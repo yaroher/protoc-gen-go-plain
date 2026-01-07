@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/goplain";
+
+package goplain;
+
+import "google/protobuf/descriptor.proto";
+
+
+message OverwriteType {
+    string go_type = 2;
+    string cast_func = 3;
+    repeated string imports = 4;
+}
+
+message PlainFieldParams {
+    bool embedded = 1;
+    bool serialized = 2;
+    OverwriteType overwrite = 3;
+}
+
+extend google.protobuf.FieldOptions {
+    PlainFieldParams field = 50000;
+}
+
+message PlainMessageParams {
+    bool generate = 1;
+    bool type_alias = 2;
+}
+
+extend google.protobuf.MessageOptions {
+    PlainMessageParams message = 50000;
+}

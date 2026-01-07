@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test";
+
+package test;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "goplain/goplain.proto";
+
+message TestMessage {
+    option (goplain.message).generate = true;
+    // Scalar numeric types.
+    double f_double = 1;
+    float f_float = 2;
+    int32 f_int32 = 3;
+    int64 f_int64 = 4;
+    uint32 f_uint32 = 5;
+    uint64 f_uint64 = 6;
+    sint32 f_sint32 = 7;
+    sint64 f_sint64 = 8;
+    fixed32 f_fixed32 = 9;
+    fixed64 f_fixed64 = 10;
+    sfixed32 f_sfixed32 = 11;
+    sfixed64 f_sfixed64 = 12;
+
+    // Scalar non-numeric types.
+    bool f_bool = 13;
+    string f_string = 14;
+    bytes f_bytes = 15;
+
+    // Optional fields (proto3 optional).
+    optional int32 f_opt_int32 = 16;
+    optional string f_opt_string = 17;
+    optional NestedMessage f_opt_message = 18;
+
+    // Repeated fields.
+    repeated int32 f_rep_int32 = 19;
+    repeated string f_rep_string = 20;
+    repeated NestedMessage f_rep_message = 21;
+    repeated TestEnum f_rep_enum = 22;
+
+    // Map fields (all allowed key types shown across maps).
+    map<int32, string> f_map_int32_string = 23;
+    map<int64, int32> f_map_int64_int32 = 24;
+    map<uint32, uint64> f_map_uint32_uint64 = 25;
+    map<uint64, bool> f_map_uint64_bool = 26;
+    map<sint32, bytes> f_map_sint32_bytes = 27;
+    map<sint64, float> f_map_sint64_float = 28;
+    map<fixed32, double> f_map_fixed32_double = 29;
+    map<fixed64, NestedMessage> f_map_fixed64_message = 30;
+    map<sfixed32, TestEnum> f_map_sfixed32_enum = 31;
+    map<sfixed64, string> f_map_sfixed64_string = 32;
+    map<bool, int32> f_map_bool_int32 = 33;
+    map<string, string> f_map_string_string = 34;
+
+    // Oneof fields.
+    oneof f_oneof {
+        int32 f_oneof_int32 = 35;
+        string f_oneof_string = 36;
+        bytes f_oneof_bytes = 37;
+        NestedMessage f_oneof_message = 38;
+        TestEnum f_oneof_enum = 39;
+    }
+
+    // Nested message and enum fields.
+    NestedMessage f_nested_message = 40;
+    NestedMessage f_nested_message_embedded = 42 [(goplain.field).embedded = true];
+    NestedMessage f_nested_message_serialized = 43 [(goplain.field).serialized = true];
+    TestEnum f_enum = 41;
+
+    // Well-known types (WKT).
+    google.protobuf.Any f_any = 45;
+    google.protobuf.Timestamp f_timestamp = 46;
+    google.protobuf.Duration f_duration = 47;
+    google.protobuf.Struct f_struct = 50;
+    google.protobuf.Value f_value = 51;
+    google.protobuf.ListValue f_list_value = 52;
+    google.protobuf.DoubleValue f_wkt_double = 53;
+    google.protobuf.FloatValue f_wkt_float = 54;
+    google.protobuf.Int64Value f_wkt_int64 = 55;
+    google.protobuf.UInt64Value f_wkt_uint64 = 56;
+    google.protobuf.Int32Value f_wkt_int32 = 57;
+    google.protobuf.UInt32Value f_wkt_uint32 = 58;
+    google.protobuf.BoolValue f_wkt_bool = 59;
+    google.protobuf.StringValue f_wkt_string = 60;
+    google.protobuf.BytesValue f_wkt_bytes = 61;
+    NestedMessage.InnerMessage.InnerInnerMessage f_double_nested = 64;
+}
+
+message NestedMessage {
+    message InnerMessage {
+        message InnerInnerMessage {
+            int32 depth = 1;
+            string note = 2;
+        }
+        InnerInnerMessage inner_inner = 1;
+    }
+
+    int32 id = 1;
+    string name = 2;
+    InnerMessage inner = 3;
+}
+
+enum TestEnum {
+    TEST_ENUM_UNSPECIFIED = 0;
+    TEST_ENUM_ONE = 1;
+    TEST_ENUM_TWO = 2;
+}
