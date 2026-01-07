@@ -46,7 +46,19 @@ func isEmbeddedMessage(field *protogen.Field) bool {
 }
 
 func shouldGenerateMessage(msg *protogen.Message) bool {
+	params := getMessageParams(msg)
+	return params.GetGenerate() && !params.GetTypeAlias()
+}
+
+func isTypeAliasMessage(msg *protogen.Message) bool {
+	return getMessageParams(msg).GetTypeAlias()
+}
+
+func getMessageParams(msg *protogen.Message) *goplain.PlainMessageParams {
 	opts := msg.Desc.Options().(*descriptorpb.MessageOptions)
 	params, _ := proto.GetExtension(opts, goplain.E_Message).(*goplain.PlainMessageParams)
-	return params.GetGenerate()
+	if params == nil {
+		return &goplain.PlainMessageParams{}
+	}
+	return params
 }

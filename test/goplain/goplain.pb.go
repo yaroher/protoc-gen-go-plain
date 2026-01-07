@@ -145,6 +145,7 @@ func (x *PlainFieldParams) GetOverwrite() *OverwriteType {
 type PlainMessageParams struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Generate      bool                   `protobuf:"varint,1,opt,name=generate,proto3" json:"generate,omitempty"`
+	TypeAlias     bool                   `protobuf:"varint,2,opt,name=type_alias,json=typeAlias,proto3" json:"type_alias,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -182,6 +183,13 @@ func (*PlainMessageParams) Descriptor() ([]byte, []int) {
 func (x *PlainMessageParams) GetGenerate() bool {
 	if x != nil {
 		return x.Generate
+	}
+	return false
+}
+
+func (x *PlainMessageParams) GetTypeAlias() bool {
+	if x != nil {
+		return x.TypeAlias
 	}
 	return false
 }
@@ -231,9 +239,11 @@ const file_goplain_goplain_proto_rawDesc = "" +
 	"\n" +
 	"serialized\x18\x02 \x01(\bR\n" +
 	"serialized\x124\n" +
-	"\toverwrite\x18\x03 \x01(\v2\x16.goplain.OverwriteTypeR\toverwrite\"0\n" +
+	"\toverwrite\x18\x03 \x01(\v2\x16.goplain.OverwriteTypeR\toverwrite\"O\n" +
 	"\x12PlainMessageParams\x12\x1a\n" +
-	"\bgenerate\x18\x01 \x01(\bR\bgenerate:P\n" +
+	"\bgenerate\x18\x01 \x01(\bR\bgenerate\x12\x1d\n" +
+	"\n" +
+	"type_alias\x18\x02 \x01(\bR\ttypeAlias:P\n" +
 	"\x05field\x12\x1d.google.protobuf.FieldOptions\x18І\x03 \x01(\v2\x19.goplain.PlainFieldParamsR\x05field:X\n" +
 	"\amessage\x12\x1f.google.protobuf.MessageOptions\x18І\x03 \x01(\v2\x1b.goplain.PlainMessageParamsR\amessageB0Z.github.com/yaroher/protoc-gen-go-plain/goplainb\x06proto3"
 

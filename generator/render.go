@@ -436,6 +436,54 @@ func cloneBytesExpr(src string) string {
 	return "append([]byte(nil), " + src + "...)"
 }
 
+func (fg *fileGen) aliasValueField(msg *protogen.Message) *protogen.Field {
+	if msg == nil || !isTypeAliasMessage(msg) {
+		return nil
+	}
+	if len(msg.Fields) != 1 {
+		panic("type_alias message " + string(msg.Desc.FullName()) + " must have exactly one field named value")
+	}
+	field := msg.Fields[0]
+	if field.Desc.Name() != "value" {
+		panic("type_alias message " + string(msg.Desc.FullName()) + " must have a single field named value")
+	}
+	if field.Desc.IsList() || field.Desc.IsMap() || isRealOneofField(field) {
+		panic("type_alias message " + string(msg.Desc.FullName()) + " value field must be a singular non-oneof field")
+	}
+	return field
+}
+
+func (fg *fileGen) aliasValueFieldFromField(field *protogen.Field) *protogen.Field {
+	if field == nil || field.Desc.Kind() != protoreflect.MessageKind {
+		return nil
+	}
+	return fg.aliasValueField(field.Message)
+}
+
+func (fg *fileGen) aliasPBToPlainExpr(field, aliasField *protogen.Field, src string, ctx fieldContext, deep bool) string {
+	plainType := fg.plainType(field, ctx)
+	valExpr := fg.pbToPlainExpr(aliasField, src+".Value", ctx, deep)
+	retExpr := "val"
+	if ctx == ctxOneofField && aliasField.Desc.Kind() != protoreflect.MessageKind {
+		retExpr = "&val"
+	}
+	return "func() " + plainType + " { if " + src + " == nil { var zero " + plainType + "; return zero }; val := " + valExpr + "; return " + retExpr + " }()"
+}
+
+func (fg *fileGen) aliasPlainToPBExpr(field, aliasField *protogen.Field, src string, ctx fieldContext, deep bool) string {
+	plainType := fg.plainType(field, ctx)
+	valSrc := src
+	if ctx == ctxOneofField && aliasField.Desc.Kind() != protoreflect.MessageKind {
+		valSrc = "*" + src
+	}
+	valExpr := fg.plainToPBExpr(aliasField, valSrc, ctx, deep)
+	msgType := fg.out.QualifiedGoIdent(field.Message.GoIdent)
+	if isPointerType(plainType) {
+		return "func() *" + msgType + " { if " + src + " == nil { return nil }; return &" + msgType + "{Value: " + valExpr + "} }()"
+	}
+	return "&" + msgType + "{Value: " + valExpr + "}"
+}
+
 func (fg *fileGen) emitFromPBField(outVar, srcVar string, field *protogen.Field, deep bool) {
 	if field.Desc.IsMap() {
 		if !deep && !fg.requiresConversion(field.Message.Fields[1]) {
@@ -559,6 +607,10 @@ func (fg *fileGen) pbToPlainExpr(field *protogen.Field, src string, ctx fieldCon
 		return fg.castIdent("MessageToSliceByte") + "(" + src + ")"
 	}
 
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return fg.aliasPBToPlainExpr(field, aliasField, src, ctx, deep)
+	}
+
 	if model, ok := fg.model(field); ok {
 		ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
 		return model.fromPB(fg, field, src, ptr)
@@ -581,6 +633,10 @@ func (fg *fileGen) plainToPBExpr(field *protogen.Field, src string, ctx fieldCon
 			src = "*" + src
 		}
 		return fg.castIdent("MessageFromSliceByte") + "[" + fg.pbMessagePointerType(field.Message) + "](" + src + ")"
+	}
+
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return fg.aliasPlainToPBExpr(field, aliasField, src, ctx, deep)
 	}
 
 	if model, ok := fg.model(field); ok {
@@ -612,6 +668,9 @@ func (fg *fileGen) requiresConversion(field *protogen.Field) bool {
 		return true
 	}
 	if field.Desc.Kind() == protoreflect.MessageKind {
+		if fg.aliasValueFieldFromField(field) != nil {
+			return true
+		}
 		if _, ok := fg.model(field); ok {
 			return true
 		}
@@ -643,6 +702,9 @@ func (fg *fileGen) plainBaseType(field *protogen.Field) string {
 	if isSerializedMessage(field) {
 		return "[]byte"
 	}
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return fg.plainBaseType(aliasField)
+	}
 	if model, ok := fg.model(field); ok {
 		return model.basePlain(fg)
 	}
@@ -661,6 +723,10 @@ func (fg *fileGen) shouldPointer(field *protogen.Field, ctx fieldContext, base s
 	}
 	if isSerializedMessage(field) {
 		return ctx == ctxOneofField
+	}
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		aliasBase := fg.plainBaseType(aliasField)
+		return fg.shouldPointer(aliasField, ctx, aliasBase)
 	}
 	if ctx == ctxOneofField {
 		return true

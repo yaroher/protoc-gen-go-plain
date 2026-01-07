@@ -11,11 +11,13 @@ import "time"
 // - nested message поля допускаем как *NestedMessage (как в p       rotoc-gen-go для message)
 // - repeated message => []*NestedMessage
 // - map как в protoc-gen-go (message value => *NestedMessage)
-// - embedded => поля NestedMessage “поднимаются” наверх плоско (Id/Name/Inner)
+// - embedded => поля NestedMessage “поднимаются” наверх плоско (Name/Inner)
 // - serialized => []byte
 // - WKT нормализуем в native Go типы с presence (в основном через указатели)
 // - теги не добавляем
 type TestMessagePlainEtalon struct {
+	OidcId string // alias for oidc_id_alias.value
+	Id     string // alias for id_alias.value
 	// Scalar numeric types.
 	FDouble   float64
 	FFloat    float32
@@ -73,10 +75,8 @@ type TestMessagePlainEtalon struct {
 
 	// f_nested_message_embedded (embedded=true) => поля NestedMessage поднимаем наверх плоско.
 	// NestedMessage:
-	//   int32 id
 	//   string name
 	//   InnerMessage inner
-	Id    int32
 	Name  string
 	Inner *NestedMessage_InnerMessage
 

@@ -11,8 +11,20 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "goplain/goplain.proto";
 
+message OidcIdAlias {
+    option (goplain.message).type_alias = true;
+    string value = 1;
+}
+
+message IdAlias {
+    option (goplain.message).type_alias = true;
+    string value = 1;
+}
+
 message TestMessage {
     option (goplain.message).generate = true;
+    OidcIdAlias oidc_id = 100;
+    IdAlias id = 101;
     // Scalar numeric types.
     double f_double = 1;
     float f_float = 2;
@@ -100,7 +112,6 @@ message NestedMessage {
         InnerInnerMessage inner_inner = 1;
     }
 
-    int32 id = 1;
     string name = 2;
     InnerMessage inner = 3;
 }

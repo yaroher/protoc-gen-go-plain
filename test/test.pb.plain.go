@@ -10,6 +10,8 @@ import (
 )
 
 type TestMessagePlain struct {
+	OidcId                   string
+	Id                       string
 	FDouble                  float64
 	FFloat                   float32
 	FInt32                   int32
@@ -50,7 +52,6 @@ type TestMessagePlain struct {
 	FOneofMessage            *NestedMessage
 	FOneofEnum               *TestEnum
 	FNestedMessage           *NestedMessage
-	Id                       int32
 	Name                     string
 	Inner                    *NestedMessage_InnerMessage
 	FNestedMessageSerialized []byte
@@ -78,6 +79,22 @@ func (v *TestMessage) IntoPlain() *TestMessagePlain {
 		return nil
 	}
 	out := &TestMessagePlain{}
+	out.OidcId = func() string {
+		if v.OidcId == nil {
+			var zero string
+			return zero
+		}
+		val := v.OidcId.Value
+		return val
+	}()
+	out.Id = func() string {
+		if v.Id == nil {
+			var zero string
+			return zero
+		}
+		val := v.Id.Value
+		return val
+	}()
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -114,7 +131,6 @@ func (v *TestMessage) IntoPlain() *TestMessagePlain {
 	out.FMapStringString = v.FMapStringString
 	out.FNestedMessage = v.FNestedMessage
 	if v.FNestedMessageEmbedded != nil {
-		out.Id = v.FNestedMessageEmbedded.Id
 		out.Name = v.FNestedMessageEmbedded.Name
 		out.Inner = v.FNestedMessageEmbedded.Inner
 	}
@@ -160,6 +176,22 @@ func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
 		return nil
 	}
 	out := &TestMessagePlain{}
+	out.OidcId = func() string {
+		if v.OidcId == nil {
+			var zero string
+			return zero
+		}
+		val := v.OidcId.Value
+		return val
+	}()
+	out.Id = func() string {
+		if v.Id == nil {
+			var zero string
+			return zero
+		}
+		val := v.Id.Value
+		return val
+	}()
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -272,7 +304,6 @@ func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
 	}
 	out.FNestedMessage = v.FNestedMessage
 	if v.FNestedMessageEmbedded != nil {
-		out.Id = v.FNestedMessageEmbedded.Id
 		out.Name = v.FNestedMessageEmbedded.Name
 		out.Inner = v.FNestedMessageEmbedded.Inner
 	}
@@ -318,6 +349,8 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 		return nil
 	}
 	out := &TestMessage{}
+	out.OidcId = &OidcIdAlias{Value: v.OidcId}
+	out.Id = &IdAlias{Value: v.Id}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -354,7 +387,6 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	out.FMapStringString = v.FMapStringString
 	out.FNestedMessage = v.FNestedMessage
 	out.FNestedMessageEmbedded = &NestedMessage{}
-	out.FNestedMessageEmbedded.Id = v.Id
 	out.FNestedMessageEmbedded.Name = v.Name
 	out.FNestedMessageEmbedded.Inner = v.Inner
 	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
@@ -394,6 +426,8 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 		return nil
 	}
 	out := &TestMessage{}
+	out.OidcId = &OidcIdAlias{Value: v.OidcId}
+	out.Id = &IdAlias{Value: v.Id}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -506,7 +540,6 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	}
 	out.FNestedMessage = v.FNestedMessage
 	out.FNestedMessageEmbedded = &NestedMessage{}
-	out.FNestedMessageEmbedded.Id = v.Id
 	out.FNestedMessageEmbedded.Name = v.Name
 	out.FNestedMessageEmbedded.Inner = v.Inner
 	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
