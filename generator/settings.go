@@ -13,6 +13,7 @@ import (
 
 type PluginSettings struct {
 	TypeOverrides []*goplain.OverwriteType
+	PlainSuffix   string
 }
 
 func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue string) string {
@@ -35,7 +36,9 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 		paramsMap[paramSplit[0]] = paramSplit[1]
 	}
 
-	settings := &PluginSettings{}
+	settings := &PluginSettings{
+		PlainSuffix: "Plain",
+	}
 
 	if overridesPath, ok := paramsMap["overrides_file"]; ok && overridesPath != "" {
 		raw, err := os.ReadFile(overridesPath)

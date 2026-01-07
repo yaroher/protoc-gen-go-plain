@@ -785,7 +785,11 @@ func (fg *fileGen) pbValueType(field *protogen.Field) string {
 }
 
 func (fg *fileGen) plainMessageName(msg *protogen.Message) string {
-	return msg.GoIdent.GoName + "Plain"
+	suffix := "Plain"
+	if fg.g != nil && fg.g.Settings != nil && fg.g.Settings.PlainSuffix != "" {
+		suffix = fg.g.Settings.PlainSuffix
+	}
+	return msg.GoIdent.GoName + suffix
 }
 
 func (fg *fileGen) pbOneofWrapperName(msg *protogen.Message, field *protogen.Field) string {
