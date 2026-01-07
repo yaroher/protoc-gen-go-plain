@@ -3,6 +3,7 @@ package generator
 import (
 	"strings"
 
+	"github.com/yaroher/protoc-gen-go-plain/goplain"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -209,11 +210,17 @@ type fileGen struct {
 	g    *Generator
 	file *protogen.File
 	out  *protogen.GeneratedFile
+
+	fileOverrides  map[string]*goplain.OverwriteType
+	fieldOverrides map[*protogen.Field]*goplain.OverwriteType
 }
 
 func newFileGen(g *Generator, f *protogen.File) *fileGen {
 	out := g.Plugin.NewGeneratedFile(f.GeneratedFilenamePrefix+".pb.plain.go", f.GoImportPath)
-	return &fileGen{g: g, file: f, out: out}
+	fg := &fileGen{g: g, file: f, out: out}
+	fg.fileOverrides = newOverrideRegistry(getFileParams(f).GetOverwrite()).byProto
+	fg.buildFieldOverrides(f.Messages)
+	return fg
 }
 
 func (fg *fileGen) P(v ...any) {
@@ -607,13 +614,16 @@ func (fg *fileGen) pbToPlainExpr(field *protogen.Field, src string, ctx fieldCon
 		return fg.castIdent("MessageToSliceByte") + "(" + src + ")"
 	}
 
-	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
-		return fg.aliasPBToPlainExpr(field, aliasField, src, ctx, deep)
-	}
-
 	if model, ok := fg.model(field); ok {
 		ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
+		if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+			ptr = false
+		}
 		return model.fromPB(fg, field, src, ptr)
+	}
+
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return fg.aliasPBToPlainExpr(field, aliasField, src, ctx, deep)
 	}
 
 	if field.Desc.Kind() == protoreflect.BytesKind && deep {
@@ -635,13 +645,16 @@ func (fg *fileGen) plainToPBExpr(field *protogen.Field, src string, ctx fieldCon
 		return fg.castIdent("MessageFromSliceByte") + "[" + fg.pbMessagePointerType(field.Message) + "](" + src + ")"
 	}
 
-	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
-		return fg.aliasPlainToPBExpr(field, aliasField, src, ctx, deep)
-	}
-
 	if model, ok := fg.model(field); ok {
 		ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
+		if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+			ptr = false
+		}
 		return model.toPB(fg, field, src, ptr)
+	}
+
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return fg.aliasPlainToPBExpr(field, aliasField, src, ctx, deep)
 	}
 
 	if field.Desc.Kind() == protoreflect.BytesKind && deep {
@@ -656,6 +669,22 @@ func (fg *fileGen) plainToPBExpr(field *protogen.Field, src string, ctx fieldCon
 }
 
 func (fg *fileGen) model(field *protogen.Field) (typeModel, bool) {
+	if ov := fg.overrideForField(field); ov != nil {
+		base := fg.overrideBaseType(ov)
+		model := typeModel{
+			basePlain: func(*fileGen) string {
+				return base
+			},
+			pointerField: ov.GetPointer(),
+			fromPB: func(fg *fileGen, field *protogen.Field, src string, ptr bool) string {
+				return fg.overrideFromPBExpr(field, src, ptr, ov)
+			},
+			toPB: func(fg *fileGen, field *protogen.Field, src string, ptr bool) string {
+				return fg.overrideToPBExpr(field, src, ptr, ov)
+			},
+		}
+		return model, true
+	}
 	if field.Desc.Kind() != protoreflect.MessageKind {
 		return typeModel{}, false
 	}
@@ -667,13 +696,11 @@ func (fg *fileGen) requiresConversion(field *protogen.Field) bool {
 	if isSerializedMessage(field) {
 		return true
 	}
-	if field.Desc.Kind() == protoreflect.MessageKind {
-		if fg.aliasValueFieldFromField(field) != nil {
-			return true
-		}
-		if _, ok := fg.model(field); ok {
-			return true
-		}
+	if fg.aliasValueFieldFromField(field) != nil {
+		return true
+	}
+	if _, ok := fg.model(field); ok {
+		return true
 	}
 	return false
 }
@@ -702,11 +729,11 @@ func (fg *fileGen) plainBaseType(field *protogen.Field) string {
 	if isSerializedMessage(field) {
 		return "[]byte"
 	}
-	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
-		return fg.plainBaseType(aliasField)
-	}
 	if model, ok := fg.model(field); ok {
 		return model.basePlain(fg)
+	}
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return fg.plainBaseType(aliasField)
 	}
 	if field.Desc.Kind() == protoreflect.EnumKind {
 		return fg.out.QualifiedGoIdent(field.Enum.GoIdent)

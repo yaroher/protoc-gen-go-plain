@@ -237,6 +237,7 @@ type TestMessage struct {
 	// Scalar non-numeric types.
 	FBool   bool   `protobuf:"varint,13,opt,name=f_bool,json=fBool,proto3" json:"f_bool,omitempty"`
 	FString string `protobuf:"bytes,14,opt,name=f_string,json=fString,proto3" json:"f_string,omitempty"`
+	FUuid   string `protobuf:"bytes,62,opt,name=f_uuid,json=fUuid,proto3" json:"f_uuid,omitempty"`
 	FBytes  []byte `protobuf:"bytes,15,opt,name=f_bytes,json=fBytes,proto3" json:"f_bytes,omitempty"`
 	// Optional fields (proto3 optional).
 	FOptInt32   *int32         `protobuf:"varint,16,opt,name=f_opt_int32,json=fOptInt32,proto3,oneof" json:"f_opt_int32,omitempty"`
@@ -443,6 +444,13 @@ func (x *TestMessage) GetFBool() bool {
 func (x *TestMessage) GetFString() string {
 	if x != nil {
 		return x.FString
+	}
+	return ""
+}
+
+func (x *TestMessage) GetFUuid() string {
+	if x != nil {
+		return x.FUuid
 	}
 	return ""
 }
@@ -987,7 +995,7 @@ const file_test_proto_rawDesc = "" +
 	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"q\n" +
 	"\x0eEmbedWithAlias\x125\n" +
 	"\rembed_oidc_id\x18\x01 \x01(\v2\x11.test.OidcIdAliasR\vembedOidcId\x12(\n" +
-	"\bembed_id\x18\x02 \x01(\v2\r.test.IdAliasR\aembedId\"\xf1\"\n" +
+	"\bembed_id\x18\x02 \x01(\v2\r.test.IdAliasR\aembedId\"\x85$\n" +
 	"\vTestMessage\x12*\n" +
 	"\aoidc_id\x18d \x01(\v2\x11.test.OidcIdAliasR\x06oidcId\x12\x1d\n" +
 	"\x02id\x18e \x01(\v2\r.test.IdAliasR\x02id\x122\n" +
@@ -1008,7 +1016,11 @@ const file_test_proto_rawDesc = "" +
 	"\n" +
 	"f_sfixed64\x18\f \x01(\x10R\tfSfixed64\x12\x15\n" +
 	"\x06f_bool\x18\r \x01(\bR\x05fBool\x12\x19\n" +
-	"\bf_string\x18\x0e \x01(\tR\afString\x12\x17\n" +
+	"\bf_string\x18\x0e \x01(\tR\afString\x12\x91\x01\n" +
+	"\x06f_uuid\x18> \x01(\tBz\x82\xb5\x18v\x1at\x12\x1e\n" +
+	"\x04UUID\x12\x16github.com/google/uuid2?id, err := uuid.Parse(v)\n" +
+	"if err != nil { panic(err) }\n" +
+	"return id:\x11return v.String()R\x05fUuid\x12\x17\n" +
 	"\af_bytes\x18\x0f \x01(\fR\x06fBytes\x12#\n" +
 	"\vf_opt_int32\x18\x10 \x01(\x05H\x01R\tfOptInt32\x88\x01\x01\x12%\n" +
 	"\ff_opt_string\x18\x11 \x01(\tH\x02R\n" +

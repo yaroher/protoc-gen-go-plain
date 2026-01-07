@@ -1,14 +1,18 @@
 package generator
 
 import (
+	"os"
 	"strings"
 
+	"github.com/yaroher/protoc-gen-go-plain/goplain"
 	"github.com/yaroher/protoc-gen-go-plain/internal/logger"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type PluginSettings struct {
+	TypeOverrides []*goplain.OverwriteType
 }
 
 func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue string) string {
@@ -32,6 +36,18 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{}
+
+	if overridesPath, ok := paramsMap["overrides_file"]; ok && overridesPath != "" {
+		raw, err := os.ReadFile(overridesPath)
+		if err != nil {
+			return nil, err
+		}
+		var params goplain.PlainFileParams
+		if err := protojson.Unmarshal(raw, &params); err != nil {
+			return nil, err
+		}
+		settings.TypeOverrides = params.GetOverwrite()
+	}
 
 	return settings, nil
 }

@@ -1,6 +1,10 @@
 package test
 
-import "time"
+import (
+	"time"
+
+	uuid "github.com/google/uuid"
+)
 
 // TestMessagePlainEtalon — “плоская” структура для TestMessage.
 //
@@ -38,6 +42,7 @@ type TestMessagePlainEtalon struct {
 	// Scalar non-numeric types.
 	FBool   bool
 	FString string
+	FUuid   uuid.UUID
 	FBytes  []byte
 
 	// Optional fields (proto3 optional).

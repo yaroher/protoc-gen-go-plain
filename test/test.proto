@@ -48,6 +48,11 @@ message TestMessage {
     // Scalar non-numeric types.
     bool f_bool = 13;
     string f_string = 14;
+    string f_uuid = 62 [(goplain.field).overwrite = {
+        go_type: { name: "UUID", import_path: "github.com/google/uuid" }
+        to_plain_body: "id, err := uuid.Parse(v)\nif err != nil { panic(err) }\nreturn id"
+        to_pb_body: "return v.String()"
+    }];
     bytes f_bytes = 15;
 
     // Optional fields (proto3 optional).

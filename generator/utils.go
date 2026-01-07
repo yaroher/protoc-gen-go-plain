@@ -45,6 +45,24 @@ func isEmbeddedMessage(field *protogen.Field) bool {
 	return plainField.GetEmbedded()
 }
 
+func getFieldOverwrite(field *protogen.Field) *goplain.OverwriteType {
+	opts := field.Desc.Options().(*descriptorpb.FieldOptions)
+	plainField, _ := proto.GetExtension(opts, goplain.E_Field).(*goplain.PlainFieldParams)
+	if plainField == nil {
+		return nil
+	}
+	return plainField.GetOverwrite()
+}
+
+func getFileParams(file *protogen.File) *goplain.PlainFileParams {
+	opts := file.Desc.Options().(*descriptorpb.FileOptions)
+	params, _ := proto.GetExtension(opts, goplain.E_File).(*goplain.PlainFileParams)
+	if params == nil {
+		return &goplain.PlainFileParams{}
+	}
+	return params
+}
+
 func shouldGenerateMessage(msg *protogen.Message) bool {
 	params := getMessageParams(msg)
 	return params.GetGenerate() && !params.GetTypeAlias()

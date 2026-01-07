@@ -22,18 +22,76 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OverwriteType struct {
+type GoIdent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	GoType        string                 `protobuf:"bytes,2,opt,name=go_type,json=goType,proto3" json:"go_type,omitempty"`
-	CastFunc      string                 `protobuf:"bytes,3,opt,name=cast_func,json=castFunc,proto3" json:"cast_func,omitempty"`
-	Imports       []string               `protobuf:"bytes,4,rep,name=imports,proto3" json:"imports,omitempty"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ImportPath    string                 `protobuf:"bytes,2,opt,name=import_path,json=importPath,proto3" json:"import_path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoIdent) Reset() {
+	*x = GoIdent{}
+	mi := &file_goplain_goplain_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoIdent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoIdent) ProtoMessage() {}
+
+func (x *GoIdent) ProtoReflect() protoreflect.Message {
+	mi := &file_goplain_goplain_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoIdent.ProtoReflect.Descriptor instead.
+func (*GoIdent) Descriptor() ([]byte, []int) {
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GoIdent) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GoIdent) GetImportPath() string {
+	if x != nil {
+		return x.ImportPath
+	}
+	return ""
+}
+
+type OverwriteType struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// For file/global overrides: proto full name (e.g. "google.protobuf.Timestamp" or "pkg.Message").
+	// For field overrides this can be empty.
+	ProtoType     string   `protobuf:"bytes,1,opt,name=proto_type,json=protoType,proto3" json:"proto_type,omitempty"`
+	GoType        *GoIdent `protobuf:"bytes,2,opt,name=go_type,json=goType,proto3" json:"go_type,omitempty"`
+	ToPlain       *GoIdent `protobuf:"bytes,3,opt,name=to_plain,json=toPlain,proto3" json:"to_plain,omitempty"`
+	ToPb          *GoIdent `protobuf:"bytes,4,opt,name=to_pb,json=toPb,proto3" json:"to_pb,omitempty"`
+	Pointer       bool     `protobuf:"varint,5,opt,name=pointer,proto3" json:"pointer,omitempty"`
+	ToPlainBody   string   `protobuf:"bytes,6,opt,name=to_plain_body,json=toPlainBody,proto3" json:"to_plain_body,omitempty"`
+	ToPbBody      string   `protobuf:"bytes,7,opt,name=to_pb_body,json=toPbBody,proto3" json:"to_pb_body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OverwriteType) Reset() {
 	*x = OverwriteType{}
-	mi := &file_goplain_goplain_proto_msgTypes[0]
+	mi := &file_goplain_goplain_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +103,7 @@ func (x *OverwriteType) String() string {
 func (*OverwriteType) ProtoMessage() {}
 
 func (x *OverwriteType) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[0]
+	mi := &file_goplain_goplain_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,28 +116,56 @@ func (x *OverwriteType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OverwriteType.ProtoReflect.Descriptor instead.
 func (*OverwriteType) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{0}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *OverwriteType) GetGoType() string {
+func (x *OverwriteType) GetProtoType() string {
+	if x != nil {
+		return x.ProtoType
+	}
+	return ""
+}
+
+func (x *OverwriteType) GetGoType() *GoIdent {
 	if x != nil {
 		return x.GoType
 	}
-	return ""
+	return nil
 }
 
-func (x *OverwriteType) GetCastFunc() string {
+func (x *OverwriteType) GetToPlain() *GoIdent {
 	if x != nil {
-		return x.CastFunc
-	}
-	return ""
-}
-
-func (x *OverwriteType) GetImports() []string {
-	if x != nil {
-		return x.Imports
+		return x.ToPlain
 	}
 	return nil
+}
+
+func (x *OverwriteType) GetToPb() *GoIdent {
+	if x != nil {
+		return x.ToPb
+	}
+	return nil
+}
+
+func (x *OverwriteType) GetPointer() bool {
+	if x != nil {
+		return x.Pointer
+	}
+	return false
+}
+
+func (x *OverwriteType) GetToPlainBody() string {
+	if x != nil {
+		return x.ToPlainBody
+	}
+	return ""
+}
+
+func (x *OverwriteType) GetToPbBody() string {
+	if x != nil {
+		return x.ToPbBody
+	}
+	return ""
 }
 
 type PlainFieldParams struct {
@@ -93,7 +179,7 @@ type PlainFieldParams struct {
 
 func (x *PlainFieldParams) Reset() {
 	*x = PlainFieldParams{}
-	mi := &file_goplain_goplain_proto_msgTypes[1]
+	mi := &file_goplain_goplain_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -105,7 +191,7 @@ func (x *PlainFieldParams) String() string {
 func (*PlainFieldParams) ProtoMessage() {}
 
 func (x *PlainFieldParams) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[1]
+	mi := &file_goplain_goplain_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -118,7 +204,7 @@ func (x *PlainFieldParams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlainFieldParams.ProtoReflect.Descriptor instead.
 func (*PlainFieldParams) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{1}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *PlainFieldParams) GetEmbedded() bool {
@@ -142,6 +228,50 @@ func (x *PlainFieldParams) GetOverwrite() *OverwriteType {
 	return nil
 }
 
+type PlainFileParams struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Overwrite     []*OverwriteType       `protobuf:"bytes,1,rep,name=overwrite,proto3" json:"overwrite,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlainFileParams) Reset() {
+	*x = PlainFileParams{}
+	mi := &file_goplain_goplain_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlainFileParams) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlainFileParams) ProtoMessage() {}
+
+func (x *PlainFileParams) ProtoReflect() protoreflect.Message {
+	mi := &file_goplain_goplain_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlainFileParams.ProtoReflect.Descriptor instead.
+func (*PlainFileParams) Descriptor() ([]byte, []int) {
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *PlainFileParams) GetOverwrite() []*OverwriteType {
+	if x != nil {
+		return x.Overwrite
+	}
+	return nil
+}
+
 type PlainMessageParams struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Generate      bool                   `protobuf:"varint,1,opt,name=generate,proto3" json:"generate,omitempty"`
@@ -152,7 +282,7 @@ type PlainMessageParams struct {
 
 func (x *PlainMessageParams) Reset() {
 	*x = PlainMessageParams{}
-	mi := &file_goplain_goplain_proto_msgTypes[2]
+	mi := &file_goplain_goplain_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -164,7 +294,7 @@ func (x *PlainMessageParams) String() string {
 func (*PlainMessageParams) ProtoMessage() {}
 
 func (x *PlainMessageParams) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[2]
+	mi := &file_goplain_goplain_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -177,7 +307,7 @@ func (x *PlainMessageParams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlainMessageParams.ProtoReflect.Descriptor instead.
 func (*PlainMessageParams) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{2}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PlainMessageParams) GetGenerate() bool {
@@ -204,6 +334,14 @@ var file_goplain_goplain_proto_extTypes = []protoimpl.ExtensionInfo{
 		Filename:      "goplain/goplain.proto",
 	},
 	{
+		ExtendedType:  (*descriptorpb.FileOptions)(nil),
+		ExtensionType: (*PlainFileParams)(nil),
+		Field:         50000,
+		Name:          "goplain.file",
+		Tag:           "bytes,50000,opt,name=file",
+		Filename:      "goplain/goplain.proto",
+	},
+	{
 		ExtendedType:  (*descriptorpb.MessageOptions)(nil),
 		ExtensionType: (*PlainMessageParams)(nil),
 		Field:         50000,
@@ -219,32 +357,51 @@ var (
 	E_Field = &file_goplain_goplain_proto_extTypes[0]
 )
 
+// Extension fields to descriptorpb.FileOptions.
+var (
+	// optional goplain.PlainFileParams file = 50000;
+	E_File = &file_goplain_goplain_proto_extTypes[1]
+)
+
 // Extension fields to descriptorpb.MessageOptions.
 var (
 	// optional goplain.PlainMessageParams message = 50000;
-	E_Message = &file_goplain_goplain_proto_extTypes[1]
+	E_Message = &file_goplain_goplain_proto_extTypes[2]
 )
 
 var File_goplain_goplain_proto protoreflect.FileDescriptor
 
 const file_goplain_goplain_proto_rawDesc = "" +
 	"\n" +
-	"\x15goplain/goplain.proto\x12\agoplain\x1a google/protobuf/descriptor.proto\"_\n" +
-	"\rOverwriteType\x12\x17\n" +
-	"\ago_type\x18\x02 \x01(\tR\x06goType\x12\x1b\n" +
-	"\tcast_func\x18\x03 \x01(\tR\bcastFunc\x12\x18\n" +
-	"\aimports\x18\x04 \x03(\tR\aimports\"\x84\x01\n" +
+	"\x15goplain/goplain.proto\x12\agoplain\x1a google/protobuf/descriptor.proto\">\n" +
+	"\aGoIdent\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
+	"\vimport_path\x18\x02 \x01(\tR\n" +
+	"importPath\"\x89\x02\n" +
+	"\rOverwriteType\x12\x1d\n" +
+	"\n" +
+	"proto_type\x18\x01 \x01(\tR\tprotoType\x12)\n" +
+	"\ago_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\x06goType\x12+\n" +
+	"\bto_plain\x18\x03 \x01(\v2\x10.goplain.GoIdentR\atoPlain\x12%\n" +
+	"\x05to_pb\x18\x04 \x01(\v2\x10.goplain.GoIdentR\x04toPb\x12\x18\n" +
+	"\apointer\x18\x05 \x01(\bR\apointer\x12\"\n" +
+	"\rto_plain_body\x18\x06 \x01(\tR\vtoPlainBody\x12\x1c\n" +
+	"\n" +
+	"to_pb_body\x18\a \x01(\tR\btoPbBody\"\x84\x01\n" +
 	"\x10PlainFieldParams\x12\x1a\n" +
 	"\bembedded\x18\x01 \x01(\bR\bembedded\x12\x1e\n" +
 	"\n" +
 	"serialized\x18\x02 \x01(\bR\n" +
 	"serialized\x124\n" +
-	"\toverwrite\x18\x03 \x01(\v2\x16.goplain.OverwriteTypeR\toverwrite\"O\n" +
+	"\toverwrite\x18\x03 \x01(\v2\x16.goplain.OverwriteTypeR\toverwrite\"G\n" +
+	"\x0fPlainFileParams\x124\n" +
+	"\toverwrite\x18\x01 \x03(\v2\x16.goplain.OverwriteTypeR\toverwrite\"O\n" +
 	"\x12PlainMessageParams\x12\x1a\n" +
 	"\bgenerate\x18\x01 \x01(\bR\bgenerate\x12\x1d\n" +
 	"\n" +
 	"type_alias\x18\x02 \x01(\bR\ttypeAlias:P\n" +
-	"\x05field\x12\x1d.google.protobuf.FieldOptions\x18І\x03 \x01(\v2\x19.goplain.PlainFieldParamsR\x05field:X\n" +
+	"\x05field\x12\x1d.google.protobuf.FieldOptions\x18І\x03 \x01(\v2\x19.goplain.PlainFieldParamsR\x05field:L\n" +
+	"\x04file\x12\x1c.google.protobuf.FileOptions\x18І\x03 \x01(\v2\x18.goplain.PlainFileParamsR\x04file:X\n" +
 	"\amessage\x12\x1f.google.protobuf.MessageOptions\x18І\x03 \x01(\v2\x1b.goplain.PlainMessageParamsR\amessageB0Z.github.com/yaroher/protoc-gen-go-plain/goplainb\x06proto3"
 
 var (
@@ -259,25 +416,34 @@ func file_goplain_goplain_proto_rawDescGZIP() []byte {
 	return file_goplain_goplain_proto_rawDescData
 }
 
-var file_goplain_goplain_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_goplain_goplain_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_goplain_goplain_proto_goTypes = []any{
-	(*OverwriteType)(nil),               // 0: goplain.OverwriteType
-	(*PlainFieldParams)(nil),            // 1: goplain.PlainFieldParams
-	(*PlainMessageParams)(nil),          // 2: goplain.PlainMessageParams
-	(*descriptorpb.FieldOptions)(nil),   // 3: google.protobuf.FieldOptions
-	(*descriptorpb.MessageOptions)(nil), // 4: google.protobuf.MessageOptions
+	(*GoIdent)(nil),                     // 0: goplain.GoIdent
+	(*OverwriteType)(nil),               // 1: goplain.OverwriteType
+	(*PlainFieldParams)(nil),            // 2: goplain.PlainFieldParams
+	(*PlainFileParams)(nil),             // 3: goplain.PlainFileParams
+	(*PlainMessageParams)(nil),          // 4: goplain.PlainMessageParams
+	(*descriptorpb.FieldOptions)(nil),   // 5: google.protobuf.FieldOptions
+	(*descriptorpb.FileOptions)(nil),    // 6: google.protobuf.FileOptions
+	(*descriptorpb.MessageOptions)(nil), // 7: google.protobuf.MessageOptions
 }
 var file_goplain_goplain_proto_depIdxs = []int32{
-	0, // 0: goplain.PlainFieldParams.overwrite:type_name -> goplain.OverwriteType
-	3, // 1: goplain.field:extendee -> google.protobuf.FieldOptions
-	4, // 2: goplain.message:extendee -> google.protobuf.MessageOptions
-	1, // 3: goplain.field:type_name -> goplain.PlainFieldParams
-	2, // 4: goplain.message:type_name -> goplain.PlainMessageParams
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	3, // [3:5] is the sub-list for extension type_name
-	1, // [1:3] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0,  // 0: goplain.OverwriteType.go_type:type_name -> goplain.GoIdent
+	0,  // 1: goplain.OverwriteType.to_plain:type_name -> goplain.GoIdent
+	0,  // 2: goplain.OverwriteType.to_pb:type_name -> goplain.GoIdent
+	1,  // 3: goplain.PlainFieldParams.overwrite:type_name -> goplain.OverwriteType
+	1,  // 4: goplain.PlainFileParams.overwrite:type_name -> goplain.OverwriteType
+	5,  // 5: goplain.field:extendee -> google.protobuf.FieldOptions
+	6,  // 6: goplain.file:extendee -> google.protobuf.FileOptions
+	7,  // 7: goplain.message:extendee -> google.protobuf.MessageOptions
+	2,  // 8: goplain.field:type_name -> goplain.PlainFieldParams
+	3,  // 9: goplain.file:type_name -> goplain.PlainFileParams
+	4,  // 10: goplain.message:type_name -> goplain.PlainMessageParams
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	8,  // [8:11] is the sub-list for extension type_name
+	5,  // [5:8] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_goplain_goplain_proto_init() }
@@ -291,8 +457,8 @@ func file_goplain_goplain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_goplain_goplain_proto_rawDesc), len(file_goplain_goplain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
-			NumExtensions: 2,
+			NumMessages:   5,
+			NumExtensions: 3,
 			NumServices:   0,
 		},
 		GoTypes:           file_goplain_goplain_proto_goTypes,

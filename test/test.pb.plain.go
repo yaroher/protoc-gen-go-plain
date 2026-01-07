@@ -3,6 +3,7 @@
 package test
 
 import (
+	uuid "github.com/google/uuid"
 	cast "github.com/yaroher/protoc-gen-go-plain/cast"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 	structpb "google.golang.org/protobuf/types/known/structpb"
@@ -28,6 +29,7 @@ type TestMessagePlain struct {
 	FSfixed64                int64
 	FBool                    bool
 	FString                  string
+	FUuid                    uuid.UUID
 	FBytes                   []byte
 	FOptInt32                *int32
 	FOptString               *string
@@ -131,6 +133,13 @@ func (v *TestMessage) IntoPlain() *TestMessagePlain {
 	out.FSfixed64 = v.FSfixed64
 	out.FBool = v.FBool
 	out.FString = v.FString
+	out.FUuid = func(v string) uuid.UUID {
+		id, err := uuid.Parse(v)
+		if err != nil {
+			panic(err)
+		}
+		return id
+	}(v.FUuid)
 	out.FBytes = v.FBytes
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString
@@ -252,6 +261,13 @@ func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
 	out.FSfixed64 = v.FSfixed64
 	out.FBool = v.FBool
 	out.FString = v.FString
+	out.FUuid = func(v string) uuid.UUID {
+		id, err := uuid.Parse(v)
+		if err != nil {
+			panic(err)
+		}
+		return id
+	}(v.FUuid)
 	out.FBytes = append([]byte(nil), v.FBytes...)
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString
@@ -420,6 +436,7 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	out.FSfixed64 = v.FSfixed64
 	out.FBool = v.FBool
 	out.FString = v.FString
+	out.FUuid = func(v uuid.UUID) string { return v.String() }(v.FUuid)
 	out.FBytes = v.FBytes
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString
@@ -506,6 +523,7 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	out.FSfixed64 = v.FSfixed64
 	out.FBool = v.FBool
 	out.FString = v.FString
+	out.FUuid = func(v uuid.UUID) string { return v.String() }(v.FUuid)
 	out.FBytes = append([]byte(nil), v.FBytes...)
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString

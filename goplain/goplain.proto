@@ -7,10 +7,21 @@ package goplain;
 import "google/protobuf/descriptor.proto";
 
 
+message GoIdent {
+    string name = 1;
+    string import_path = 2;
+}
+
 message OverwriteType {
-    string go_type = 2;
-    string cast_func = 3;
-    repeated string imports = 4;
+    // For file/global overrides: proto full name (e.g. "google.protobuf.Timestamp" or "pkg.Message").
+    // For field overrides this can be empty.
+    string proto_type = 1;
+    GoIdent go_type = 2;
+    GoIdent to_plain = 3;
+    GoIdent to_pb = 4;
+    bool pointer = 5;
+    string to_plain_body = 6;
+    string to_pb_body = 7;
 }
 
 message PlainFieldParams {
@@ -21,6 +32,14 @@ message PlainFieldParams {
 
 extend google.protobuf.FieldOptions {
     PlainFieldParams field = 50000;
+}
+
+message PlainFileParams {
+    repeated OverwriteType overwrite = 1;
+}
+
+extend google.protobuf.FileOptions {
+    PlainFileParams file = 50000;
 }
 
 message PlainMessageParams {
