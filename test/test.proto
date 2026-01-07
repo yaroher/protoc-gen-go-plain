@@ -21,10 +21,16 @@ message IdAlias {
     string value = 1;
 }
 
+message EmbedWithAlias {
+    OidcIdAlias embed_oidc_id = 1;
+    IdAlias embed_id = 2;
+}
+
 message TestMessage {
     option (goplain.message).generate = true;
     OidcIdAlias oidc_id = 100;
     IdAlias id = 101;
+    EmbedWithAlias embed = 102 [(goplain.field).embedded = true];
     // Scalar numeric types.
     double f_double = 1;
     float f_float = 2;
@@ -48,11 +54,13 @@ message TestMessage {
     optional int32 f_opt_int32 = 16;
     optional string f_opt_string = 17;
     optional NestedMessage f_opt_message = 18;
+    optional TestEnum f_opt_enum = 190;
 
     // Repeated fields.
     repeated int32 f_rep_int32 = 19;
     repeated string f_rep_string = 20;
     repeated NestedMessage f_rep_message = 21;
+    repeated NestedMessage f_rep_message_serialized = 220 [(goplain.field).serialized = true];
     repeated TestEnum f_rep_enum = 22;
 
     // Map fields (all allowed key types shown across maps).

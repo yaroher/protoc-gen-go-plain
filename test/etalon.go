@@ -18,6 +18,9 @@ import "time"
 type TestMessagePlainEtalon struct {
 	OidcId string // alias for oidc_id_alias.value
 	Id     string // alias for id_alias.value
+	// EmbedWithAlias.
+	EmbedOidcId string
+	EmbedId     string
 	// Scalar numeric types.
 	FDouble   float64
 	FFloat    float32
@@ -41,12 +44,14 @@ type TestMessagePlainEtalon struct {
 	FOptInt32   *int32
 	FOptString  *string
 	FOptMessage *NestedMessage
+	FOptEnum    *TestEnum
 
 	// Repeated fields.
-	FRepInt32   []int32
-	FRepString  []string
-	FRepMessage []*NestedMessage
-	FRepEnum    []TestEnum
+	FRepInt32             []int32
+	FRepString            []string
+	FRepMessage           []*NestedMessage
+	FRepMessageSerialized [][]byte
+	FRepEnum              []TestEnum
 
 	// Map fields (как в protoc-gen-go).
 	FMapInt32String    map[int32]string

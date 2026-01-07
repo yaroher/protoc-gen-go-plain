@@ -164,10 +164,63 @@ func (x *IdAlias) GetValue() string {
 	return ""
 }
 
+type EmbedWithAlias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EmbedOidcId   *OidcIdAlias           `protobuf:"bytes,1,opt,name=embed_oidc_id,json=embedOidcId,proto3" json:"embed_oidc_id,omitempty"`
+	EmbedId       *IdAlias               `protobuf:"bytes,2,opt,name=embed_id,json=embedId,proto3" json:"embed_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EmbedWithAlias) Reset() {
+	*x = EmbedWithAlias{}
+	mi := &file_test_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EmbedWithAlias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmbedWithAlias) ProtoMessage() {}
+
+func (x *EmbedWithAlias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmbedWithAlias.ProtoReflect.Descriptor instead.
+func (*EmbedWithAlias) Descriptor() ([]byte, []int) {
+	return file_test_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EmbedWithAlias) GetEmbedOidcId() *OidcIdAlias {
+	if x != nil {
+		return x.EmbedOidcId
+	}
+	return nil
+}
+
+func (x *EmbedWithAlias) GetEmbedId() *IdAlias {
+	if x != nil {
+		return x.EmbedId
+	}
+	return nil
+}
+
 type TestMessage struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	OidcId *OidcIdAlias           `protobuf:"bytes,100,opt,name=oidc_id,json=oidcId,proto3" json:"oidc_id,omitempty"`
 	Id     *IdAlias               `protobuf:"bytes,101,opt,name=id,proto3" json:"id,omitempty"`
+	Embed  *EmbedWithAlias        `protobuf:"bytes,102,opt,name=embed,proto3" json:"embed,omitempty"`
 	// Scalar numeric types.
 	FDouble   float64 `protobuf:"fixed64,1,opt,name=f_double,json=fDouble,proto3" json:"f_double,omitempty"`
 	FFloat    float32 `protobuf:"fixed32,2,opt,name=f_float,json=fFloat,proto3" json:"f_float,omitempty"`
@@ -189,11 +242,13 @@ type TestMessage struct {
 	FOptInt32   *int32         `protobuf:"varint,16,opt,name=f_opt_int32,json=fOptInt32,proto3,oneof" json:"f_opt_int32,omitempty"`
 	FOptString  *string        `protobuf:"bytes,17,opt,name=f_opt_string,json=fOptString,proto3,oneof" json:"f_opt_string,omitempty"`
 	FOptMessage *NestedMessage `protobuf:"bytes,18,opt,name=f_opt_message,json=fOptMessage,proto3,oneof" json:"f_opt_message,omitempty"`
+	FOptEnum    *TestEnum      `protobuf:"varint,190,opt,name=f_opt_enum,json=fOptEnum,proto3,enum=test.TestEnum,oneof" json:"f_opt_enum,omitempty"`
 	// Repeated fields.
-	FRepInt32   []int32          `protobuf:"varint,19,rep,packed,name=f_rep_int32,json=fRepInt32,proto3" json:"f_rep_int32,omitempty"`
-	FRepString  []string         `protobuf:"bytes,20,rep,name=f_rep_string,json=fRepString,proto3" json:"f_rep_string,omitempty"`
-	FRepMessage []*NestedMessage `protobuf:"bytes,21,rep,name=f_rep_message,json=fRepMessage,proto3" json:"f_rep_message,omitempty"`
-	FRepEnum    []TestEnum       `protobuf:"varint,22,rep,packed,name=f_rep_enum,json=fRepEnum,proto3,enum=test.TestEnum" json:"f_rep_enum,omitempty"`
+	FRepInt32             []int32          `protobuf:"varint,19,rep,packed,name=f_rep_int32,json=fRepInt32,proto3" json:"f_rep_int32,omitempty"`
+	FRepString            []string         `protobuf:"bytes,20,rep,name=f_rep_string,json=fRepString,proto3" json:"f_rep_string,omitempty"`
+	FRepMessage           []*NestedMessage `protobuf:"bytes,21,rep,name=f_rep_message,json=fRepMessage,proto3" json:"f_rep_message,omitempty"`
+	FRepMessageSerialized []*NestedMessage `protobuf:"bytes,220,rep,name=f_rep_message_serialized,json=fRepMessageSerialized,proto3" json:"f_rep_message_serialized,omitempty"`
+	FRepEnum              []TestEnum       `protobuf:"varint,22,rep,packed,name=f_rep_enum,json=fRepEnum,proto3,enum=test.TestEnum" json:"f_rep_enum,omitempty"`
 	// Map fields (all allowed key types shown across maps).
 	FMapInt32String    map[int32]string          `protobuf:"bytes,23,rep,name=f_map_int32_string,json=fMapInt32String,proto3" json:"f_map_int32_string,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	FMapInt64Int32     map[int64]int32           `protobuf:"bytes,24,rep,name=f_map_int64_int32,json=fMapInt64Int32,proto3" json:"f_map_int64_int32,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
@@ -245,7 +300,7 @@ type TestMessage struct {
 
 func (x *TestMessage) Reset() {
 	*x = TestMessage{}
-	mi := &file_test_proto_msgTypes[2]
+	mi := &file_test_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -257,7 +312,7 @@ func (x *TestMessage) String() string {
 func (*TestMessage) ProtoMessage() {}
 
 func (x *TestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[2]
+	mi := &file_test_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -270,7 +325,7 @@ func (x *TestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestMessage.ProtoReflect.Descriptor instead.
 func (*TestMessage) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{2}
+	return file_test_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *TestMessage) GetOidcId() *OidcIdAlias {
@@ -283,6 +338,13 @@ func (x *TestMessage) GetOidcId() *OidcIdAlias {
 func (x *TestMessage) GetId() *IdAlias {
 	if x != nil {
 		return x.Id
+	}
+	return nil
+}
+
+func (x *TestMessage) GetEmbed() *EmbedWithAlias {
+	if x != nil {
+		return x.Embed
 	}
 	return nil
 }
@@ -413,6 +475,13 @@ func (x *TestMessage) GetFOptMessage() *NestedMessage {
 	return nil
 }
 
+func (x *TestMessage) GetFOptEnum() TestEnum {
+	if x != nil && x.FOptEnum != nil {
+		return *x.FOptEnum
+	}
+	return TestEnum_TEST_ENUM_UNSPECIFIED
+}
+
 func (x *TestMessage) GetFRepInt32() []int32 {
 	if x != nil {
 		return x.FRepInt32
@@ -430,6 +499,13 @@ func (x *TestMessage) GetFRepString() []string {
 func (x *TestMessage) GetFRepMessage() []*NestedMessage {
 	if x != nil {
 		return x.FRepMessage
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFRepMessageSerialized() []*NestedMessage {
+	if x != nil {
+		return x.FRepMessageSerialized
 	}
 	return nil
 }
@@ -761,7 +837,7 @@ type NestedMessage struct {
 
 func (x *NestedMessage) Reset() {
 	*x = NestedMessage{}
-	mi := &file_test_proto_msgTypes[3]
+	mi := &file_test_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -773,7 +849,7 @@ func (x *NestedMessage) String() string {
 func (*NestedMessage) ProtoMessage() {}
 
 func (x *NestedMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[3]
+	mi := &file_test_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -786,7 +862,7 @@ func (x *NestedMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NestedMessage.ProtoReflect.Descriptor instead.
 func (*NestedMessage) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{3}
+	return file_test_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *NestedMessage) GetName() string {
@@ -812,7 +888,7 @@ type NestedMessage_InnerMessage struct {
 
 func (x *NestedMessage_InnerMessage) Reset() {
 	*x = NestedMessage_InnerMessage{}
-	mi := &file_test_proto_msgTypes[16]
+	mi := &file_test_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -824,7 +900,7 @@ func (x *NestedMessage_InnerMessage) String() string {
 func (*NestedMessage_InnerMessage) ProtoMessage() {}
 
 func (x *NestedMessage_InnerMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[16]
+	mi := &file_test_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -837,7 +913,7 @@ func (x *NestedMessage_InnerMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NestedMessage_InnerMessage.ProtoReflect.Descriptor instead.
 func (*NestedMessage_InnerMessage) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{3, 0}
+	return file_test_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *NestedMessage_InnerMessage) GetInnerInner() *NestedMessage_InnerMessage_InnerInnerMessage {
@@ -857,7 +933,7 @@ type NestedMessage_InnerMessage_InnerInnerMessage struct {
 
 func (x *NestedMessage_InnerMessage_InnerInnerMessage) Reset() {
 	*x = NestedMessage_InnerMessage_InnerInnerMessage{}
-	mi := &file_test_proto_msgTypes[17]
+	mi := &file_test_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -869,7 +945,7 @@ func (x *NestedMessage_InnerMessage_InnerInnerMessage) String() string {
 func (*NestedMessage_InnerMessage_InnerInnerMessage) ProtoMessage() {}
 
 func (x *NestedMessage_InnerMessage_InnerInnerMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[17]
+	mi := &file_test_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -882,7 +958,7 @@ func (x *NestedMessage_InnerMessage_InnerInnerMessage) ProtoReflect() protorefle
 
 // Deprecated: Use NestedMessage_InnerMessage_InnerInnerMessage.ProtoReflect.Descriptor instead.
 func (*NestedMessage_InnerMessage_InnerInnerMessage) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{3, 0, 0}
+	return file_test_proto_rawDescGZIP(), []int{4, 0, 0}
 }
 
 func (x *NestedMessage_InnerMessage_InnerInnerMessage) GetDepth() int32 {
@@ -908,10 +984,14 @@ const file_test_proto_rawDesc = "" +
 	"\vOidcIdAlias\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"'\n" +
 	"\aIdAlias\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"\xa3!\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"q\n" +
+	"\x0eEmbedWithAlias\x125\n" +
+	"\rembed_oidc_id\x18\x01 \x01(\v2\x11.test.OidcIdAliasR\vembedOidcId\x12(\n" +
+	"\bembed_id\x18\x02 \x01(\v2\r.test.IdAliasR\aembedId\"\xf1\"\n" +
 	"\vTestMessage\x12*\n" +
 	"\aoidc_id\x18d \x01(\v2\x11.test.OidcIdAliasR\x06oidcId\x12\x1d\n" +
-	"\x02id\x18e \x01(\v2\r.test.IdAliasR\x02id\x12\x19\n" +
+	"\x02id\x18e \x01(\v2\r.test.IdAliasR\x02id\x122\n" +
+	"\x05embed\x18f \x01(\v2\x14.test.EmbedWithAliasB\x06\x82\xb5\x18\x02\b\x01R\x05embed\x12\x19\n" +
 	"\bf_double\x18\x01 \x01(\x01R\afDouble\x12\x17\n" +
 	"\af_float\x18\x02 \x01(\x02R\x06fFloat\x12\x17\n" +
 	"\af_int32\x18\x03 \x01(\x05R\x06fInt32\x12\x17\n" +
@@ -933,11 +1013,14 @@ const file_test_proto_rawDesc = "" +
 	"\vf_opt_int32\x18\x10 \x01(\x05H\x01R\tfOptInt32\x88\x01\x01\x12%\n" +
 	"\ff_opt_string\x18\x11 \x01(\tH\x02R\n" +
 	"fOptString\x88\x01\x01\x12<\n" +
-	"\rf_opt_message\x18\x12 \x01(\v2\x13.test.NestedMessageH\x03R\vfOptMessage\x88\x01\x01\x12\x1e\n" +
+	"\rf_opt_message\x18\x12 \x01(\v2\x13.test.NestedMessageH\x03R\vfOptMessage\x88\x01\x01\x122\n" +
+	"\n" +
+	"f_opt_enum\x18\xbe\x01 \x01(\x0e2\x0e.test.TestEnumH\x04R\bfOptEnum\x88\x01\x01\x12\x1e\n" +
 	"\vf_rep_int32\x18\x13 \x03(\x05R\tfRepInt32\x12 \n" +
 	"\ff_rep_string\x18\x14 \x03(\tR\n" +
 	"fRepString\x127\n" +
-	"\rf_rep_message\x18\x15 \x03(\v2\x13.test.NestedMessageR\vfRepMessage\x12,\n" +
+	"\rf_rep_message\x18\x15 \x03(\v2\x13.test.NestedMessageR\vfRepMessage\x12U\n" +
+	"\x18f_rep_message_serialized\x18\xdc\x01 \x03(\v2\x13.test.NestedMessageB\x06\x82\xb5\x18\x02\x10\x01R\x15fRepMessageSerialized\x12,\n" +
 	"\n" +
 	"f_rep_enum\x18\x16 \x03(\x0e2\x0e.test.TestEnumR\bfRepEnum\x12S\n" +
 	"\x12f_map_int32_string\x18\x17 \x03(\v2&.test.TestMessage.FMapInt32StringEntryR\x0ffMapInt32String\x12P\n" +
@@ -1025,7 +1108,8 @@ const file_test_proto_rawDesc = "" +
 	"\af_oneofB\x0e\n" +
 	"\f_f_opt_int32B\x0f\n" +
 	"\r_f_opt_stringB\x10\n" +
-	"\x0e_f_opt_message\"\x80\x02\n" +
+	"\x0e_f_opt_messageB\r\n" +
+	"\v_f_opt_enum\"\x80\x02\n" +
 	"\rNestedMessage\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x126\n" +
 	"\x05inner\x18\x03 \x01(\v2 .test.NestedMessage.InnerMessageR\x05inner\x1a\xa2\x01\n" +
@@ -1053,92 +1137,98 @@ func file_test_proto_rawDescGZIP() []byte {
 }
 
 var file_test_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_test_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_test_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_test_proto_goTypes = []any{
 	(TestEnum)(0),                      // 0: test.TestEnum
 	(*OidcIdAlias)(nil),                // 1: test.OidcIdAlias
 	(*IdAlias)(nil),                    // 2: test.IdAlias
-	(*TestMessage)(nil),                // 3: test.TestMessage
-	(*NestedMessage)(nil),              // 4: test.NestedMessage
-	nil,                                // 5: test.TestMessage.FMapInt32StringEntry
-	nil,                                // 6: test.TestMessage.FMapInt64Int32Entry
-	nil,                                // 7: test.TestMessage.FMapUint32Uint64Entry
-	nil,                                // 8: test.TestMessage.FMapUint64BoolEntry
-	nil,                                // 9: test.TestMessage.FMapSint32BytesEntry
-	nil,                                // 10: test.TestMessage.FMapSint64FloatEntry
-	nil,                                // 11: test.TestMessage.FMapFixed32DoubleEntry
-	nil,                                // 12: test.TestMessage.FMapFixed64MessageEntry
-	nil,                                // 13: test.TestMessage.FMapSfixed32EnumEntry
-	nil,                                // 14: test.TestMessage.FMapSfixed64StringEntry
-	nil,                                // 15: test.TestMessage.FMapBoolInt32Entry
-	nil,                                // 16: test.TestMessage.FMapStringStringEntry
-	(*NestedMessage_InnerMessage)(nil), // 17: test.NestedMessage.InnerMessage
-	(*NestedMessage_InnerMessage_InnerInnerMessage)(nil), // 18: test.NestedMessage.InnerMessage.InnerInnerMessage
-	(*anypb.Any)(nil),              // 19: google.protobuf.Any
-	(*timestamppb.Timestamp)(nil),  // 20: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),    // 21: google.protobuf.Duration
-	(*structpb.Struct)(nil),        // 22: google.protobuf.Struct
-	(*structpb.Value)(nil),         // 23: google.protobuf.Value
-	(*structpb.ListValue)(nil),     // 24: google.protobuf.ListValue
-	(*wrapperspb.DoubleValue)(nil), // 25: google.protobuf.DoubleValue
-	(*wrapperspb.FloatValue)(nil),  // 26: google.protobuf.FloatValue
-	(*wrapperspb.Int64Value)(nil),  // 27: google.protobuf.Int64Value
-	(*wrapperspb.UInt64Value)(nil), // 28: google.protobuf.UInt64Value
-	(*wrapperspb.Int32Value)(nil),  // 29: google.protobuf.Int32Value
-	(*wrapperspb.UInt32Value)(nil), // 30: google.protobuf.UInt32Value
-	(*wrapperspb.BoolValue)(nil),   // 31: google.protobuf.BoolValue
-	(*wrapperspb.StringValue)(nil), // 32: google.protobuf.StringValue
-	(*wrapperspb.BytesValue)(nil),  // 33: google.protobuf.BytesValue
+	(*EmbedWithAlias)(nil),             // 3: test.EmbedWithAlias
+	(*TestMessage)(nil),                // 4: test.TestMessage
+	(*NestedMessage)(nil),              // 5: test.NestedMessage
+	nil,                                // 6: test.TestMessage.FMapInt32StringEntry
+	nil,                                // 7: test.TestMessage.FMapInt64Int32Entry
+	nil,                                // 8: test.TestMessage.FMapUint32Uint64Entry
+	nil,                                // 9: test.TestMessage.FMapUint64BoolEntry
+	nil,                                // 10: test.TestMessage.FMapSint32BytesEntry
+	nil,                                // 11: test.TestMessage.FMapSint64FloatEntry
+	nil,                                // 12: test.TestMessage.FMapFixed32DoubleEntry
+	nil,                                // 13: test.TestMessage.FMapFixed64MessageEntry
+	nil,                                // 14: test.TestMessage.FMapSfixed32EnumEntry
+	nil,                                // 15: test.TestMessage.FMapSfixed64StringEntry
+	nil,                                // 16: test.TestMessage.FMapBoolInt32Entry
+	nil,                                // 17: test.TestMessage.FMapStringStringEntry
+	(*NestedMessage_InnerMessage)(nil), // 18: test.NestedMessage.InnerMessage
+	(*NestedMessage_InnerMessage_InnerInnerMessage)(nil), // 19: test.NestedMessage.InnerMessage.InnerInnerMessage
+	(*anypb.Any)(nil),              // 20: google.protobuf.Any
+	(*timestamppb.Timestamp)(nil),  // 21: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),    // 22: google.protobuf.Duration
+	(*structpb.Struct)(nil),        // 23: google.protobuf.Struct
+	(*structpb.Value)(nil),         // 24: google.protobuf.Value
+	(*structpb.ListValue)(nil),     // 25: google.protobuf.ListValue
+	(*wrapperspb.DoubleValue)(nil), // 26: google.protobuf.DoubleValue
+	(*wrapperspb.FloatValue)(nil),  // 27: google.protobuf.FloatValue
+	(*wrapperspb.Int64Value)(nil),  // 28: google.protobuf.Int64Value
+	(*wrapperspb.UInt64Value)(nil), // 29: google.protobuf.UInt64Value
+	(*wrapperspb.Int32Value)(nil),  // 30: google.protobuf.Int32Value
+	(*wrapperspb.UInt32Value)(nil), // 31: google.protobuf.UInt32Value
+	(*wrapperspb.BoolValue)(nil),   // 32: google.protobuf.BoolValue
+	(*wrapperspb.StringValue)(nil), // 33: google.protobuf.StringValue
+	(*wrapperspb.BytesValue)(nil),  // 34: google.protobuf.BytesValue
 }
 var file_test_proto_depIdxs = []int32{
-	1,  // 0: test.TestMessage.oidc_id:type_name -> test.OidcIdAlias
-	2,  // 1: test.TestMessage.id:type_name -> test.IdAlias
-	4,  // 2: test.TestMessage.f_opt_message:type_name -> test.NestedMessage
-	4,  // 3: test.TestMessage.f_rep_message:type_name -> test.NestedMessage
-	0,  // 4: test.TestMessage.f_rep_enum:type_name -> test.TestEnum
-	5,  // 5: test.TestMessage.f_map_int32_string:type_name -> test.TestMessage.FMapInt32StringEntry
-	6,  // 6: test.TestMessage.f_map_int64_int32:type_name -> test.TestMessage.FMapInt64Int32Entry
-	7,  // 7: test.TestMessage.f_map_uint32_uint64:type_name -> test.TestMessage.FMapUint32Uint64Entry
-	8,  // 8: test.TestMessage.f_map_uint64_bool:type_name -> test.TestMessage.FMapUint64BoolEntry
-	9,  // 9: test.TestMessage.f_map_sint32_bytes:type_name -> test.TestMessage.FMapSint32BytesEntry
-	10, // 10: test.TestMessage.f_map_sint64_float:type_name -> test.TestMessage.FMapSint64FloatEntry
-	11, // 11: test.TestMessage.f_map_fixed32_double:type_name -> test.TestMessage.FMapFixed32DoubleEntry
-	12, // 12: test.TestMessage.f_map_fixed64_message:type_name -> test.TestMessage.FMapFixed64MessageEntry
-	13, // 13: test.TestMessage.f_map_sfixed32_enum:type_name -> test.TestMessage.FMapSfixed32EnumEntry
-	14, // 14: test.TestMessage.f_map_sfixed64_string:type_name -> test.TestMessage.FMapSfixed64StringEntry
-	15, // 15: test.TestMessage.f_map_bool_int32:type_name -> test.TestMessage.FMapBoolInt32Entry
-	16, // 16: test.TestMessage.f_map_string_string:type_name -> test.TestMessage.FMapStringStringEntry
-	4,  // 17: test.TestMessage.f_oneof_message:type_name -> test.NestedMessage
-	0,  // 18: test.TestMessage.f_oneof_enum:type_name -> test.TestEnum
-	4,  // 19: test.TestMessage.f_nested_message:type_name -> test.NestedMessage
-	4,  // 20: test.TestMessage.f_nested_message_embedded:type_name -> test.NestedMessage
-	4,  // 21: test.TestMessage.f_nested_message_serialized:type_name -> test.NestedMessage
-	0,  // 22: test.TestMessage.f_enum:type_name -> test.TestEnum
-	19, // 23: test.TestMessage.f_any:type_name -> google.protobuf.Any
-	20, // 24: test.TestMessage.f_timestamp:type_name -> google.protobuf.Timestamp
-	21, // 25: test.TestMessage.f_duration:type_name -> google.protobuf.Duration
-	22, // 26: test.TestMessage.f_struct:type_name -> google.protobuf.Struct
-	23, // 27: test.TestMessage.f_value:type_name -> google.protobuf.Value
-	24, // 28: test.TestMessage.f_list_value:type_name -> google.protobuf.ListValue
-	25, // 29: test.TestMessage.f_wkt_double:type_name -> google.protobuf.DoubleValue
-	26, // 30: test.TestMessage.f_wkt_float:type_name -> google.protobuf.FloatValue
-	27, // 31: test.TestMessage.f_wkt_int64:type_name -> google.protobuf.Int64Value
-	28, // 32: test.TestMessage.f_wkt_uint64:type_name -> google.protobuf.UInt64Value
-	29, // 33: test.TestMessage.f_wkt_int32:type_name -> google.protobuf.Int32Value
-	30, // 34: test.TestMessage.f_wkt_uint32:type_name -> google.protobuf.UInt32Value
-	31, // 35: test.TestMessage.f_wkt_bool:type_name -> google.protobuf.BoolValue
-	32, // 36: test.TestMessage.f_wkt_string:type_name -> google.protobuf.StringValue
-	33, // 37: test.TestMessage.f_wkt_bytes:type_name -> google.protobuf.BytesValue
-	18, // 38: test.TestMessage.f_double_nested:type_name -> test.NestedMessage.InnerMessage.InnerInnerMessage
-	17, // 39: test.NestedMessage.inner:type_name -> test.NestedMessage.InnerMessage
-	4,  // 40: test.TestMessage.FMapFixed64MessageEntry.value:type_name -> test.NestedMessage
-	0,  // 41: test.TestMessage.FMapSfixed32EnumEntry.value:type_name -> test.TestEnum
-	18, // 42: test.NestedMessage.InnerMessage.inner_inner:type_name -> test.NestedMessage.InnerMessage.InnerInnerMessage
-	43, // [43:43] is the sub-list for method output_type
-	43, // [43:43] is the sub-list for method input_type
-	43, // [43:43] is the sub-list for extension type_name
-	43, // [43:43] is the sub-list for extension extendee
-	0,  // [0:43] is the sub-list for field type_name
+	1,  // 0: test.EmbedWithAlias.embed_oidc_id:type_name -> test.OidcIdAlias
+	2,  // 1: test.EmbedWithAlias.embed_id:type_name -> test.IdAlias
+	1,  // 2: test.TestMessage.oidc_id:type_name -> test.OidcIdAlias
+	2,  // 3: test.TestMessage.id:type_name -> test.IdAlias
+	3,  // 4: test.TestMessage.embed:type_name -> test.EmbedWithAlias
+	5,  // 5: test.TestMessage.f_opt_message:type_name -> test.NestedMessage
+	0,  // 6: test.TestMessage.f_opt_enum:type_name -> test.TestEnum
+	5,  // 7: test.TestMessage.f_rep_message:type_name -> test.NestedMessage
+	5,  // 8: test.TestMessage.f_rep_message_serialized:type_name -> test.NestedMessage
+	0,  // 9: test.TestMessage.f_rep_enum:type_name -> test.TestEnum
+	6,  // 10: test.TestMessage.f_map_int32_string:type_name -> test.TestMessage.FMapInt32StringEntry
+	7,  // 11: test.TestMessage.f_map_int64_int32:type_name -> test.TestMessage.FMapInt64Int32Entry
+	8,  // 12: test.TestMessage.f_map_uint32_uint64:type_name -> test.TestMessage.FMapUint32Uint64Entry
+	9,  // 13: test.TestMessage.f_map_uint64_bool:type_name -> test.TestMessage.FMapUint64BoolEntry
+	10, // 14: test.TestMessage.f_map_sint32_bytes:type_name -> test.TestMessage.FMapSint32BytesEntry
+	11, // 15: test.TestMessage.f_map_sint64_float:type_name -> test.TestMessage.FMapSint64FloatEntry
+	12, // 16: test.TestMessage.f_map_fixed32_double:type_name -> test.TestMessage.FMapFixed32DoubleEntry
+	13, // 17: test.TestMessage.f_map_fixed64_message:type_name -> test.TestMessage.FMapFixed64MessageEntry
+	14, // 18: test.TestMessage.f_map_sfixed32_enum:type_name -> test.TestMessage.FMapSfixed32EnumEntry
+	15, // 19: test.TestMessage.f_map_sfixed64_string:type_name -> test.TestMessage.FMapSfixed64StringEntry
+	16, // 20: test.TestMessage.f_map_bool_int32:type_name -> test.TestMessage.FMapBoolInt32Entry
+	17, // 21: test.TestMessage.f_map_string_string:type_name -> test.TestMessage.FMapStringStringEntry
+	5,  // 22: test.TestMessage.f_oneof_message:type_name -> test.NestedMessage
+	0,  // 23: test.TestMessage.f_oneof_enum:type_name -> test.TestEnum
+	5,  // 24: test.TestMessage.f_nested_message:type_name -> test.NestedMessage
+	5,  // 25: test.TestMessage.f_nested_message_embedded:type_name -> test.NestedMessage
+	5,  // 26: test.TestMessage.f_nested_message_serialized:type_name -> test.NestedMessage
+	0,  // 27: test.TestMessage.f_enum:type_name -> test.TestEnum
+	20, // 28: test.TestMessage.f_any:type_name -> google.protobuf.Any
+	21, // 29: test.TestMessage.f_timestamp:type_name -> google.protobuf.Timestamp
+	22, // 30: test.TestMessage.f_duration:type_name -> google.protobuf.Duration
+	23, // 31: test.TestMessage.f_struct:type_name -> google.protobuf.Struct
+	24, // 32: test.TestMessage.f_value:type_name -> google.protobuf.Value
+	25, // 33: test.TestMessage.f_list_value:type_name -> google.protobuf.ListValue
+	26, // 34: test.TestMessage.f_wkt_double:type_name -> google.protobuf.DoubleValue
+	27, // 35: test.TestMessage.f_wkt_float:type_name -> google.protobuf.FloatValue
+	28, // 36: test.TestMessage.f_wkt_int64:type_name -> google.protobuf.Int64Value
+	29, // 37: test.TestMessage.f_wkt_uint64:type_name -> google.protobuf.UInt64Value
+	30, // 38: test.TestMessage.f_wkt_int32:type_name -> google.protobuf.Int32Value
+	31, // 39: test.TestMessage.f_wkt_uint32:type_name -> google.protobuf.UInt32Value
+	32, // 40: test.TestMessage.f_wkt_bool:type_name -> google.protobuf.BoolValue
+	33, // 41: test.TestMessage.f_wkt_string:type_name -> google.protobuf.StringValue
+	34, // 42: test.TestMessage.f_wkt_bytes:type_name -> google.protobuf.BytesValue
+	19, // 43: test.TestMessage.f_double_nested:type_name -> test.NestedMessage.InnerMessage.InnerInnerMessage
+	18, // 44: test.NestedMessage.inner:type_name -> test.NestedMessage.InnerMessage
+	5,  // 45: test.TestMessage.FMapFixed64MessageEntry.value:type_name -> test.NestedMessage
+	0,  // 46: test.TestMessage.FMapSfixed32EnumEntry.value:type_name -> test.TestEnum
+	19, // 47: test.NestedMessage.InnerMessage.inner_inner:type_name -> test.NestedMessage.InnerMessage.InnerInnerMessage
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_test_proto_init() }
@@ -1146,7 +1236,7 @@ func file_test_proto_init() {
 	if File_test_proto != nil {
 		return
 	}
-	file_test_proto_msgTypes[2].OneofWrappers = []any{
+	file_test_proto_msgTypes[3].OneofWrappers = []any{
 		(*TestMessage_FOneofInt32)(nil),
 		(*TestMessage_FOneofString)(nil),
 		(*TestMessage_FOneofBytes)(nil),
@@ -1159,7 +1249,7 @@ func file_test_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_proto_rawDesc), len(file_test_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

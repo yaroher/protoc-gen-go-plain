@@ -12,6 +12,8 @@ import (
 type TestMessagePlain struct {
 	OidcId                   string
 	Id                       string
+	EmbedOidcId              string
+	EmbedId                  string
 	FDouble                  float64
 	FFloat                   float32
 	FInt32                   int32
@@ -30,9 +32,11 @@ type TestMessagePlain struct {
 	FOptInt32                *int32
 	FOptString               *string
 	FOptMessage              *NestedMessage
+	FOptEnum                 *TestEnum
 	FRepInt32                []int32
 	FRepString               []string
 	FRepMessage              []*NestedMessage
+	FRepMessageSerialized    [][]byte
 	FRepEnum                 []TestEnum
 	FMapInt32String          map[int32]string
 	FMapInt64Int32           map[int64]int32
@@ -95,6 +99,24 @@ func (v *TestMessage) IntoPlain() *TestMessagePlain {
 		val := v.Id.Value
 		return val
 	}()
+	if v.Embed != nil {
+		out.EmbedOidcId = func() string {
+			if v.Embed.EmbedOidcId == nil {
+				var zero string
+				return zero
+			}
+			val := v.Embed.EmbedOidcId.Value
+			return val
+		}()
+		out.EmbedId = func() string {
+			if v.Embed.EmbedId == nil {
+				var zero string
+				return zero
+			}
+			val := v.Embed.EmbedId.Value
+			return val
+		}()
+	}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -113,9 +135,15 @@ func (v *TestMessage) IntoPlain() *TestMessagePlain {
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString
 	out.FOptMessage = v.FOptMessage
+	out.FOptEnum = v.FOptEnum
 	out.FRepInt32 = v.FRepInt32
 	out.FRepString = v.FRepString
 	out.FRepMessage = v.FRepMessage
+	if v.FRepMessageSerialized != nil {
+		for _, el := range v.FRepMessageSerialized {
+			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageToSliceByte(el))
+		}
+	}
 	out.FRepEnum = v.FRepEnum
 	out.FMapInt32String = v.FMapInt32String
 	out.FMapInt64Int32 = v.FMapInt64Int32
@@ -192,6 +220,24 @@ func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
 		val := v.Id.Value
 		return val
 	}()
+	if v.Embed != nil {
+		out.EmbedOidcId = func() string {
+			if v.Embed.EmbedOidcId == nil {
+				var zero string
+				return zero
+			}
+			val := v.Embed.EmbedOidcId.Value
+			return val
+		}()
+		out.EmbedId = func() string {
+			if v.Embed.EmbedId == nil {
+				var zero string
+				return zero
+			}
+			val := v.Embed.EmbedId.Value
+			return val
+		}()
+	}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -210,6 +256,7 @@ func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString
 	out.FOptMessage = v.FOptMessage
+	out.FOptEnum = v.FOptEnum
 	if v.FRepInt32 != nil {
 		for _, el := range v.FRepInt32 {
 			out.FRepInt32 = append(out.FRepInt32, el)
@@ -223,6 +270,11 @@ func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
 	if v.FRepMessage != nil {
 		for _, el := range v.FRepMessage {
 			out.FRepMessage = append(out.FRepMessage, el)
+		}
+	}
+	if v.FRepMessageSerialized != nil {
+		for _, el := range v.FRepMessageSerialized {
+			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageToSliceByte(el))
 		}
 	}
 	if v.FRepEnum != nil {
@@ -351,6 +403,9 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	out := &TestMessage{}
 	out.OidcId = &OidcIdAlias{Value: v.OidcId}
 	out.Id = &IdAlias{Value: v.Id}
+	out.Embed = &EmbedWithAlias{}
+	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
+	out.Embed.EmbedId = &IdAlias{Value: v.EmbedId}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -369,9 +424,15 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString
 	out.FOptMessage = v.FOptMessage
+	out.FOptEnum = v.FOptEnum
 	out.FRepInt32 = v.FRepInt32
 	out.FRepString = v.FRepString
 	out.FRepMessage = v.FRepMessage
+	if v.FRepMessageSerialized != nil {
+		for _, el := range v.FRepMessageSerialized {
+			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageFromSliceByte[*NestedMessage](el))
+		}
+	}
 	out.FRepEnum = v.FRepEnum
 	out.FMapInt32String = v.FMapInt32String
 	out.FMapInt64Int32 = v.FMapInt64Int32
@@ -428,6 +489,9 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	out := &TestMessage{}
 	out.OidcId = &OidcIdAlias{Value: v.OidcId}
 	out.Id = &IdAlias{Value: v.Id}
+	out.Embed = &EmbedWithAlias{}
+	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
+	out.Embed.EmbedId = &IdAlias{Value: v.EmbedId}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -446,6 +510,7 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	out.FOptInt32 = v.FOptInt32
 	out.FOptString = v.FOptString
 	out.FOptMessage = v.FOptMessage
+	out.FOptEnum = v.FOptEnum
 	if v.FRepInt32 != nil {
 		for _, el := range v.FRepInt32 {
 			out.FRepInt32 = append(out.FRepInt32, el)
@@ -459,6 +524,11 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	if v.FRepMessage != nil {
 		for _, el := range v.FRepMessage {
 			out.FRepMessage = append(out.FRepMessage, el)
+		}
+	}
+	if v.FRepMessageSerialized != nil {
+		for _, el := range v.FRepMessageSerialized {
+			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageFromSliceByte[*NestedMessage](el))
 		}
 	}
 	if v.FRepEnum != nil {
