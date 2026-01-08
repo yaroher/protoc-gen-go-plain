@@ -74,8 +74,8 @@ func (g *Generator) Generate() error {
 		if err != nil {
 			return err
 		}
-		fg := newFileGen(g, f, model)
-		fg.genFile()
+		fg := g.NewFileGen(f, model)
+		fg.GenFile()
 	}
 	return nil
 }
