@@ -70,7 +70,7 @@ func (g *Generator) Generate() error {
 		if !f.Generate {
 			continue
 		}
-		model, err := g.BuildModel(f)
+		model, err := g.BuildIR(f)
 		if err != nil {
 			return err
 		}

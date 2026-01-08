@@ -65,36 +65,6 @@ message PlainMessageParams {
     repeated VirtualFieldSpec virtual_fields = 3;
 }
 
-message FieldModel {
-    string proto_name = 1;
-    string go_name = 2;
-    string kind = 3;
-    bool is_list = 4;
-    bool is_map = 5;
-    bool is_optional = 6;
-    bool is_embedded = 7;
-    bool is_serialized = 8;
-    string message_full_name = 9;
-    string enum_full_name = 10;
-}
-
-message MessageModel {
-    string full_name = 1;
-    string go_name = 2;
-    string plain_name = 3;
-    bool generate = 4;
-    repeated FieldModel fields = 5;
-    repeated VirtualFieldSpec virtual_fields = 6;
-}
-
-message FileModel {
-    string go_package = 1;
-    string plain_suffix = 2;
-    repeated OverwriteType overwrite = 3;
-    repeated VirtualMessage virtual_message = 4;
-    repeated MessageModel messages = 5;
-}
-
 extend google.protobuf.MessageOptions {
     PlainMessageParams message = 50000;
 }

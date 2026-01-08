@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
+	"github.com/yaroher/protoc-gen-go-plain/ir"
 	"google.golang.org/protobuf/compiler/protogen"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type fieldContext int
@@ -20,105 +20,31 @@ const (
 type typeModel struct {
 	basePlain    func(*fileGen) string
 	pointerField bool
-	fromPB       func(*fileGen, *protogen.Field, string, bool) string
-	toPB         func(*fileGen, *protogen.Field, string, bool) string
+	fromPB       func(*fileGen, *ir.Field, string, bool) string
+	toPB         func(*fileGen, *ir.Field, string, bool) string
 }
 
-type wrapperCast struct {
-	baseType string
-	toVal    string
-	toPtr    string
-	fromVal  string
-	fromPtr  string
-}
+var typeModels = func() map[string]typeModel {
+	m := map[string]typeModel{}
 
-var wrapperCasts = map[protoreflect.FullName]wrapperCast{
-	"google.protobuf.StringValue": {
-		baseType: "string",
-		toVal:    "StringValueToString",
-		toPtr:    "StringValueToPtrString",
-		fromVal:  "StringValueFromString",
-		fromPtr:  "StringValueFromPtrString",
-	},
-	"google.protobuf.BoolValue": {
-		baseType: "bool",
-		toVal:    "BoolValueToBool",
-		toPtr:    "BoolValueToPtrBool",
-		fromVal:  "BoolValueFromBool",
-		fromPtr:  "BoolValueFromPtrBool",
-	},
-	"google.protobuf.Int32Value": {
-		baseType: "int32",
-		toVal:    "Int32ValueToInt32",
-		toPtr:    "Int32ValueToPtrInt32",
-		fromVal:  "Int32ValueFromInt32",
-		fromPtr:  "Int32ValueFromPtrInt32",
-	},
-	"google.protobuf.Int64Value": {
-		baseType: "int64",
-		toVal:    "Int64ValueToInt64",
-		toPtr:    "Int64ValueToPtrInt64",
-		fromVal:  "Int64ValueFromInt64",
-		fromPtr:  "Int64ValueFromPtrInt64",
-	},
-	"google.protobuf.UInt32Value": {
-		baseType: "uint32",
-		toVal:    "UInt32ValueToUint32",
-		toPtr:    "UInt32ValueToPtrUint32",
-		fromVal:  "UInt32ValueFromUint32",
-		fromPtr:  "UInt32ValueFromPtrUint32",
-	},
-	"google.protobuf.UInt64Value": {
-		baseType: "uint64",
-		toVal:    "UInt64ValueToUint64",
-		toPtr:    "UInt64ValueToPtrUint64",
-		fromVal:  "UInt64ValueFromUint64",
-		fromPtr:  "UInt64ValueFromPtrUint64",
-	},
-	"google.protobuf.FloatValue": {
-		baseType: "float32",
-		toVal:    "FloatValueToFloat32",
-		toPtr:    "FloatValueToPtrFloat32",
-		fromVal:  "FloatValueFromFloat32",
-		fromPtr:  "FloatValueFromPtrFloat32",
-	},
-	"google.protobuf.DoubleValue": {
-		baseType: "float64",
-		toVal:    "DoubleValueToFloat64",
-		toPtr:    "DoubleValueToPtrFloat64",
-		fromVal:  "DoubleValueFromFloat64",
-		fromPtr:  "DoubleValueFromPtrFloat64",
-	},
-	"google.protobuf.BytesValue": {
-		baseType: "[]byte",
-		toVal:    "BytesValueToBytes",
-		toPtr:    "BytesValueToPtrBytes",
-		fromVal:  "BytesValueFromBytes",
-		fromPtr:  "BytesValueFromPtrBytes",
-	},
-}
-
-var typeModels = func() map[protoreflect.FullName]typeModel {
-	m := map[protoreflect.FullName]typeModel{}
-
-	for name, w := range wrapperCasts {
+	for name, w := range ir.WKTCasts {
 		cast := w
 		m[name] = typeModel{
 			basePlain: func(*fileGen) string {
-				return cast.baseType
+				return cast.BaseType
 			},
 			pointerField: true,
-			fromPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+			fromPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 				if ptr {
-					return fg.castIdent(cast.toPtr) + "(" + src + ")"
+					return fg.castIdent(cast.ToPtr) + "(" + src + ")"
 				}
-				return fg.castIdent(cast.toVal) + "(" + src + ")"
+				return fg.castIdent(cast.ToVal) + "(" + src + ")"
 			},
-			toPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+			toPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 				if ptr {
-					return fg.castIdent(cast.fromPtr) + "(" + src + ")"
+					return fg.castIdent(cast.FromPtr) + "(" + src + ")"
 				}
-				return fg.castIdent(cast.fromVal) + "(" + src + ")"
+				return fg.castIdent(cast.FromVal) + "(" + src + ")"
 			},
 		}
 	}
@@ -128,13 +54,13 @@ var typeModels = func() map[protoreflect.FullName]typeModel {
 			return fg.timeIdent("Time")
 		},
 		pointerField: true,
-		fromPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+		fromPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 			if ptr {
 				return fg.castIdent("TimestampToPtrTime") + "(" + src + ")"
 			}
 			return fg.castIdent("TimestampToTime") + "(" + src + ")"
 		},
-		toPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+		toPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 			if ptr {
 				return fg.castIdent("TimestampFromPtrTime") + "(" + src + ")"
 			}
@@ -146,13 +72,13 @@ var typeModels = func() map[protoreflect.FullName]typeModel {
 			return fg.timeIdent("Duration")
 		},
 		pointerField: true,
-		fromPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+		fromPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 			if ptr {
 				return fg.castIdent("DurationToPtrTime") + "(" + src + ")"
 			}
 			return fg.castIdent("DurationToTime") + "(" + src + ")"
 		},
-		toPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+		toPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 			if ptr {
 				return fg.castIdent("DurationFromPtrTime") + "(" + src + ")"
 			}
@@ -161,10 +87,10 @@ var typeModels = func() map[protoreflect.FullName]typeModel {
 	}
 	m["google.protobuf.Struct"] = typeModel{
 		basePlain: func(*fileGen) string { return "map[string]any" },
-		fromPB: func(fg *fileGen, _ *protogen.Field, src string, _ bool) string {
+		fromPB: func(fg *fileGen, _ *ir.Field, src string, _ bool) string {
 			return fg.castIdent("StructToMap") + "(" + src + ")"
 		},
-		toPB: func(fg *fileGen, _ *protogen.Field, src string, _ bool) string {
+		toPB: func(fg *fileGen, _ *ir.Field, src string, _ bool) string {
 			return fg.castIdent("StructFromMap") + "(" + src + ")"
 		},
 	}
@@ -174,13 +100,13 @@ var typeModels = func() map[protoreflect.FullName]typeModel {
 	m["google.protobuf.Empty"] = typeModel{
 		basePlain:    func(*fileGen) string { return "struct{}" },
 		pointerField: true,
-		fromPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+		fromPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 			if ptr {
 				return fg.castIdent("EmptyToPtrStruct") + "(" + src + ")"
 			}
 			return fg.castIdent("EmptyToStruct") + "(" + src + ")"
 		},
-		toPB: func(fg *fileGen, _ *protogen.Field, src string, ptr bool) string {
+		toPB: func(fg *fileGen, _ *ir.Field, src string, ptr bool) string {
 			if ptr {
 				return fg.castIdent("EmptyFromPtrStruct") + "(" + src + ")"
 			}
@@ -194,14 +120,14 @@ var typeModels = func() map[protoreflect.FullName]typeModel {
 func serializedModel() typeModel {
 	return typeModel{
 		basePlain: func(*fileGen) string { return "[]byte" },
-		fromPB: func(fg *fileGen, _ *protogen.Field, src string, _ bool) string {
+		fromPB: func(fg *fileGen, _ *ir.Field, src string, _ bool) string {
 			return fg.castIdent("MessageToSliceByte") + "(" + src + ")"
 		},
-		toPB: func(fg *fileGen, field *protogen.Field, src string, ptr bool) string {
+		toPB: func(fg *fileGen, field *ir.Field, src string, ptr bool) string {
 			if ptr {
 				src = "*" + src
 			}
-			return fg.castIdent("MessageFromSliceByte") + "[" + fg.pbMessagePointerType(field.Message) + "](" + src + ")"
+			return fg.castIdent("MessageFromSliceByte") + "[" + fg.pbMessagePointerType(field.MessageType) + "](" + src + ")"
 		},
 	}
 }
@@ -211,28 +137,22 @@ type fileGen struct {
 	file *protogen.File
 	out  *protogen.GeneratedFile
 
-	fileOverrides  map[string]*goplain.OverwriteType
-	fieldOverrides map[*protogen.Field]*goplain.OverwriteType
-
-	fileModel       *goplain.FileModel
-	virtualFields   map[protoreflect.FullName][]*goplain.VirtualFieldSpec
+	irFile          *ir.File
+	messagesByFull  map[string]*ir.Message
 	virtualMessages []*goplain.VirtualMessage
 }
 
-func newFileGen(g *Generator, f *protogen.File, model *goplain.FileModel) *fileGen {
+func newFileGen(g *Generator, f *protogen.File, model *ir.File) *fileGen {
 	out := g.Plugin.NewGeneratedFile(f.GeneratedFilenamePrefix+".pb.plain.go", f.GoImportPath)
-	fg := &fileGen{g: g, file: f, out: out, fileModel: model}
-	fg.fileOverrides = newOverrideRegistry(getFileParams(f).GetOverwrite()).byProto
-	fg.buildFieldOverrides(f.Messages)
+	fg := &fileGen{g: g, file: f, out: out, irFile: model}
 	if model != nil {
-		fg.virtualMessages = model.VirtualMessage
-		fg.virtualFields = make(map[protoreflect.FullName][]*goplain.VirtualFieldSpec)
+		fg.virtualMessages = model.VirtualMessages
+		fg.messagesByFull = make(map[string]*ir.Message, len(model.Messages))
 		for _, msg := range model.Messages {
-			if len(msg.VirtualFields) == 0 {
+			if msg == nil {
 				continue
 			}
-			fullName := protoreflect.FullName(msg.FullName)
-			fg.virtualFields[fullName] = append([]*goplain.VirtualFieldSpec(nil), msg.VirtualFields...)
+			fg.messagesByFull[msg.ProtoFullName] = msg
 		}
 	}
 	return fg
@@ -240,6 +160,19 @@ func newFileGen(g *Generator, f *protogen.File, model *goplain.FileModel) *fileG
 
 func (fg *fileGen) P(v ...any) {
 	fg.out.P(v...)
+}
+
+func (fg *fileGen) qualifiedGoIdent(id ir.GoIdent) string {
+	if id.Name == "" {
+		return ""
+	}
+	if id.ImportPath == "" {
+		return id.Name
+	}
+	return fg.out.QualifiedGoIdent(protogen.GoIdent{
+		GoImportPath: protogen.GoImportPath(id.ImportPath),
+		GoName:       id.Name,
+	})
 }
 
 func (fg *fileGen) castIdent(name string) string {
@@ -256,8 +189,50 @@ func (fg *fileGen) timeIdent(name string) string {
 	})
 }
 
+func (fg *fileGen) messageByFullName(name string) *ir.Message {
+	if fg.messagesByFull == nil {
+		return nil
+	}
+	return fg.messagesByFull[name]
+}
+
+func (fg *fileGen) virtualFields(msg *ir.Message) []*ir.Field {
+	if msg == nil {
+		return nil
+	}
+	out := make([]*ir.Field, 0)
+	for _, field := range msg.Fields {
+		if field != nil && field.IsVirtual {
+			out = append(out, field)
+		}
+	}
+	return out
+}
+
+func (fg *fileGen) virtualFieldType(field *ir.Field) string {
+	if field == nil || field.GoType.Name == "" {
+		panic("virtual field go_type is required")
+	}
+	name := field.GoType.Name
+	if field.GoType.ImportPath == "" {
+		return name
+	}
+	ptr := ""
+	if strings.HasPrefix(name, "*") {
+		ptr = "*"
+		name = strings.TrimPrefix(name, "*")
+	}
+	if strings.Contains(name, ".") {
+		panic("virtual field go_type.name must be unqualified when import_path is set")
+	}
+	return ptr + fg.out.QualifiedGoIdent(protogen.GoIdent{
+		GoImportPath: protogen.GoImportPath(field.GoType.ImportPath),
+		GoName:       name,
+	})
+}
+
 func (fg *fileGen) genFile() {
-	if !fg.hasGeneratedMessages(fg.file.Messages) {
+	if fg.irFile == nil || !fg.hasGeneratedMessages(fg.irFile.Messages) {
 		fg.out.Skip()
 		return
 	}
@@ -268,26 +243,22 @@ func (fg *fileGen) genFile() {
 
 	fg.emitVirtualMessages()
 
-	for _, msg := range fg.file.Messages {
+	for _, msg := range fg.irFile.Messages {
 		fg.genMessage(msg)
 	}
 }
 
-func (fg *fileGen) genMessage(msg *protogen.Message) {
-	if msg.Desc.IsMapEntry() {
+func (fg *fileGen) genMessage(msg *ir.Message) {
+	if msg == nil {
 		return
 	}
-	if shouldGenerateMessage(msg) {
+	if msg.Generate {
 		fg.genPlainStruct(msg)
 		fg.genPlainOptions(msg)
 		fg.genIntoPlain(msg, false)
 		fg.genIntoPlain(msg, true)
 		fg.genIntoPb(msg, false)
 		fg.genIntoPb(msg, true)
-	}
-
-	for _, child := range msg.Messages {
-		fg.genMessage(child)
 	}
 }
 
@@ -313,26 +284,27 @@ func (fg *fileGen) emitVirtualMessages() {
 	}
 }
 
-func (fg *fileGen) hasGeneratedMessages(msgs []*protogen.Message) bool {
+func (fg *fileGen) hasGeneratedMessages(msgs []*ir.Message) bool {
 	for _, msg := range msgs {
-		if msg.Desc.IsMapEntry() {
+		if msg == nil {
 			continue
 		}
-		if shouldGenerateMessage(msg) {
-			return true
-		}
-		if fg.hasGeneratedMessages(msg.Messages) {
+		if msg.Generate {
 			return true
 		}
 	}
 	return false
 }
 
-func (fg *fileGen) genPlainStruct(msg *protogen.Message) {
-	plainName := fg.plainMessageName(msg)
+func (fg *fileGen) genPlainStruct(msg *ir.Message) {
+	plainName := msg.PlainName
 	fg.P("type ", plainName, " struct {")
 
 	for _, field := range msg.Fields {
+		if field.IsVirtual {
+			fg.P(field.GoName, " ", fg.virtualFieldType(field))
+			continue
+		}
 		if isRealOneofField(field) {
 			// oneof fields are emitted as standalone nullable fields
 			fieldType := fg.plainType(field, ctxOneofField)
@@ -340,8 +312,11 @@ func (fg *fileGen) genPlainStruct(msg *protogen.Message) {
 			continue
 		}
 
-		if isEmbeddedMessage(field) {
-			fg.emitEmbeddedFields(field.Message)
+		if field.IsEmbedded {
+			embedded := fg.messageByFullName(field.MessageType.ProtoFullName)
+			if embedded != nil {
+				fg.emitEmbeddedFields(embedded)
+			}
 			continue
 		}
 
@@ -349,45 +324,46 @@ func (fg *fileGen) genPlainStruct(msg *protogen.Message) {
 		fg.P(field.GoName, " ", fieldType)
 	}
 
-	if extras := fg.virtualFields[msg.Desc.FullName()]; len(extras) > 0 {
-		for _, field := range extras {
-			fg.P(field.GetName(), " ", virtualFieldType(fg.out, field))
-		}
-	}
 	fg.P("}")
 	fg.P()
 }
 
-func (fg *fileGen) genPlainOptions(msg *protogen.Message) {
-	extras := fg.virtualFields[msg.Desc.FullName()]
+func (fg *fileGen) genPlainOptions(msg *ir.Message) {
+	extras := fg.virtualFields(msg)
 	if len(extras) == 0 {
 		return
 	}
-	plainName := fg.plainMessageName(msg)
+	plainName := msg.PlainName
 	optionName := plainName + "Option"
 	fg.P("type ", optionName, " func(*", plainName, ")")
-	pbName := msg.GoIdent.GoName
+	pbName := msg.GoIdent.Name
 	for _, field := range extras {
-		fieldName := field.GetName()
+		fieldName := field.GoName
 		if fieldName == "" {
 			continue
 		}
-		fg.P("func With", pbName, fieldName, "(v ", virtualFieldType(fg.out, field), ") ", optionName, " {")
+		fg.P("func With", pbName, fieldName, "(v ", fg.virtualFieldType(field), ") ", optionName, " {")
 		fg.P("return func(out *", plainName, ") { out.", fieldName, " = v }")
 		fg.P("}")
 	}
 	fg.P()
 }
 
-func (fg *fileGen) emitEmbeddedFields(msg *protogen.Message) {
+func (fg *fileGen) emitEmbeddedFields(msg *ir.Message) {
 	for _, field := range msg.Fields {
+		if field.IsVirtual {
+			continue
+		}
 		if isRealOneofField(field) {
 			fieldType := fg.plainType(field, ctxOneofField)
 			fg.P(field.GoName, " ", fieldType)
 			continue
 		}
-		if isEmbeddedMessage(field) {
-			fg.emitEmbeddedFields(field.Message)
+		if field.IsEmbedded {
+			embedded := fg.messageByFullName(field.MessageType.ProtoFullName)
+			if embedded != nil {
+				fg.emitEmbeddedFields(embedded)
+			}
 			continue
 		}
 		fieldType := fg.plainType(field, ctxField)
@@ -395,14 +371,14 @@ func (fg *fileGen) emitEmbeddedFields(msg *protogen.Message) {
 	}
 }
 
-func (fg *fileGen) genIntoPlain(msg *protogen.Message, deep bool) {
-	plainName := fg.plainMessageName(msg)
-	pbName := fg.out.QualifiedGoIdent(msg.GoIdent)
+func (fg *fileGen) genIntoPlain(msg *ir.Message, deep bool) {
+	plainName := msg.PlainName
+	pbName := fg.qualifiedGoIdent(msg.GoIdent)
 	methodName := "IntoPlain"
 	if deep {
 		methodName = "IntoPlainDeep"
 	}
-	extras := fg.virtualFields[msg.Desc.FullName()]
+	extras := fg.virtualFields(msg)
 	if len(extras) == 0 {
 		fg.P("func (v *", pbName, ") ", methodName, "() *", plainName, " {")
 	} else {
@@ -412,10 +388,13 @@ func (fg *fileGen) genIntoPlain(msg *protogen.Message, deep bool) {
 	fg.P("out := &", plainName, "{}")
 
 	for _, field := range msg.Fields {
+		if field.IsVirtual {
+			continue
+		}
 		if isRealOneofField(field) {
 			continue
 		}
-		if isEmbeddedMessage(field) {
+		if field.IsEmbedded {
 			fg.emitFromPBEmbedded("out", "v", field, deep)
 			continue
 		}
@@ -423,9 +402,6 @@ func (fg *fileGen) genIntoPlain(msg *protogen.Message, deep bool) {
 	}
 
 	for _, oneof := range msg.Oneofs {
-		if oneof.Desc.IsSynthetic() {
-			continue
-		}
 		fg.emitFromPBOneof("out", "v", msg, oneof, deep)
 	}
 
@@ -439,9 +415,9 @@ func (fg *fileGen) genIntoPlain(msg *protogen.Message, deep bool) {
 	fg.P()
 }
 
-func (fg *fileGen) genIntoPb(msg *protogen.Message, deep bool) {
-	plainName := fg.plainMessageName(msg)
-	pbName := fg.out.QualifiedGoIdent(msg.GoIdent)
+func (fg *fileGen) genIntoPb(msg *ir.Message, deep bool) {
+	plainName := msg.PlainName
+	pbName := fg.qualifiedGoIdent(msg.GoIdent)
 	methodName := "IntoPb"
 	if deep {
 		methodName = "IntoPbDeep"
@@ -451,10 +427,13 @@ func (fg *fileGen) genIntoPb(msg *protogen.Message, deep bool) {
 	fg.P("out := &", pbName, "{}")
 
 	for _, field := range msg.Fields {
+		if field.IsVirtual {
+			continue
+		}
 		if isRealOneofField(field) {
 			continue
 		}
-		if isEmbeddedMessage(field) {
+		if field.IsEmbedded {
 			fg.emitToPBEmbedded("out", "v", field, deep)
 			continue
 		}
@@ -462,9 +441,6 @@ func (fg *fileGen) genIntoPb(msg *protogen.Message, deep bool) {
 	}
 
 	for _, oneof := range msg.Oneofs {
-		if oneof.Desc.IsSynthetic() {
-			continue
-		}
 		fg.emitToPBOneof("out", "v", msg, oneof, deep)
 	}
 
@@ -473,39 +449,67 @@ func (fg *fileGen) genIntoPb(msg *protogen.Message, deep bool) {
 	fg.P()
 }
 
-func (fg *fileGen) emitFromPBEmbedded(outVar, srcVar string, field *protogen.Field, deep bool) {
+func (fg *fileGen) emitFromPBEmbedded(outVar, srcVar string, field *ir.Field, deep bool) {
+	if field.MessageType == nil {
+		return
+	}
+	msg := fg.messageByFullName(field.MessageType.ProtoFullName)
+	if msg == nil {
+		return
+	}
 	fg.P("if ", srcVar, ".", field.GoName, " != nil {")
-	fg.emitEmbeddedAssignFrom(srcVar+"."+field.GoName, outVar, field.Message, deep)
+	fg.emitEmbeddedAssignFrom(srcVar+"."+field.GoName, outVar, msg, deep)
 	fg.P("}")
 }
 
-func (fg *fileGen) emitEmbeddedAssignFrom(srcVar, outVar string, msg *protogen.Message, deep bool) {
+func (fg *fileGen) emitEmbeddedAssignFrom(srcVar, outVar string, msg *ir.Message, deep bool) {
 	for _, field := range msg.Fields {
+		if field.IsVirtual {
+			continue
+		}
 		if isRealOneofField(field) {
 			fg.P(outVar, ".", field.GoName, " = ", fg.pbToPlainExpr(field, srcVar+"."+field.GoName, ctxField, deep))
 			continue
 		}
-		if isEmbeddedMessage(field) {
-			fg.emitEmbeddedAssignFrom(srcVar+"."+field.GoName, outVar, field.Message, deep)
+		if field.IsEmbedded {
+			if field.MessageType != nil {
+				if embedded := fg.messageByFullName(field.MessageType.ProtoFullName); embedded != nil {
+					fg.emitEmbeddedAssignFrom(srcVar+"."+field.GoName, outVar, embedded, deep)
+				}
+			}
 			continue
 		}
 		fg.P(outVar, ".", field.GoName, " = ", fg.pbToPlainExpr(field, srcVar+"."+field.GoName, ctxField, deep))
 	}
 }
 
-func (fg *fileGen) emitToPBEmbedded(outVar, srcVar string, field *protogen.Field, deep bool) {
-	fg.P(outVar, ".", field.GoName, " = &", fg.out.QualifiedGoIdent(field.Message.GoIdent), "{}")
-	fg.emitEmbeddedAssignTo(outVar+"."+field.GoName, srcVar, field.Message, deep)
+func (fg *fileGen) emitToPBEmbedded(outVar, srcVar string, field *ir.Field, deep bool) {
+	if field.MessageType == nil {
+		return
+	}
+	msg := fg.messageByFullName(field.MessageType.ProtoFullName)
+	if msg == nil {
+		return
+	}
+	fg.P(outVar, ".", field.GoName, " = &", fg.qualifiedGoIdent(field.MessageType.GoIdent), "{}")
+	fg.emitEmbeddedAssignTo(outVar+"."+field.GoName, srcVar, msg, deep)
 }
 
-func (fg *fileGen) emitEmbeddedAssignTo(tmpVar, srcVar string, msg *protogen.Message, deep bool) {
+func (fg *fileGen) emitEmbeddedAssignTo(tmpVar, srcVar string, msg *ir.Message, deep bool) {
 	for _, field := range msg.Fields {
+		if field.IsVirtual {
+			continue
+		}
 		if isRealOneofField(field) {
 			fg.P(tmpVar, ".", field.GoName, " = ", fg.plainToPBExpr(field, srcVar+"."+field.GoName, ctxField, deep))
 			continue
 		}
-		if isEmbeddedMessage(field) {
-			fg.emitEmbeddedAssignTo(tmpVar, srcVar, field.Message, deep)
+		if field.IsEmbedded {
+			if field.MessageType != nil {
+				if embedded := fg.messageByFullName(field.MessageType.ProtoFullName); embedded != nil {
+					fg.emitEmbeddedAssignTo(tmpVar, srcVar, embedded, deep)
+				}
+			}
 			continue
 		}
 		fg.P(tmpVar, ".", field.GoName, " = ", fg.plainToPBExpr(field, srcVar+"."+field.GoName, ctxField, deep))
@@ -520,62 +524,59 @@ func cloneBytesExpr(src string) string {
 	return "append([]byte(nil), " + src + "...)"
 }
 
-func (fg *fileGen) aliasValueField(msg *protogen.Message) *protogen.Field {
-	if msg == nil || !isTypeAliasMessage(msg) {
+func (fg *fileGen) aliasValueField(msg *ir.Message) *ir.Field {
+	if msg == nil || !msg.TypeAlias {
 		return nil
 	}
-	if len(msg.Fields) != 1 {
-		panic("type_alias message " + string(msg.Desc.FullName()) + " must have exactly one field named value")
-	}
-	field := msg.Fields[0]
-	if field.Desc.Name() != "value" {
-		panic("type_alias message " + string(msg.Desc.FullName()) + " must have a single field named value")
-	}
-	if field.Desc.IsList() || field.Desc.IsMap() || isRealOneofField(field) {
-		panic("type_alias message " + string(msg.Desc.FullName()) + " value field must be a singular non-oneof field")
-	}
-	return field
+	return msg.AliasValueField
 }
 
-func (fg *fileGen) aliasValueFieldFromField(field *protogen.Field) *protogen.Field {
-	if field == nil || field.Desc.Kind() != protoreflect.MessageKind {
+func (fg *fileGen) aliasValueFieldFromField(field *ir.Field) *ir.Field {
+	if field == nil || field.Kind != ir.KindMessage || field.MessageType == nil {
 		return nil
 	}
-	return fg.aliasValueField(field.Message)
+	msg := fg.messageByFullName(field.MessageType.ProtoFullName)
+	if msg == nil {
+		return nil
+	}
+	return fg.aliasValueField(msg)
 }
 
-func (fg *fileGen) aliasPBToPlainExpr(field, aliasField *protogen.Field, src string, ctx fieldContext, deep bool) string {
+func (fg *fileGen) aliasPBToPlainExpr(field, aliasField *ir.Field, src string, ctx fieldContext, deep bool) string {
 	plainType := fg.plainType(field, ctx)
 	valExpr := fg.pbToPlainExpr(aliasField, src+".Value", ctx, deep)
 	retExpr := "val"
-	if ctx == ctxOneofField && aliasField.Desc.Kind() != protoreflect.MessageKind {
+	if ctx == ctxOneofField && aliasField.Kind != ir.KindMessage {
 		retExpr = "&val"
 	}
 	return "func() " + plainType + " { if " + src + " == nil { var zero " + plainType + "; return zero }; val := " + valExpr + "; return " + retExpr + " }()"
 }
 
-func (fg *fileGen) aliasPlainToPBExpr(field, aliasField *protogen.Field, src string, ctx fieldContext, deep bool) string {
+func (fg *fileGen) aliasPlainToPBExpr(field, aliasField *ir.Field, src string, ctx fieldContext, deep bool) string {
 	plainType := fg.plainType(field, ctx)
 	valSrc := src
-	if ctx == ctxOneofField && aliasField.Desc.Kind() != protoreflect.MessageKind {
+	if ctx == ctxOneofField && aliasField.Kind != ir.KindMessage {
 		valSrc = "*" + src
 	}
 	valExpr := fg.plainToPBExpr(aliasField, valSrc, ctx, deep)
-	msgType := fg.out.QualifiedGoIdent(field.Message.GoIdent)
+	msgType := fg.qualifiedGoIdent(field.MessageType.GoIdent)
 	if isPointerType(plainType) {
 		return "func() *" + msgType + " { if " + src + " == nil { return nil }; return &" + msgType + "{Value: " + valExpr + "} }()"
 	}
 	return "&" + msgType + "{Value: " + valExpr + "}"
 }
 
-func (fg *fileGen) emitFromPBField(outVar, srcVar string, field *protogen.Field, deep bool) {
-	if field.Desc.IsMap() {
-		if !deep && !fg.requiresConversion(field.Message.Fields[1]) {
+func (fg *fileGen) emitFromPBField(outVar, srcVar string, field *ir.Field, deep bool) {
+	if field.IsMap {
+		if field.MapValue == nil {
+			return
+		}
+		if !deep && !fg.requiresConversion(field.MapValue) {
 			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
 			return
 		}
-		keyField := field.Message.Fields[0]
-		valField := field.Message.Fields[1]
+		keyField := field.MapKey
+		valField := field.MapValue
 		keyType := fg.mapKeyType(keyField)
 		valType := fg.plainType(valField, ctxMapValue)
 		fg.P("if ", srcVar, ".", field.GoName, " != nil {")
@@ -587,7 +588,7 @@ func (fg *fileGen) emitFromPBField(outVar, srcVar string, field *protogen.Field,
 		return
 	}
 
-	if field.Desc.IsList() {
+	if field.IsList {
 		if !deep && !fg.requiresConversion(field) {
 			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
 			return
@@ -604,14 +605,17 @@ func (fg *fileGen) emitFromPBField(outVar, srcVar string, field *protogen.Field,
 	fg.P(outVar, ".", field.GoName, " = ", expr)
 }
 
-func (fg *fileGen) emitToPBField(outVar, srcVar string, field *protogen.Field, deep bool) {
-	if field.Desc.IsMap() {
-		if !deep && !fg.requiresConversion(field.Message.Fields[1]) {
+func (fg *fileGen) emitToPBField(outVar, srcVar string, field *ir.Field, deep bool) {
+	if field.IsMap {
+		if field.MapValue == nil {
+			return
+		}
+		if !deep && !fg.requiresConversion(field.MapValue) {
 			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
 			return
 		}
-		keyField := field.Message.Fields[0]
-		valField := field.Message.Fields[1]
+		keyField := field.MapKey
+		valField := field.MapValue
 		keyType := fg.mapKeyType(keyField)
 		valType := fg.pbValueType(valField)
 		fg.P("if ", srcVar, ".", field.GoName, " != nil {")
@@ -623,7 +627,7 @@ func (fg *fileGen) emitToPBField(outVar, srcVar string, field *protogen.Field, d
 		return
 	}
 
-	if field.Desc.IsList() {
+	if field.IsList {
 		if !deep && !fg.requiresConversion(field) {
 			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
 			return
@@ -640,7 +644,7 @@ func (fg *fileGen) emitToPBField(outVar, srcVar string, field *protogen.Field, d
 	fg.P(outVar, ".", field.GoName, " = ", expr)
 }
 
-func (fg *fileGen) emitFromPBOneof(outVar, srcVar string, msg *protogen.Message, oneof *protogen.Oneof, deep bool) {
+func (fg *fileGen) emitFromPBOneof(outVar, srcVar string, msg *ir.Message, oneof *ir.Oneof, deep bool) {
 	fg.P("switch t := ", srcVar, ".", oneof.GoName, ".(type) {")
 	for _, field := range oneof.Fields {
 		pbWrapper := fg.pbOneofWrapperName(msg, field)
@@ -648,7 +652,7 @@ func (fg *fileGen) emitFromPBOneof(outVar, srcVar string, msg *protogen.Message,
 		plainType := fg.plainType(field, ctxOneofField)
 		fg.P("case *", pbWrapper, ":")
 		expr := fg.pbToPlainExpr(field, "t."+field.GoName, ctxOneofField, deep)
-		if strings.HasPrefix(plainType, "*") && field.Desc.Kind() != protoreflect.MessageKind {
+		if strings.HasPrefix(plainType, "*") && field.Kind != ir.KindMessage {
 			fg.P("val := ", expr)
 			fg.P(outVar, ".", plainField, " = &val")
 			continue
@@ -658,7 +662,7 @@ func (fg *fileGen) emitFromPBOneof(outVar, srcVar string, msg *protogen.Message,
 	fg.P("}")
 }
 
-func (fg *fileGen) emitToPBOneof(outVar, srcVar string, msg *protogen.Message, oneof *protogen.Oneof, deep bool) {
+func (fg *fileGen) emitToPBOneof(outVar, srcVar string, msg *ir.Message, oneof *ir.Oneof, deep bool) {
 	first := true
 	for _, field := range oneof.Fields {
 		cond := srcVar + "." + field.GoName + " != nil"
@@ -679,31 +683,31 @@ func (fg *fileGen) emitToPBOneof(outVar, srcVar string, msg *protogen.Message, o
 	}
 }
 
-func (fg *fileGen) oneofPlainToPBExpr(field *protogen.Field, src string, deep bool) string {
-	if field.Desc.Kind() == protoreflect.MessageKind {
+func (fg *fileGen) oneofPlainToPBExpr(field *ir.Field, src string, deep bool) string {
+	if field.Kind == ir.KindMessage {
 		return fg.plainToPBExpr(field, src, ctxOneofField, deep)
 	}
 	return fg.plainToPBExpr(field, "*"+src, ctxOneofField, deep)
 }
 
-func (fg *fileGen) pbToPlainExpr(field *protogen.Field, src string, ctx fieldContext, deep bool) string {
+func (fg *fileGen) pbToPlainExpr(field *ir.Field, src string, ctx fieldContext, deep bool) string {
 	if fg.overrideForField(field) != nil {
 		if model, ok := fg.model(field); ok {
 			ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
-			if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+			if ctx == ctxOneofField && field.Kind != ir.KindMessage {
 				ptr = false
 			}
 			return model.fromPB(fg, field, src, ptr)
 		}
 	}
 
-	if isSerializedMessage(field) {
+	if field.IsSerialized {
 		return fg.castIdent("MessageToSliceByte") + "(" + src + ")"
 	}
 
 	if model, ok := fg.model(field); ok {
 		ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
-		if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+		if ctx == ctxOneofField && field.Kind != ir.KindMessage {
 			ptr = false
 		}
 		return model.fromPB(fg, field, src, ptr)
@@ -713,38 +717,38 @@ func (fg *fileGen) pbToPlainExpr(field *protogen.Field, src string, ctx fieldCon
 		return fg.aliasPBToPlainExpr(field, aliasField, src, ctx, deep)
 	}
 
-	if field.Desc.Kind() == protoreflect.BytesKind && deep {
+	if field.Kind == ir.KindBytes && deep {
 		return cloneBytesExpr(src)
 	}
 
-	if field.Desc.Kind() == protoreflect.MessageKind {
+	if field.Kind == ir.KindMessage {
 		return src
 	}
 
 	return src
 }
 
-func (fg *fileGen) plainToPBExpr(field *protogen.Field, src string, ctx fieldContext, deep bool) string {
+func (fg *fileGen) plainToPBExpr(field *ir.Field, src string, ctx fieldContext, deep bool) string {
 	if fg.overrideForField(field) != nil {
 		if model, ok := fg.model(field); ok {
 			ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
-			if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+			if ctx == ctxOneofField && field.Kind != ir.KindMessage {
 				ptr = false
 			}
 			return model.toPB(fg, field, src, ptr)
 		}
 	}
 
-	if isSerializedMessage(field) {
+	if field.IsSerialized {
 		if isPointerType(fg.plainType(field, ctx)) {
 			src = "*" + src
 		}
-		return fg.castIdent("MessageFromSliceByte") + "[" + fg.pbMessagePointerType(field.Message) + "](" + src + ")"
+		return fg.castIdent("MessageFromSliceByte") + "[" + fg.pbMessagePointerType(field.MessageType) + "](" + src + ")"
 	}
 
 	if model, ok := fg.model(field); ok {
 		ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
-		if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+		if ctx == ctxOneofField && field.Kind != ir.KindMessage {
 			ptr = false
 		}
 		return model.toPB(fg, field, src, ptr)
@@ -754,18 +758,18 @@ func (fg *fileGen) plainToPBExpr(field *protogen.Field, src string, ctx fieldCon
 		return fg.aliasPlainToPBExpr(field, aliasField, src, ctx, deep)
 	}
 
-	if field.Desc.Kind() == protoreflect.BytesKind && deep {
+	if field.Kind == ir.KindBytes && deep {
 		return cloneBytesExpr(src)
 	}
 
-	if field.Desc.Kind() == protoreflect.MessageKind {
+	if field.Kind == ir.KindMessage {
 		return src
 	}
 
 	return src
 }
 
-func (fg *fileGen) model(field *protogen.Field) (typeModel, bool) {
+func (fg *fileGen) model(field *ir.Field) (typeModel, bool) {
 	if ov := fg.overrideForField(field); ov != nil {
 		base := fg.overrideBaseType(ov)
 		model := typeModel{
@@ -773,27 +777,27 @@ func (fg *fileGen) model(field *protogen.Field) (typeModel, bool) {
 				return base
 			},
 			pointerField: ov.GetPointer(),
-			fromPB: func(fg *fileGen, field *protogen.Field, src string, ptr bool) string {
+			fromPB: func(fg *fileGen, field *ir.Field, src string, ptr bool) string {
 				return fg.overrideFromPBExpr(field, src, ptr, ov)
 			},
-			toPB: func(fg *fileGen, field *protogen.Field, src string, ptr bool) string {
+			toPB: func(fg *fileGen, field *ir.Field, src string, ptr bool) string {
 				return fg.overrideToPBExpr(field, src, ptr, ov)
 			},
 		}
 		return model, true
 	}
-	if field.Desc.Kind() != protoreflect.MessageKind {
+	if field.Kind != ir.KindMessage || field.MessageType == nil {
 		return typeModel{}, false
 	}
-	model, ok := typeModels[field.Message.Desc.FullName()]
+	model, ok := typeModels[field.MessageType.ProtoFullName]
 	return model, ok
 }
 
-func (fg *fileGen) requiresConversion(field *protogen.Field) bool {
+func (fg *fileGen) requiresConversion(field *ir.Field) bool {
 	if fg.overrideForField(field) != nil {
 		return true
 	}
-	if isSerializedMessage(field) {
+	if field.IsSerialized {
 		return true
 	}
 	if fg.aliasValueFieldFromField(field) != nil {
@@ -805,14 +809,17 @@ func (fg *fileGen) requiresConversion(field *protogen.Field) bool {
 	return false
 }
 
-func (fg *fileGen) plainType(field *protogen.Field, ctx fieldContext) string {
+func (fg *fileGen) plainType(field *ir.Field, ctx fieldContext) string {
+	if field.IsVirtual {
+		return fg.virtualFieldType(field)
+	}
 	if ctx == ctxField {
-		if field.Desc.IsMap() {
-			keyType := fg.mapKeyType(field.Message.Fields[0])
-			valType := fg.plainType(field.Message.Fields[1], ctxMapValue)
+		if field.IsMap {
+			keyType := fg.mapKeyType(field.MapKey)
+			valType := fg.plainType(field.MapValue, ctxMapValue)
 			return "map[" + keyType + "]" + valType
 		}
-		if field.Desc.IsList() {
+		if field.IsList {
 			elemType := fg.plainType(field, ctxListElem)
 			return "[]" + elemType
 		}
@@ -825,11 +832,14 @@ func (fg *fileGen) plainType(field *protogen.Field, ctx fieldContext) string {
 	return base
 }
 
-func (fg *fileGen) plainBaseType(field *protogen.Field) string {
+func (fg *fileGen) plainBaseType(field *ir.Field) string {
+	if field.IsVirtual {
+		return fg.virtualFieldType(field)
+	}
 	if ov := fg.overrideForField(field); ov != nil {
 		return fg.overrideBaseType(ov)
 	}
-	if isSerializedMessage(field) {
+	if field.IsSerialized {
 		return "[]byte"
 	}
 	if model, ok := fg.model(field); ok {
@@ -838,16 +848,16 @@ func (fg *fileGen) plainBaseType(field *protogen.Field) string {
 	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
 		return fg.plainBaseType(aliasField)
 	}
-	if field.Desc.Kind() == protoreflect.EnumKind {
-		return fg.out.QualifiedGoIdent(field.Enum.GoIdent)
+	if field.Kind == ir.KindEnum && field.EnumType != nil {
+		return fg.qualifiedGoIdent(field.EnumType.GoIdent)
 	}
-	if field.Desc.Kind() == protoreflect.MessageKind {
-		return fg.out.QualifiedGoIdent(field.Message.GoIdent)
+	if field.Kind == ir.KindMessage && field.MessageType != nil {
+		return fg.qualifiedGoIdent(field.MessageType.GoIdent)
 	}
-	return kindToGoType(field.Desc.Kind())
+	return kindToGoType(field.Kind)
 }
 
-func (fg *fileGen) shouldPointer(field *protogen.Field, ctx fieldContext, base string) bool {
+func (fg *fileGen) shouldPointer(field *ir.Field, ctx fieldContext, base string) bool {
 	if strings.HasPrefix(base, "*") {
 		return false
 	}
@@ -857,7 +867,7 @@ func (fg *fileGen) shouldPointer(field *protogen.Field, ctx fieldContext, base s
 		}
 		return ov.GetPointer() && ctx == ctxField
 	}
-	if isSerializedMessage(field) {
+	if field.IsSerialized {
 		return ctx == ctxOneofField
 	}
 	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
@@ -870,70 +880,72 @@ func (fg *fileGen) shouldPointer(field *protogen.Field, ctx fieldContext, base s
 	if model, ok := fg.model(field); ok {
 		return model.pointerField && ctx == ctxField
 	}
-	if field.Desc.Kind() == protoreflect.MessageKind {
+	if field.Kind == ir.KindMessage {
 		return true
 	}
-	if ctx == ctxField && isFieldNullable(field) {
+	if ctx == ctxField && isIRFieldNullable(field) {
 		return true
 	}
 	return false
 }
 
-func (fg *fileGen) mapKeyType(field *protogen.Field) string {
-	return kindToGoType(field.Desc.Kind())
-}
-
-func (fg *fileGen) pbValueType(field *protogen.Field) string {
-	if field.Desc.Kind() == protoreflect.EnumKind {
-		return fg.out.QualifiedGoIdent(field.Enum.GoIdent)
+func (fg *fileGen) mapKeyType(field *ir.Field) string {
+	if field == nil {
+		return ""
 	}
-	if field.Desc.Kind() == protoreflect.MessageKind {
-		return "*" + fg.out.QualifiedGoIdent(field.Message.GoIdent)
+	return kindToGoType(field.Kind)
+}
+
+func (fg *fileGen) pbValueType(field *ir.Field) string {
+	if field.Kind == ir.KindEnum && field.EnumType != nil {
+		return fg.qualifiedGoIdent(field.EnumType.GoIdent)
 	}
-	return kindToGoType(field.Desc.Kind())
-}
-
-func (fg *fileGen) plainMessageName(msg *protogen.Message) string {
-	suffix := "Plain"
-	if fg.g != nil && fg.g.Settings != nil && fg.g.Settings.PlainSuffix != "" {
-		suffix = fg.g.Settings.PlainSuffix
+	if field.Kind == ir.KindMessage && field.MessageType != nil {
+		return "*" + fg.qualifiedGoIdent(field.MessageType.GoIdent)
 	}
-	return msg.GoIdent.GoName + suffix
+	return kindToGoType(field.Kind)
 }
 
-func (fg *fileGen) pbOneofWrapperName(msg *protogen.Message, field *protogen.Field) string {
-	return msg.GoIdent.GoName + "_" + field.GoName
+func (fg *fileGen) pbOneofWrapperName(msg *ir.Message, field *ir.Field) string {
+	return msg.GoIdent.Name + "_" + field.GoName
 }
 
-func (fg *fileGen) pbMessagePointerType(msg *protogen.Message) string {
-	return "*" + fg.out.QualifiedGoIdent(msg.GoIdent)
+func (fg *fileGen) pbMessagePointerType(msg *ir.TypeRef) string {
+	if msg == nil {
+		return ""
+	}
+	return "*" + fg.qualifiedGoIdent(msg.GoIdent)
 }
 
-func kindToGoType(kind protoreflect.Kind) string {
+func kindToGoType(kind ir.Kind) string {
 	switch kind {
-	case protoreflect.BoolKind:
+	case ir.KindBool:
 		return "bool"
-	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+	case ir.KindInt32, ir.KindSint32, ir.KindSfixed32:
 		return "int32"
-	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+	case ir.KindUint32, ir.KindFixed32:
 		return "uint32"
-	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+	case ir.KindInt64, ir.KindSint64, ir.KindSfixed64:
 		return "int64"
-	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+	case ir.KindUint64, ir.KindFixed64:
 		return "uint64"
-	case protoreflect.FloatKind:
+	case ir.KindFloat:
 		return "float32"
-	case protoreflect.DoubleKind:
+	case ir.KindDouble:
 		return "float64"
-	case protoreflect.StringKind:
+	case ir.KindString:
 		return "string"
-	case protoreflect.BytesKind:
+	case ir.KindBytes:
 		return "[]byte"
 	default:
 		return ""
 	}
 }
 
-func isRealOneofField(field *protogen.Field) bool {
-	return field.Oneof != nil && !field.Oneof.Desc.IsSynthetic()
+func isRealOneofField(field *ir.Field) bool {
+	return field != nil && field.Oneof != nil
+}
+
+func isIRFieldNullable(field *ir.Field) bool {
+	return field != nil && (field.IsOptional || field.Oneof != nil)
 }

@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
+	"github.com/yaroher/protoc-gen-go-plain/ir"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-func (g *Generator) BuildModel(f *protogen.File) (*goplain.FileModel, error) {
+func (g *Generator) BuildIR(f *protogen.File) (*ir.File, error) {
 	params := getFileParams(f)
 
 	virtualFields := append([]*goplain.VirtualField(nil), params.GetVirtualField()...)
@@ -17,14 +18,15 @@ func (g *Generator) BuildModel(f *protogen.File) (*goplain.FileModel, error) {
 	virtualMessages := append([]*goplain.VirtualMessage(nil), params.GetVirtualMessage()...)
 	virtualMessages = append(virtualMessages, g.virtualMessages...)
 
-	model := &goplain.FileModel{
-		GoPackage:      string(f.GoPackageName),
-		PlainSuffix:    g.Settings.PlainSuffix,
-		Overwrite:      params.GetOverwrite(),
-		VirtualMessage: virtualMessages,
+	model := &ir.File{
+		GoPackage:       string(f.GoPackageName),
+		GoImportPath:    string(f.GoImportPath),
+		PlainSuffix:     g.Settings.PlainSuffix,
+		VirtualMessages: append([]*goplain.VirtualMessage(nil), virtualMessages...),
 	}
 
 	byFull, byGo := collectMessages(f.Messages)
+	ordered := orderedMessages(f.Messages)
 	virtualByMessage := make(map[protoreflect.FullName][]*goplain.VirtualFieldSpec)
 	for _, vf := range virtualFields {
 		msg, ok := resolveMessage(vf.GetMessage(), byFull, byGo)
@@ -39,49 +41,176 @@ func (g *Generator) BuildModel(f *protogen.File) (*goplain.FileModel, error) {
 		virtualByMessage[msg.Desc.FullName()] = append(virtualByMessage[msg.Desc.FullName()], field)
 	}
 
-	for _, msg := range byFull {
+	fileOverrides := newOverrideRegistry(params.GetOverwrite())
+
+	for _, msg := range ordered {
 		msgParams := getMessageParams(msg)
-		mm := &goplain.MessageModel{
-			FullName:  string(msg.Desc.FullName()),
-			GoName:    msg.GoIdent.GoName,
-			PlainName: msg.GoIdent.GoName + g.Settings.PlainSuffix,
-			Generate:  shouldGenerateMessage(msg),
+		mm := &ir.Message{
+			ProtoFullName: string(msg.Desc.FullName()),
+			GoIdent:       irGoIdent(msg.GoIdent),
+			PlainName:     msg.GoIdent.GoName + g.Settings.PlainSuffix,
+			Generate:      shouldGenerateMessage(msg),
+			TypeAlias:     msgParams.GetTypeAlias(),
 		}
+
+		oneofByProto := make(map[*protogen.Oneof]*ir.Oneof)
+		for _, oneof := range msg.Oneofs {
+			if oneof.Desc.IsSynthetic() {
+				continue
+			}
+			oo := &ir.Oneof{
+				Name:   string(oneof.Desc.Name()),
+				GoName: oneof.GoName,
+			}
+			oneofByProto[oneof] = oo
+			mm.Oneofs = append(mm.Oneofs, oo)
+		}
+
 		for _, field := range msg.Fields {
-			fm := &goplain.FieldModel{
-				ProtoName:    string(field.Desc.Name()),
-				GoName:       field.GoName,
-				Kind:         field.Desc.Kind().String(),
-				IsList:       field.Desc.IsList(),
-				IsMap:        field.Desc.IsMap(),
-				IsOptional:   field.Desc.HasOptionalKeyword(),
-				IsEmbedded:   isEmbeddedMessage(field),
-				IsSerialized: isSerializedMessage(field),
+			fm := buildFieldIR(field, fileOverrides, g.overrides)
+			if fm == nil {
+				continue
 			}
-			if field.Desc.Kind() == protoreflect.MessageKind {
-				fm.MessageFullName = string(field.Message.Desc.FullName())
-			}
-			if field.Desc.Kind() == protoreflect.EnumKind {
-				fm.EnumFullName = string(field.Enum.Desc.FullName())
+			if field.Oneof != nil && !field.Oneof.Desc.IsSynthetic() {
+				if oo, ok := oneofByProto[field.Oneof]; ok {
+					fm.Oneof = oo
+					oo.Fields = append(oo.Fields, fm)
+				}
 			}
 			mm.Fields = append(mm.Fields, fm)
 		}
-		if extras := msgParams.GetVirtualFields(); len(extras) > 0 {
-			for _, field := range extras {
-				if field == nil {
-					continue
-				}
-				field.Name = goSanitized(field.GetName())
-				mm.VirtualFields = append(mm.VirtualFields, field)
-			}
+
+		if mm.TypeAlias {
+			mm.AliasValueField = aliasValueFieldIR(mm)
+		} else {
+			appendVirtualFields(mm, msgParams.GetVirtualFields())
+			appendVirtualFields(mm, virtualByMessage[msg.Desc.FullName()])
 		}
-		if extras := virtualByMessage[msg.Desc.FullName()]; len(extras) > 0 {
-			mm.VirtualFields = append(mm.VirtualFields, extras...)
-		}
+
 		model.Messages = append(model.Messages, mm)
 	}
 
 	return model, nil
+}
+
+func irGoIdent(id protogen.GoIdent) ir.GoIdent {
+	return ir.GoIdent{
+		Name:       id.GoName,
+		ImportPath: string(id.GoImportPath),
+	}
+}
+
+func irGoIdentFromSpec(id *goplain.GoIdent) ir.GoIdent {
+	if id == nil {
+		return ir.GoIdent{}
+	}
+	return ir.GoIdent{
+		Name:       id.GetName(),
+		ImportPath: id.GetImportPath(),
+	}
+}
+
+func appendVirtualFields(msg *ir.Message, specs []*goplain.VirtualFieldSpec) {
+	if msg == nil || len(specs) == 0 {
+		return
+	}
+	for _, spec := range specs {
+		if spec == nil || spec.GetGoType() == nil {
+			continue
+		}
+		name := goSanitized(spec.GetName())
+		if name == "" {
+			continue
+		}
+		msg.Fields = append(msg.Fields, &ir.Field{
+			ProtoName: name,
+			GoName:    name,
+			IsVirtual: true,
+			GoType:    irGoIdentFromSpec(spec.GetGoType()),
+		})
+	}
+}
+
+func buildFieldIR(field *protogen.Field, fileOverrides, globalOverrides *overrideRegistry) *ir.Field {
+	if field == nil {
+		return nil
+	}
+	ov := resolveOverride(field, fileOverrides, globalOverrides)
+	fm := &ir.Field{
+		ProtoName:    string(field.Desc.Name()),
+		GoName:       field.GoName,
+		Kind:         ir.Kind(field.Desc.Kind().String()),
+		IsList:       field.Desc.IsList(),
+		IsMap:        field.Desc.IsMap(),
+		IsOptional:   field.Desc.HasOptionalKeyword(),
+		IsEmbedded:   isEmbeddedMessage(field),
+		IsSerialized: isSerializedMessage(field),
+		Override:     ov,
+	}
+
+	if field.Desc.Kind() == protoreflect.MessageKind {
+		fm.MessageType = &ir.TypeRef{
+			Kind:          ir.KindMessage,
+			ProtoFullName: string(field.Message.Desc.FullName()),
+			GoIdent:       irGoIdent(field.Message.GoIdent),
+		}
+	}
+	if field.Desc.Kind() == protoreflect.EnumKind {
+		fm.EnumType = &ir.TypeRef{
+			Kind:          ir.KindEnum,
+			ProtoFullName: string(field.Enum.Desc.FullName()),
+			GoIdent:       irGoIdent(field.Enum.GoIdent),
+		}
+	}
+
+	if field.Desc.IsMap() {
+		keyField := field.Message.Fields[0]
+		valField := field.Message.Fields[1]
+		fm.MapKey = buildFieldIR(keyField, fileOverrides, globalOverrides)
+
+		valOverride := getFieldOverwrite(field)
+		if valOverride == nil {
+			valOverride = resolveOverride(valField, fileOverrides, globalOverrides)
+		}
+		fm.MapValue = buildFieldIR(valField, fileOverrides, globalOverrides)
+		if fm.MapValue != nil {
+			fm.MapValue.Override = valOverride
+		}
+	}
+
+	return fm
+}
+
+func resolveOverride(field *protogen.Field, fileOverrides, globalOverrides *overrideRegistry) *goplain.OverwriteType {
+	if ov := getFieldOverwrite(field); ov != nil {
+		return ov
+	}
+	if fileOverrides != nil {
+		if ov := fileOverrides.byProto[protoTypeKey(field)]; ov != nil {
+			return ov
+		}
+	}
+	if globalOverrides != nil {
+		return globalOverrides.byProto[protoTypeKey(field)]
+	}
+	return nil
+}
+
+func aliasValueFieldIR(msg *ir.Message) *ir.Field {
+	if msg == nil || !msg.TypeAlias {
+		return nil
+	}
+	if len(msg.Fields) != 1 {
+		panic("type_alias message " + msg.ProtoFullName + " must have exactly one field named value")
+	}
+	field := msg.Fields[0]
+	if field.ProtoName != "value" {
+		panic("type_alias message " + msg.ProtoFullName + " must have a single field named value")
+	}
+	if field.IsList || field.IsMap || field.Oneof != nil {
+		panic("type_alias message " + msg.ProtoFullName + " value field must be a singular non-oneof field")
+	}
+	return field
 }
 
 func collectMessages(msgs []*protogen.Message) (map[protoreflect.FullName]*protogen.Message, map[string]*protogen.Message) {
@@ -100,6 +229,22 @@ func collectMessages(msgs []*protogen.Message) (map[protoreflect.FullName]*proto
 	}
 	walk(msgs)
 	return byFull, byGo
+}
+
+func orderedMessages(msgs []*protogen.Message) []*protogen.Message {
+	ordered := make([]*protogen.Message, 0)
+	var walk func(list []*protogen.Message)
+	walk = func(list []*protogen.Message) {
+		for _, msg := range list {
+			if msg.Desc.IsMapEntry() {
+				continue
+			}
+			ordered = append(ordered, msg)
+			walk(msg.Messages)
+		}
+	}
+	walk(msgs)
+	return ordered
 }
 
 func resolveMessage(name string, byFull map[protoreflect.FullName]*protogen.Message, byGo map[string]*protogen.Message) (*protogen.Message, bool) {

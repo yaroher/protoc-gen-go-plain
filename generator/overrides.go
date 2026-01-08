@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
+	"github.com/yaroher/protoc-gen-go-plain/ir"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -42,55 +43,11 @@ func protoTypeKey(field *protogen.Field) string {
 	}
 }
 
-func (fg *fileGen) buildFieldOverrides(msgs []*protogen.Message) {
-	for _, msg := range msgs {
-		if msg.Desc.IsMapEntry() {
-			continue
-		}
-		for _, field := range msg.Fields {
-			if ov := getFieldOverwrite(field); ov != nil {
-				if fg.fieldOverrides == nil {
-					fg.fieldOverrides = make(map[*protogen.Field]*goplain.OverwriteType)
-				}
-				fg.fieldOverrides[field] = ov
-				if field.Desc.IsMap() && len(field.Message.Fields) > 1 {
-					fg.fieldOverrides[field.Message.Fields[1]] = ov
-				}
-			}
-		}
-		fg.buildFieldOverrides(msg.Messages)
-	}
-}
-
-func (fg *fileGen) fieldOverride(field *protogen.Field) *goplain.OverwriteType {
-	if fg.fieldOverrides == nil {
+func (fg *fileGen) overrideForField(field *ir.Field) *goplain.OverwriteType {
+	if field == nil {
 		return nil
 	}
-	return fg.fieldOverrides[field]
-}
-
-func (fg *fileGen) fileOverride(field *protogen.Field) *goplain.OverwriteType {
-	if fg.fileOverrides == nil {
-		return nil
-	}
-	return fg.fileOverrides[protoTypeKey(field)]
-}
-
-func (fg *fileGen) globalOverride(field *protogen.Field) *goplain.OverwriteType {
-	if fg.g == nil || fg.g.overrides == nil {
-		return nil
-	}
-	return fg.g.overrides.byProto[protoTypeKey(field)]
-}
-
-func (fg *fileGen) overrideForField(field *protogen.Field) *goplain.OverwriteType {
-	if ov := fg.fieldOverride(field); ov != nil {
-		return ov
-	}
-	if ov := fg.fileOverride(field); ov != nil {
-		return ov
-	}
-	return fg.globalOverride(field)
+	return field.Override
 }
 
 func (fg *fileGen) overrideBaseType(ov *goplain.OverwriteType) string {
@@ -130,34 +87,34 @@ func (fg *fileGen) overrideFuncIdent(id *goplain.GoIdent) string {
 	return fg.qualifyGoIdent(id)
 }
 
-func (fg *fileGen) pbType(field *protogen.Field) string {
-	if field.Desc.Kind() == protoreflect.EnumKind {
-		return fg.out.QualifiedGoIdent(field.Enum.GoIdent)
+func (fg *fileGen) pbType(field *ir.Field) string {
+	if field.Kind == ir.KindEnum && field.EnumType != nil {
+		return fg.qualifiedGoIdent(field.EnumType.GoIdent)
 	}
-	if field.Desc.Kind() == protoreflect.MessageKind {
-		return "*" + fg.out.QualifiedGoIdent(field.Message.GoIdent)
+	if field.Kind == ir.KindMessage && field.MessageType != nil {
+		return "*" + fg.qualifiedGoIdent(field.MessageType.GoIdent)
 	}
-	base := kindToGoType(field.Desc.Kind())
-	if isFieldNullable(field) {
+	base := kindToGoType(field.Kind)
+	if isIRFieldNullable(field) {
 		return "*" + base
 	}
 	return base
 }
 
-func (fg *fileGen) overrideFromPBExpr(field *protogen.Field, src string, ptr bool, ov *goplain.OverwriteType) string {
+func (fg *fileGen) overrideFromPBExpr(field *ir.Field, src string, ptr bool, ov *goplain.OverwriteType) string {
 	expr := fg.overrideToPlainCall(field, src, ov)
 	if !ptr {
 		return expr
 	}
 	base := fg.overrideBaseType(ov)
-	nilable := field.Desc.Kind() == protoreflect.MessageKind || isFieldNullable(field)
+	nilable := field.Kind == ir.KindMessage || isIRFieldNullable(field)
 	if nilable {
 		return "func() *" + base + " { if " + src + " == nil { return nil }; val := " + expr + "; return &val }()"
 	}
 	return "func() *" + base + " { val := " + expr + "; return &val }()"
 }
 
-func (fg *fileGen) overrideToPBExpr(field *protogen.Field, src string, ptr bool, ov *goplain.OverwriteType) string {
+func (fg *fileGen) overrideToPBExpr(field *ir.Field, src string, ptr bool, ov *goplain.OverwriteType) string {
 	if !ptr {
 		return fg.overrideToPBCall(field, src, ov)
 	}
@@ -168,7 +125,7 @@ func (fg *fileGen) overrideToPBExpr(field *protogen.Field, src string, ptr bool,
 	return "func() " + pbType + " { if " + src + " == nil { var zero " + pbType + "; return zero }; return " + fg.overrideToPBCall(field, "*"+src, ov) + " }()"
 }
 
-func (fg *fileGen) overrideToPlainCall(field *protogen.Field, src string, ov *goplain.OverwriteType) string {
+func (fg *fileGen) overrideToPlainCall(field *ir.Field, src string, ov *goplain.OverwriteType) string {
 	body := strings.TrimSpace(ov.GetToPlainBody())
 	if body != "" {
 		pbType := fg.pbType(field)
@@ -182,7 +139,7 @@ func (fg *fileGen) overrideToPlainCall(field *protogen.Field, src string, ov *go
 	return fn + "(" + src + ")"
 }
 
-func (fg *fileGen) overrideToPBCall(field *protogen.Field, src string, ov *goplain.OverwriteType) string {
+func (fg *fileGen) overrideToPBCall(field *ir.Field, src string, ov *goplain.OverwriteType) string {
 	body := strings.TrimSpace(ov.GetToPbBody())
 	if body != "" {
 		base := fg.overrideBaseType(ov)
