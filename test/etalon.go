@@ -126,6 +126,6 @@ type TestMessagePlainEtalon struct {
 
 	// Virtual fields.
 	Meta    int64
-	TraceId uuid.UUID
+	TraceId string
 	Debug   string
 }

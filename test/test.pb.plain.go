@@ -84,7 +84,7 @@ type TestMessagePlain struct {
 	FWktBytes                *[]byte
 	FDoubleNested            *NestedMessage_InnerMessage_InnerInnerMessage
 	Meta                     int64
-	TraceId                  uuid.UUID
+	TraceId                  string
 	Debug                    string
 }
 
@@ -93,7 +93,7 @@ type TestMessagePlainOption func(*TestMessagePlain)
 func WithTestMessageMeta(v int64) TestMessagePlainOption {
 	return func(out *TestMessagePlain) { out.Meta = v }
 }
-func WithTestMessageTraceId(v uuid.UUID) TestMessagePlainOption {
+func WithTestMessageTraceId(v string) TestMessagePlainOption {
 	return func(out *TestMessagePlain) { out.TraceId = v }
 }
 func WithTestMessageDebug(v string) TestMessagePlainOption {
@@ -130,6 +130,8 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 			val := v.Embed.EmbedOidcId.Value
 			return val
 		}()
+	}
+	if v.Embed != nil {
 		out.EmbedId = func() string {
 			if v.Embed.EmbedId == nil {
 				var zero string
@@ -189,6 +191,8 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 	out.FNestedMessage = v.FNestedMessage
 	if v.FNestedMessageEmbedded != nil {
 		out.Name = v.FNestedMessageEmbedded.Name
+	}
+	if v.FNestedMessageEmbedded != nil {
 		out.Inner = v.FNestedMessageEmbedded.Inner
 	}
 	out.FNestedMessageSerialized = cast.MessageToSliceByte(v.FNestedMessageSerialized)
@@ -263,6 +267,8 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 			val := v.Embed.EmbedOidcId.Value
 			return val
 		}()
+	}
+	if v.Embed != nil {
 		out.EmbedId = func() string {
 			if v.Embed.EmbedId == nil {
 				var zero string
@@ -398,6 +404,8 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 	out.FNestedMessage = v.FNestedMessage
 	if v.FNestedMessageEmbedded != nil {
 		out.Name = v.FNestedMessageEmbedded.Name
+	}
+	if v.FNestedMessageEmbedded != nil {
 		out.Inner = v.FNestedMessageEmbedded.Inner
 	}
 	out.FNestedMessageSerialized = cast.MessageToSliceByte(v.FNestedMessageSerialized)
@@ -449,8 +457,13 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	out := &TestMessage{}
 	out.OidcId = &OidcIdAlias{Value: v.OidcId}
 	out.Id = &IdAlias{Value: v.Id}
-	out.Embed = &EmbedWithAlias{}
+	if out.Embed == nil {
+		out.Embed = &EmbedWithAlias{}
+	}
 	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
+	if out.Embed == nil {
+		out.Embed = &EmbedWithAlias{}
+	}
 	out.Embed.EmbedId = &IdAlias{Value: v.EmbedId}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
@@ -494,8 +507,13 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	out.FMapBoolInt32 = v.FMapBoolInt32
 	out.FMapStringString = v.FMapStringString
 	out.FNestedMessage = v.FNestedMessage
-	out.FNestedMessageEmbedded = &NestedMessage{}
+	if out.FNestedMessageEmbedded == nil {
+		out.FNestedMessageEmbedded = &NestedMessage{}
+	}
 	out.FNestedMessageEmbedded.Name = v.Name
+	if out.FNestedMessageEmbedded == nil {
+		out.FNestedMessageEmbedded = &NestedMessage{}
+	}
 	out.FNestedMessageEmbedded.Inner = v.Inner
 	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
 	out.FEnum = v.FEnum
@@ -536,8 +554,13 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	out := &TestMessage{}
 	out.OidcId = &OidcIdAlias{Value: v.OidcId}
 	out.Id = &IdAlias{Value: v.Id}
-	out.Embed = &EmbedWithAlias{}
+	if out.Embed == nil {
+		out.Embed = &EmbedWithAlias{}
+	}
 	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
+	if out.Embed == nil {
+		out.Embed = &EmbedWithAlias{}
+	}
 	out.Embed.EmbedId = &IdAlias{Value: v.EmbedId}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
@@ -657,8 +680,13 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 		}
 	}
 	out.FNestedMessage = v.FNestedMessage
-	out.FNestedMessageEmbedded = &NestedMessage{}
+	if out.FNestedMessageEmbedded == nil {
+		out.FNestedMessageEmbedded = &NestedMessage{}
+	}
 	out.FNestedMessageEmbedded.Name = v.Name
+	if out.FNestedMessageEmbedded == nil {
+		out.FNestedMessageEmbedded = &NestedMessage{}
+	}
 	out.FNestedMessageEmbedded.Inner = v.Inner
 	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
 	out.FEnum = v.FEnum

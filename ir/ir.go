@@ -54,6 +54,11 @@ type Field struct {
 	IsSerialized bool
 	IsVirtual    bool
 
+	EmbeddedFrom       string
+	EmbeddedFromFull   string
+	AliasFromFull      string
+	SerializedFromFull string
+
 	GoType GoIdent
 
 	Oneof *Oneof

@@ -99,7 +99,7 @@ func collectFieldSigs(t reflect.Type) []fieldSig {
 func sampleMessage() (*TestMessage, *TestMessagePlain) {
 	uuidStr := "550e8400-e29b-41d4-a716-446655440000"
 	uuidVal := uuid.MustParse(uuidStr)
-	traceID := uuid.MustParse("880e8400-e29b-41d4-a716-446655440000")
+	traceID := "880e8400-e29b-41d4-a716-446655440000"
 
 	oidcID := "oidc-id"
 	id := "id"

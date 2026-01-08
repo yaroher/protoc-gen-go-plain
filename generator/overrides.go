@@ -10,20 +10,16 @@ import (
 )
 
 type overrideRegistry struct {
-	byProto map[string]*goplain.OverwriteType
+	rules []*goplain.OverwriteType
 }
 
 func newOverrideRegistry(overrides []*goplain.OverwriteType) *overrideRegistry {
-	reg := &overrideRegistry{byProto: make(map[string]*goplain.OverwriteType)}
+	reg := &overrideRegistry{}
 	for _, ov := range overrides {
 		if ov == nil {
 			continue
 		}
-		protoType := normalizeProtoType(ov.GetProtoType())
-		if protoType == "" {
-			panic("override proto_type is required for file/global overrides")
-		}
-		reg.byProto[protoType] = ov
+		reg.rules = append(reg.rules, ov)
 	}
 	return reg
 }
@@ -48,6 +44,59 @@ func (fg *fileGen) overrideForField(field *ir.Field) *goplain.OverwriteType {
 		return nil
 	}
 	return field.Override
+}
+
+func (reg *overrideRegistry) matchField(protoType string, state selectorState) *goplain.OverwriteType {
+	if reg == nil || len(reg.rules) == 0 {
+		return nil
+	}
+	for _, ov := range reg.rules {
+		if ov == nil {
+			continue
+		}
+		if selectorMatches(ov.GetSelector(), protoType, state) {
+			return ov
+		}
+	}
+	return nil
+}
+
+func selectorMatches(selectors []*goplain.OverrideSelector, protoType string, state selectorState) bool {
+	if len(selectors) == 0 {
+		return false
+	}
+	protoType = normalizeProtoType(protoType)
+	for _, sel := range selectors {
+		if sel == nil {
+			continue
+		}
+		if sel.GetProtoType() != "" && normalizeProtoType(sel.GetProtoType()) != protoType {
+			continue
+		}
+		if sel.IsList != nil && state.isList != sel.GetIsList() {
+			continue
+		}
+		if sel.IsMap != nil && state.isMap != sel.GetIsMap() {
+			continue
+		}
+		if sel.IsOptional != nil && state.isOptional != sel.GetIsOptional() {
+			continue
+		}
+		if sel.IsOneof != nil && state.isOneof != sel.GetIsOneof() {
+			continue
+		}
+		if sel.IsEmbedded != nil && state.isEmbedded != sel.GetIsEmbedded() {
+			continue
+		}
+		if sel.IsSerialized != nil && state.isSerialized != sel.GetIsSerialized() {
+			continue
+		}
+		if sel.IsVirtual != nil && state.isVirtual != sel.GetIsVirtual() {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 func (fg *fileGen) overrideBaseType(ov *goplain.OverwriteType) string {

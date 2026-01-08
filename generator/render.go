@@ -210,25 +210,27 @@ func (fg *fileGen) virtualFields(msg *ir.Message) []*ir.Field {
 }
 
 func (fg *fileGen) virtualFieldType(field *ir.Field) string {
-	if field == nil || field.GoType.Name == "" {
-		panic("virtual field go_type is required")
+	if field == nil {
+		return ""
 	}
-	name := field.GoType.Name
-	if field.GoType.ImportPath == "" {
-		return name
+	if ov := fg.overrideForField(field); ov != nil {
+		base := fg.overrideBaseType(ov)
+		if fg.shouldPointer(field, ctxField, base) {
+			return "*" + base
+		}
+		return base
 	}
-	ptr := ""
-	if strings.HasPrefix(name, "*") {
-		ptr = "*"
-		name = strings.TrimPrefix(name, "*")
+	if field.Kind == ir.KindEnum && field.EnumType != nil {
+		return fg.qualifiedGoIdent(field.EnumType.GoIdent)
 	}
-	if strings.Contains(name, ".") {
-		panic("virtual field go_type.name must be unqualified when import_path is set")
+	if field.Kind == ir.KindMessage && field.MessageType != nil {
+		return fg.qualifiedGoIdent(field.MessageType.GoIdent)
 	}
-	return ptr + fg.out.QualifiedGoIdent(protogen.GoIdent{
-		GoImportPath: protogen.GoImportPath(field.GoType.ImportPath),
-		GoName:       name,
-	})
+	base := kindToGoType(field.Kind)
+	if fg.shouldPointer(field, ctxField, base) {
+		return "*" + base
+	}
+	return base
 }
 
 func (fg *fileGen) genFile() {
@@ -531,14 +533,28 @@ func (fg *fileGen) aliasValueField(msg *ir.Message) *ir.Field {
 	return msg.AliasValueField
 }
 
+func (fg *fileGen) aliasMessageFromField(field *ir.Field) *ir.Message {
+	if field == nil {
+		return nil
+	}
+	if field.AliasFromFull != "" {
+		msg := fg.messageByFullName(field.AliasFromFull)
+		if msg != nil && msg.TypeAlias {
+			return msg
+		}
+		return nil
+	}
+	if field.Kind == ir.KindMessage && field.MessageType != nil {
+		msg := fg.messageByFullName(field.MessageType.ProtoFullName)
+		if msg != nil && msg.TypeAlias {
+			return msg
+		}
+	}
+	return nil
+}
+
 func (fg *fileGen) aliasValueFieldFromField(field *ir.Field) *ir.Field {
-	if field == nil || field.Kind != ir.KindMessage || field.MessageType == nil {
-		return nil
-	}
-	msg := fg.messageByFullName(field.MessageType.ProtoFullName)
-	if msg == nil {
-		return nil
-	}
+	msg := fg.aliasMessageFromField(field)
 	return fg.aliasValueField(msg)
 }
 
@@ -559,7 +575,11 @@ func (fg *fileGen) aliasPlainToPBExpr(field, aliasField *ir.Field, src string, c
 		valSrc = "*" + src
 	}
 	valExpr := fg.plainToPBExpr(aliasField, valSrc, ctx, deep)
-	msgType := fg.qualifiedGoIdent(field.MessageType.GoIdent)
+	msg := fg.aliasMessageFromField(field)
+	if msg == nil {
+		panic("alias message not found for field " + field.GoName)
+	}
+	msgType := fg.qualifiedGoIdent(msg.GoIdent)
 	if isPointerType(plainType) {
 		return "func() *" + msgType + " { if " + src + " == nil { return nil }; return &" + msgType + "{Value: " + valExpr + "} }()"
 	}
@@ -567,51 +587,88 @@ func (fg *fileGen) aliasPlainToPBExpr(field, aliasField *ir.Field, src string, c
 }
 
 func (fg *fileGen) emitFromPBField(outVar, srcVar string, field *ir.Field, deep bool) {
+	embeddedVar := ""
+	srcField := srcVar + "." + field.GoName
+	if field.EmbeddedFrom != "" {
+		embeddedVar = srcVar + "." + field.EmbeddedFrom
+		srcField = embeddedVar + "." + field.GoName
+		fg.P("if ", embeddedVar, " != nil {")
+	}
+
 	if field.IsMap {
 		if field.MapValue == nil {
+			if embeddedVar != "" {
+				fg.P("}")
+			}
 			return
 		}
 		if !deep && !fg.requiresConversion(field.MapValue) {
-			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
+			fg.P(outVar, ".", field.GoName, " = ", srcField)
+			if embeddedVar != "" {
+				fg.P("}")
+			}
 			return
 		}
 		keyField := field.MapKey
 		valField := field.MapValue
 		keyType := fg.mapKeyType(keyField)
 		valType := fg.plainType(valField, ctxMapValue)
-		fg.P("if ", srcVar, ".", field.GoName, " != nil {")
-		fg.P(outVar, ".", field.GoName, " = make(map[", keyType, "]", valType, ", len(", srcVar, ".", field.GoName, "))")
-		fg.P("for k, val := range ", srcVar, ".", field.GoName, " {")
+		fg.P("if ", srcField, " != nil {")
+		fg.P(outVar, ".", field.GoName, " = make(map[", keyType, "]", valType, ", len(", srcField, "))")
+		fg.P("for k, val := range ", srcField, " {")
 		fg.P(outVar, ".", field.GoName, "[k] = ", fg.pbToPlainExpr(valField, "val", ctxMapValue, deep))
 		fg.P("}")
 		fg.P("}")
+		if embeddedVar != "" {
+			fg.P("}")
+		}
 		return
 	}
 
 	if field.IsList {
 		if !deep && !fg.requiresConversion(field) {
-			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
+			fg.P(outVar, ".", field.GoName, " = ", srcField)
+			if embeddedVar != "" {
+				fg.P("}")
+			}
 			return
 		}
-		fg.P("if ", srcVar, ".", field.GoName, " != nil {")
-		fg.P("for _, el := range ", srcVar, ".", field.GoName, " {")
+		fg.P("if ", srcField, " != nil {")
+		fg.P("for _, el := range ", srcField, " {")
 		fg.P(outVar, ".", field.GoName, " = append(", outVar, ".", field.GoName, ", ", fg.pbToPlainExpr(field, "el", ctxListElem, deep), ")")
 		fg.P("}")
 		fg.P("}")
+		if embeddedVar != "" {
+			fg.P("}")
+		}
 		return
 	}
 
-	expr := fg.pbToPlainExpr(field, srcVar+"."+field.GoName, ctxField, deep)
+	expr := fg.pbToPlainExpr(field, srcField, ctxField, deep)
 	fg.P(outVar, ".", field.GoName, " = ", expr)
+	if embeddedVar != "" {
+		fg.P("}")
+	}
 }
 
 func (fg *fileGen) emitToPBField(outVar, srcVar string, field *ir.Field, deep bool) {
+	dstField := outVar + "." + field.GoName
+	if field.EmbeddedFrom != "" {
+		embeddedVar := outVar + "." + field.EmbeddedFrom
+		embeddedType := fg.embeddedFromType(field)
+		if embeddedType == "" {
+			panic("embedded_from type not found for " + field.EmbeddedFrom)
+		}
+		fg.P("if ", embeddedVar, " == nil { ", embeddedVar, " = &", embeddedType, "{} }")
+		dstField = embeddedVar + "." + field.GoName
+	}
+
 	if field.IsMap {
 		if field.MapValue == nil {
 			return
 		}
 		if !deep && !fg.requiresConversion(field.MapValue) {
-			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
+			fg.P(dstField, " = ", srcVar, ".", field.GoName)
 			return
 		}
 		keyField := field.MapKey
@@ -619,9 +676,9 @@ func (fg *fileGen) emitToPBField(outVar, srcVar string, field *ir.Field, deep bo
 		keyType := fg.mapKeyType(keyField)
 		valType := fg.pbValueType(valField)
 		fg.P("if ", srcVar, ".", field.GoName, " != nil {")
-		fg.P(outVar, ".", field.GoName, " = make(map[", keyType, "]", valType, ", len(", srcVar, ".", field.GoName, "))")
+		fg.P(dstField, " = make(map[", keyType, "]", valType, ", len(", srcVar, ".", field.GoName, "))")
 		fg.P("for k, val := range ", srcVar, ".", field.GoName, " {")
-		fg.P(outVar, ".", field.GoName, "[k] = ", fg.plainToPBExpr(valField, "val", ctxMapValue, deep))
+		fg.P(dstField, "[k] = ", fg.plainToPBExpr(valField, "val", ctxMapValue, deep))
 		fg.P("}")
 		fg.P("}")
 		return
@@ -629,19 +686,19 @@ func (fg *fileGen) emitToPBField(outVar, srcVar string, field *ir.Field, deep bo
 
 	if field.IsList {
 		if !deep && !fg.requiresConversion(field) {
-			fg.P(outVar, ".", field.GoName, " = ", srcVar, ".", field.GoName)
+			fg.P(dstField, " = ", srcVar, ".", field.GoName)
 			return
 		}
 		fg.P("if ", srcVar, ".", field.GoName, " != nil {")
 		fg.P("for _, el := range ", srcVar, ".", field.GoName, " {")
-		fg.P(outVar, ".", field.GoName, " = append(", outVar, ".", field.GoName, ", ", fg.plainToPBExpr(field, "el", ctxListElem, deep), ")")
+		fg.P(dstField, " = append(", dstField, ", ", fg.plainToPBExpr(field, "el", ctxListElem, deep), ")")
 		fg.P("}")
 		fg.P("}")
 		return
 	}
 
 	expr := fg.plainToPBExpr(field, srcVar+"."+field.GoName, ctxField, deep)
-	fg.P(outVar, ".", field.GoName, " = ", expr)
+	fg.P(dstField, " = ", expr)
 }
 
 func (fg *fileGen) emitFromPBOneof(outVar, srcVar string, msg *ir.Message, oneof *ir.Oneof, deep bool) {
@@ -743,7 +800,7 @@ func (fg *fileGen) plainToPBExpr(field *ir.Field, src string, ctx fieldContext, 
 		if isPointerType(fg.plainType(field, ctx)) {
 			src = "*" + src
 		}
-		return fg.castIdent("MessageFromSliceByte") + "[" + fg.pbMessagePointerType(field.MessageType) + "](" + src + ")"
+		return fg.castIdent("MessageFromSliceByte") + "[" + fg.serializedMessagePointerType(field) + "](" + src + ")"
 	}
 
 	if model, ok := fg.model(field); ok {
@@ -810,9 +867,6 @@ func (fg *fileGen) requiresConversion(field *ir.Field) bool {
 }
 
 func (fg *fileGen) plainType(field *ir.Field, ctx fieldContext) string {
-	if field.IsVirtual {
-		return fg.virtualFieldType(field)
-	}
 	if ctx == ctxField {
 		if field.IsMap {
 			keyType := fg.mapKeyType(field.MapKey)
@@ -833,9 +887,6 @@ func (fg *fileGen) plainType(field *ir.Field, ctx fieldContext) string {
 }
 
 func (fg *fileGen) plainBaseType(field *ir.Field) string {
-	if field.IsVirtual {
-		return fg.virtualFieldType(field)
-	}
 	if ov := fg.overrideForField(field); ov != nil {
 		return fg.overrideBaseType(ov)
 	}
@@ -896,6 +947,16 @@ func (fg *fileGen) mapKeyType(field *ir.Field) string {
 	return kindToGoType(field.Kind)
 }
 
+func (fg *fileGen) embeddedFromType(field *ir.Field) string {
+	if field == nil || field.EmbeddedFromFull == "" {
+		return ""
+	}
+	if msg := fg.messageByFullName(field.EmbeddedFromFull); msg != nil {
+		return fg.qualifiedGoIdent(msg.GoIdent)
+	}
+	return ""
+}
+
 func (fg *fileGen) pbValueType(field *ir.Field) string {
 	if field.Kind == ir.KindEnum && field.EnumType != nil {
 		return fg.qualifiedGoIdent(field.EnumType.GoIdent)
@@ -915,6 +976,21 @@ func (fg *fileGen) pbMessagePointerType(msg *ir.TypeRef) string {
 		return ""
 	}
 	return "*" + fg.qualifiedGoIdent(msg.GoIdent)
+}
+
+func (fg *fileGen) serializedMessagePointerType(field *ir.Field) string {
+	if field == nil {
+		return ""
+	}
+	if field.MessageType != nil {
+		return fg.pbMessagePointerType(field.MessageType)
+	}
+	if field.SerializedFromFull != "" {
+		if msg := fg.messageByFullName(field.SerializedFromFull); msg != nil {
+			return "*" + fg.qualifiedGoIdent(msg.GoIdent)
+		}
+	}
+	panic("serialized field missing message type: " + field.GoName)
 }
 
 func kindToGoType(kind ir.Kind) string {

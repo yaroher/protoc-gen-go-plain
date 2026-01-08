@@ -75,16 +75,14 @@ func (x *GoIdent) GetImportPath() string {
 }
 
 type OverwriteType struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// For file/global overrides: proto full name (e.g. "google.protobuf.Timestamp" or "pkg.Message").
-	// For field overrides this can be empty.
-	ProtoType     string   `protobuf:"bytes,1,opt,name=proto_type,json=protoType,proto3" json:"proto_type,omitempty"`
-	GoType        *GoIdent `protobuf:"bytes,2,opt,name=go_type,json=goType,proto3" json:"go_type,omitempty"`
-	ToPlain       *GoIdent `protobuf:"bytes,3,opt,name=to_plain,json=toPlain,proto3" json:"to_plain,omitempty"`
-	ToPb          *GoIdent `protobuf:"bytes,4,opt,name=to_pb,json=toPb,proto3" json:"to_pb,omitempty"`
-	Pointer       bool     `protobuf:"varint,5,opt,name=pointer,proto3" json:"pointer,omitempty"`
-	ToPlainBody   string   `protobuf:"bytes,6,opt,name=to_plain_body,json=toPlainBody,proto3" json:"to_plain_body,omitempty"`
-	ToPbBody      string   `protobuf:"bytes,7,opt,name=to_pb_body,json=toPbBody,proto3" json:"to_pb_body,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Selector      []*OverrideSelector    `protobuf:"bytes,1,rep,name=selector,proto3" json:"selector,omitempty"`
+	GoType        *GoIdent               `protobuf:"bytes,2,opt,name=go_type,json=goType,proto3" json:"go_type,omitempty"`
+	ToPlain       *GoIdent               `protobuf:"bytes,3,opt,name=to_plain,json=toPlain,proto3" json:"to_plain,omitempty"`
+	ToPb          *GoIdent               `protobuf:"bytes,4,opt,name=to_pb,json=toPb,proto3" json:"to_pb,omitempty"`
+	Pointer       bool                   `protobuf:"varint,5,opt,name=pointer,proto3" json:"pointer,omitempty"`
+	ToPlainBody   string                 `protobuf:"bytes,6,opt,name=to_plain_body,json=toPlainBody,proto3" json:"to_plain_body,omitempty"`
+	ToPbBody      string                 `protobuf:"bytes,7,opt,name=to_pb_body,json=toPbBody,proto3" json:"to_pb_body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,11 +117,11 @@ func (*OverwriteType) Descriptor() ([]byte, []int) {
 	return file_goplain_goplain_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *OverwriteType) GetProtoType() string {
+func (x *OverwriteType) GetSelector() []*OverrideSelector {
 	if x != nil {
-		return x.ProtoType
+		return x.Selector
 	}
-	return ""
+	return nil
 }
 
 func (x *OverwriteType) GetGoType() *GoIdent {
@@ -168,17 +166,119 @@ func (x *OverwriteType) GetToPbBody() string {
 	return ""
 }
 
+type OverrideSelector struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Full proto type name or scalar kind name (e.g. "string", "google.protobuf.Timestamp").
+	ProtoType     string `protobuf:"bytes,1,opt,name=proto_type,json=protoType,proto3" json:"proto_type,omitempty"`
+	IsList        *bool  `protobuf:"varint,2,opt,name=is_list,json=isList,proto3,oneof" json:"is_list,omitempty"`
+	IsMap         *bool  `protobuf:"varint,3,opt,name=is_map,json=isMap,proto3,oneof" json:"is_map,omitempty"`
+	IsOptional    *bool  `protobuf:"varint,4,opt,name=is_optional,json=isOptional,proto3,oneof" json:"is_optional,omitempty"`
+	IsOneof       *bool  `protobuf:"varint,5,opt,name=is_oneof,json=isOneof,proto3,oneof" json:"is_oneof,omitempty"`
+	IsEmbedded    *bool  `protobuf:"varint,6,opt,name=is_embedded,json=isEmbedded,proto3,oneof" json:"is_embedded,omitempty"`
+	IsSerialized  *bool  `protobuf:"varint,7,opt,name=is_serialized,json=isSerialized,proto3,oneof" json:"is_serialized,omitempty"`
+	IsVirtual     *bool  `protobuf:"varint,8,opt,name=is_virtual,json=isVirtual,proto3,oneof" json:"is_virtual,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OverrideSelector) Reset() {
+	*x = OverrideSelector{}
+	mi := &file_goplain_goplain_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OverrideSelector) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OverrideSelector) ProtoMessage() {}
+
+func (x *OverrideSelector) ProtoReflect() protoreflect.Message {
+	mi := &file_goplain_goplain_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OverrideSelector.ProtoReflect.Descriptor instead.
+func (*OverrideSelector) Descriptor() ([]byte, []int) {
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *OverrideSelector) GetProtoType() string {
+	if x != nil {
+		return x.ProtoType
+	}
+	return ""
+}
+
+func (x *OverrideSelector) GetIsList() bool {
+	if x != nil && x.IsList != nil {
+		return *x.IsList
+	}
+	return false
+}
+
+func (x *OverrideSelector) GetIsMap() bool {
+	if x != nil && x.IsMap != nil {
+		return *x.IsMap
+	}
+	return false
+}
+
+func (x *OverrideSelector) GetIsOptional() bool {
+	if x != nil && x.IsOptional != nil {
+		return *x.IsOptional
+	}
+	return false
+}
+
+func (x *OverrideSelector) GetIsOneof() bool {
+	if x != nil && x.IsOneof != nil {
+		return *x.IsOneof
+	}
+	return false
+}
+
+func (x *OverrideSelector) GetIsEmbedded() bool {
+	if x != nil && x.IsEmbedded != nil {
+		return *x.IsEmbedded
+	}
+	return false
+}
+
+func (x *OverrideSelector) GetIsSerialized() bool {
+	if x != nil && x.IsSerialized != nil {
+		return *x.IsSerialized
+	}
+	return false
+}
+
+func (x *OverrideSelector) GetIsVirtual() bool {
+	if x != nil && x.IsVirtual != nil {
+		return *x.IsVirtual
+	}
+	return false
+}
+
 type VirtualFieldSpec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	GoType        *GoIdent               `protobuf:"bytes,2,opt,name=go_type,json=goType,proto3" json:"go_type,omitempty"`
+	ProtoType     string                 `protobuf:"bytes,3,opt,name=proto_type,json=protoType,proto3" json:"proto_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VirtualFieldSpec) Reset() {
 	*x = VirtualFieldSpec{}
-	mi := &file_goplain_goplain_proto_msgTypes[2]
+	mi := &file_goplain_goplain_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +290,7 @@ func (x *VirtualFieldSpec) String() string {
 func (*VirtualFieldSpec) ProtoMessage() {}
 
 func (x *VirtualFieldSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[2]
+	mi := &file_goplain_goplain_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,7 +303,7 @@ func (x *VirtualFieldSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VirtualFieldSpec.ProtoReflect.Descriptor instead.
 func (*VirtualFieldSpec) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{2}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *VirtualFieldSpec) GetName() string {
@@ -220,6 +320,13 @@ func (x *VirtualFieldSpec) GetGoType() *GoIdent {
 	return nil
 }
 
+func (x *VirtualFieldSpec) GetProtoType() string {
+	if x != nil {
+		return x.ProtoType
+	}
+	return ""
+}
+
 type VirtualField struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
@@ -230,7 +337,7 @@ type VirtualField struct {
 
 func (x *VirtualField) Reset() {
 	*x = VirtualField{}
-	mi := &file_goplain_goplain_proto_msgTypes[3]
+	mi := &file_goplain_goplain_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -242,7 +349,7 @@ func (x *VirtualField) String() string {
 func (*VirtualField) ProtoMessage() {}
 
 func (x *VirtualField) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[3]
+	mi := &file_goplain_goplain_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +362,7 @@ func (x *VirtualField) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VirtualField.ProtoReflect.Descriptor instead.
 func (*VirtualField) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{3}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *VirtualField) GetMessage() string {
@@ -282,7 +389,7 @@ type VirtualMessage struct {
 
 func (x *VirtualMessage) Reset() {
 	*x = VirtualMessage{}
-	mi := &file_goplain_goplain_proto_msgTypes[4]
+	mi := &file_goplain_goplain_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +401,7 @@ func (x *VirtualMessage) String() string {
 func (*VirtualMessage) ProtoMessage() {}
 
 func (x *VirtualMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[4]
+	mi := &file_goplain_goplain_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +414,7 @@ func (x *VirtualMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VirtualMessage.ProtoReflect.Descriptor instead.
 func (*VirtualMessage) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{4}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *VirtualMessage) GetName() string {
@@ -335,7 +442,7 @@ type PlainFieldParams struct {
 
 func (x *PlainFieldParams) Reset() {
 	*x = PlainFieldParams{}
-	mi := &file_goplain_goplain_proto_msgTypes[5]
+	mi := &file_goplain_goplain_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -347,7 +454,7 @@ func (x *PlainFieldParams) String() string {
 func (*PlainFieldParams) ProtoMessage() {}
 
 func (x *PlainFieldParams) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[5]
+	mi := &file_goplain_goplain_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -360,7 +467,7 @@ func (x *PlainFieldParams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlainFieldParams.ProtoReflect.Descriptor instead.
 func (*PlainFieldParams) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{5}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PlainFieldParams) GetEmbedded() bool {
@@ -395,7 +502,7 @@ type PlainFileParams struct {
 
 func (x *PlainFileParams) Reset() {
 	*x = PlainFileParams{}
-	mi := &file_goplain_goplain_proto_msgTypes[6]
+	mi := &file_goplain_goplain_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +514,7 @@ func (x *PlainFileParams) String() string {
 func (*PlainFileParams) ProtoMessage() {}
 
 func (x *PlainFileParams) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[6]
+	mi := &file_goplain_goplain_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -420,7 +527,7 @@ func (x *PlainFileParams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlainFileParams.ProtoReflect.Descriptor instead.
 func (*PlainFileParams) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{6}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PlainFileParams) GetOverwrite() []*OverwriteType {
@@ -455,7 +562,7 @@ type PlainMessageParams struct {
 
 func (x *PlainMessageParams) Reset() {
 	*x = PlainMessageParams{}
-	mi := &file_goplain_goplain_proto_msgTypes[7]
+	mi := &file_goplain_goplain_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -467,7 +574,7 @@ func (x *PlainMessageParams) String() string {
 func (*PlainMessageParams) ProtoMessage() {}
 
 func (x *PlainMessageParams) ProtoReflect() protoreflect.Message {
-	mi := &file_goplain_goplain_proto_msgTypes[7]
+	mi := &file_goplain_goplain_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -480,7 +587,7 @@ func (x *PlainMessageParams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlainMessageParams.ProtoReflect.Descriptor instead.
 func (*PlainMessageParams) Descriptor() ([]byte, []int) {
-	return file_goplain_goplain_proto_rawDescGZIP(), []int{7}
+	return file_goplain_goplain_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PlainMessageParams) GetGenerate() bool {
@@ -557,20 +664,42 @@ const file_goplain_goplain_proto_rawDesc = "" +
 	"\aGoIdent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
 	"\vimport_path\x18\x02 \x01(\tR\n" +
-	"importPath\"\x89\x02\n" +
-	"\rOverwriteType\x12\x1d\n" +
-	"\n" +
-	"proto_type\x18\x01 \x01(\tR\tprotoType\x12)\n" +
+	"importPath\"\xa1\x02\n" +
+	"\rOverwriteType\x125\n" +
+	"\bselector\x18\x01 \x03(\v2\x19.goplain.OverrideSelectorR\bselector\x12)\n" +
 	"\ago_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\x06goType\x12+\n" +
 	"\bto_plain\x18\x03 \x01(\v2\x10.goplain.GoIdentR\atoPlain\x12%\n" +
 	"\x05to_pb\x18\x04 \x01(\v2\x10.goplain.GoIdentR\x04toPb\x12\x18\n" +
 	"\apointer\x18\x05 \x01(\bR\apointer\x12\"\n" +
 	"\rto_plain_body\x18\x06 \x01(\tR\vtoPlainBody\x12\x1c\n" +
 	"\n" +
-	"to_pb_body\x18\a \x01(\tR\btoPbBody\"Q\n" +
+	"to_pb_body\x18\a \x01(\tR\btoPbBody\"\x8a\x03\n" +
+	"\x10OverrideSelector\x12\x1d\n" +
+	"\n" +
+	"proto_type\x18\x01 \x01(\tR\tprotoType\x12\x1c\n" +
+	"\ais_list\x18\x02 \x01(\bH\x00R\x06isList\x88\x01\x01\x12\x1a\n" +
+	"\x06is_map\x18\x03 \x01(\bH\x01R\x05isMap\x88\x01\x01\x12$\n" +
+	"\vis_optional\x18\x04 \x01(\bH\x02R\n" +
+	"isOptional\x88\x01\x01\x12\x1e\n" +
+	"\bis_oneof\x18\x05 \x01(\bH\x03R\aisOneof\x88\x01\x01\x12$\n" +
+	"\vis_embedded\x18\x06 \x01(\bH\x04R\n" +
+	"isEmbedded\x88\x01\x01\x12(\n" +
+	"\ris_serialized\x18\a \x01(\bH\x05R\fisSerialized\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"is_virtual\x18\b \x01(\bH\x06R\tisVirtual\x88\x01\x01B\n" +
+	"\n" +
+	"\b_is_listB\t\n" +
+	"\a_is_mapB\x0e\n" +
+	"\f_is_optionalB\v\n" +
+	"\t_is_oneofB\x0e\n" +
+	"\f_is_embeddedB\x10\n" +
+	"\x0e_is_serializedB\r\n" +
+	"\v_is_virtual\"p\n" +
 	"\x10VirtualFieldSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12)\n" +
-	"\ago_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\x06goType\"Y\n" +
+	"\ago_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\x06goType\x12\x1d\n" +
+	"\n" +
+	"proto_type\x18\x03 \x01(\tR\tprotoType\"Y\n" +
 	"\fVirtualField\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12/\n" +
 	"\x05field\x18\x02 \x01(\v2\x19.goplain.VirtualFieldSpecR\x05field\"W\n" +
@@ -608,43 +737,45 @@ func file_goplain_goplain_proto_rawDescGZIP() []byte {
 	return file_goplain_goplain_proto_rawDescData
 }
 
-var file_goplain_goplain_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_goplain_goplain_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_goplain_goplain_proto_goTypes = []any{
 	(*GoIdent)(nil),                     // 0: goplain.GoIdent
 	(*OverwriteType)(nil),               // 1: goplain.OverwriteType
-	(*VirtualFieldSpec)(nil),            // 2: goplain.VirtualFieldSpec
-	(*VirtualField)(nil),                // 3: goplain.VirtualField
-	(*VirtualMessage)(nil),              // 4: goplain.VirtualMessage
-	(*PlainFieldParams)(nil),            // 5: goplain.PlainFieldParams
-	(*PlainFileParams)(nil),             // 6: goplain.PlainFileParams
-	(*PlainMessageParams)(nil),          // 7: goplain.PlainMessageParams
-	(*descriptorpb.FieldOptions)(nil),   // 8: google.protobuf.FieldOptions
-	(*descriptorpb.FileOptions)(nil),    // 9: google.protobuf.FileOptions
-	(*descriptorpb.MessageOptions)(nil), // 10: google.protobuf.MessageOptions
+	(*OverrideSelector)(nil),            // 2: goplain.OverrideSelector
+	(*VirtualFieldSpec)(nil),            // 3: goplain.VirtualFieldSpec
+	(*VirtualField)(nil),                // 4: goplain.VirtualField
+	(*VirtualMessage)(nil),              // 5: goplain.VirtualMessage
+	(*PlainFieldParams)(nil),            // 6: goplain.PlainFieldParams
+	(*PlainFileParams)(nil),             // 7: goplain.PlainFileParams
+	(*PlainMessageParams)(nil),          // 8: goplain.PlainMessageParams
+	(*descriptorpb.FieldOptions)(nil),   // 9: google.protobuf.FieldOptions
+	(*descriptorpb.FileOptions)(nil),    // 10: google.protobuf.FileOptions
+	(*descriptorpb.MessageOptions)(nil), // 11: google.protobuf.MessageOptions
 }
 var file_goplain_goplain_proto_depIdxs = []int32{
-	0,  // 0: goplain.OverwriteType.go_type:type_name -> goplain.GoIdent
-	0,  // 1: goplain.OverwriteType.to_plain:type_name -> goplain.GoIdent
-	0,  // 2: goplain.OverwriteType.to_pb:type_name -> goplain.GoIdent
-	0,  // 3: goplain.VirtualFieldSpec.go_type:type_name -> goplain.GoIdent
-	2,  // 4: goplain.VirtualField.field:type_name -> goplain.VirtualFieldSpec
-	2,  // 5: goplain.VirtualMessage.fields:type_name -> goplain.VirtualFieldSpec
-	1,  // 6: goplain.PlainFieldParams.overwrite:type_name -> goplain.OverwriteType
-	1,  // 7: goplain.PlainFileParams.overwrite:type_name -> goplain.OverwriteType
-	3,  // 8: goplain.PlainFileParams.virtual_field:type_name -> goplain.VirtualField
-	4,  // 9: goplain.PlainFileParams.virtual_message:type_name -> goplain.VirtualMessage
-	2,  // 10: goplain.PlainMessageParams.virtual_fields:type_name -> goplain.VirtualFieldSpec
-	8,  // 11: goplain.field:extendee -> google.protobuf.FieldOptions
-	9,  // 12: goplain.file:extendee -> google.protobuf.FileOptions
-	10, // 13: goplain.message:extendee -> google.protobuf.MessageOptions
-	5,  // 14: goplain.field:type_name -> goplain.PlainFieldParams
-	6,  // 15: goplain.file:type_name -> goplain.PlainFileParams
-	7,  // 16: goplain.message:type_name -> goplain.PlainMessageParams
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	14, // [14:17] is the sub-list for extension type_name
-	11, // [11:14] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	2,  // 0: goplain.OverwriteType.selector:type_name -> goplain.OverrideSelector
+	0,  // 1: goplain.OverwriteType.go_type:type_name -> goplain.GoIdent
+	0,  // 2: goplain.OverwriteType.to_plain:type_name -> goplain.GoIdent
+	0,  // 3: goplain.OverwriteType.to_pb:type_name -> goplain.GoIdent
+	0,  // 4: goplain.VirtualFieldSpec.go_type:type_name -> goplain.GoIdent
+	3,  // 5: goplain.VirtualField.field:type_name -> goplain.VirtualFieldSpec
+	3,  // 6: goplain.VirtualMessage.fields:type_name -> goplain.VirtualFieldSpec
+	1,  // 7: goplain.PlainFieldParams.overwrite:type_name -> goplain.OverwriteType
+	1,  // 8: goplain.PlainFileParams.overwrite:type_name -> goplain.OverwriteType
+	4,  // 9: goplain.PlainFileParams.virtual_field:type_name -> goplain.VirtualField
+	5,  // 10: goplain.PlainFileParams.virtual_message:type_name -> goplain.VirtualMessage
+	3,  // 11: goplain.PlainMessageParams.virtual_fields:type_name -> goplain.VirtualFieldSpec
+	9,  // 12: goplain.field:extendee -> google.protobuf.FieldOptions
+	10, // 13: goplain.file:extendee -> google.protobuf.FileOptions
+	11, // 14: goplain.message:extendee -> google.protobuf.MessageOptions
+	6,  // 15: goplain.field:type_name -> goplain.PlainFieldParams
+	7,  // 16: goplain.file:type_name -> goplain.PlainFileParams
+	8,  // 17: goplain.message:type_name -> goplain.PlainMessageParams
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	15, // [15:18] is the sub-list for extension type_name
+	12, // [12:15] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_goplain_goplain_proto_init() }
@@ -652,13 +783,14 @@ func file_goplain_goplain_proto_init() {
 	if File_goplain_goplain_proto != nil {
 		return
 	}
+	file_goplain_goplain_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_goplain_goplain_proto_rawDesc), len(file_goplain_goplain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 3,
 			NumServices:   0,
 		},

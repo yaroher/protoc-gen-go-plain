@@ -13,9 +13,7 @@ message GoIdent {
 }
 
 message OverwriteType {
-    // For file/global overrides: proto full name (e.g. "google.protobuf.Timestamp" or "pkg.Message").
-    // For field overrides this can be empty.
-    string proto_type = 1;
+    repeated OverrideSelector selector = 1;
     GoIdent go_type = 2;
     GoIdent to_plain = 3;
     GoIdent to_pb = 4;
@@ -24,9 +22,22 @@ message OverwriteType {
     string to_pb_body = 7;
 }
 
+message OverrideSelector {
+    // Full proto type name or scalar kind name (e.g. "string", "google.protobuf.Timestamp").
+    string proto_type = 1;
+    optional bool is_list = 2;
+    optional bool is_map = 3;
+    optional bool is_optional = 4;
+    optional bool is_oneof = 5;
+    optional bool is_embedded = 6;
+    optional bool is_serialized = 7;
+    optional bool is_virtual = 8;
+}
+
 message VirtualFieldSpec {
     string name = 1;
     GoIdent go_type = 2;
+    string proto_type = 3;
 }
 
 message VirtualField {
