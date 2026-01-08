@@ -24,6 +24,21 @@ message OverwriteType {
     string to_pb_body = 7;
 }
 
+message VirtualFieldSpec {
+    string name = 1;
+    GoIdent go_type = 2;
+}
+
+message VirtualField {
+    string message = 1;
+    VirtualFieldSpec field = 2;
+}
+
+message VirtualMessage {
+    string name = 1;
+    repeated VirtualFieldSpec fields = 2;
+}
+
 message PlainFieldParams {
     bool embedded = 1;
     bool serialized = 2;
@@ -36,6 +51,8 @@ extend google.protobuf.FieldOptions {
 
 message PlainFileParams {
     repeated OverwriteType overwrite = 1;
+    repeated VirtualField virtual_field = 2;
+    repeated VirtualMessage virtual_message = 3;
 }
 
 extend google.protobuf.FileOptions {
@@ -45,6 +62,37 @@ extend google.protobuf.FileOptions {
 message PlainMessageParams {
     bool generate = 1;
     bool type_alias = 2;
+    repeated VirtualFieldSpec virtual_fields = 3;
+}
+
+message FieldModel {
+    string proto_name = 1;
+    string go_name = 2;
+    string kind = 3;
+    bool is_list = 4;
+    bool is_map = 5;
+    bool is_optional = 6;
+    bool is_embedded = 7;
+    bool is_serialized = 8;
+    string message_full_name = 9;
+    string enum_full_name = 10;
+}
+
+message MessageModel {
+    string full_name = 1;
+    string go_name = 2;
+    string plain_name = 3;
+    bool generate = 4;
+    repeated FieldModel fields = 5;
+    repeated VirtualFieldSpec virtual_fields = 6;
+}
+
+message FileModel {
+    string go_package = 1;
+    string plain_suffix = 2;
+    repeated OverwriteType overwrite = 3;
+    repeated VirtualMessage virtual_message = 4;
+    repeated MessageModel messages = 5;
 }
 
 extend google.protobuf.MessageOptions {

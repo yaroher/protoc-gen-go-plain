@@ -10,6 +10,11 @@ import (
 	time "time"
 )
 
+type VirtualExtra struct {
+	Id        string
+	CreatedAt time.Time
+}
+
 type TestMessagePlain struct {
 	OidcId                   string
 	Id                       string
@@ -78,9 +83,24 @@ type TestMessagePlain struct {
 	FWktString               *string
 	FWktBytes                *[]byte
 	FDoubleNested            *NestedMessage_InnerMessage_InnerInnerMessage
+	Meta                     int64
+	TraceId                  uuid.UUID
+	Debug                    string
 }
 
-func (v *TestMessage) IntoPlain() *TestMessagePlain {
+type TestMessagePlainOption func(*TestMessagePlain)
+
+func WithTestMessageMeta(v int64) TestMessagePlainOption {
+	return func(out *TestMessagePlain) { out.Meta = v }
+}
+func WithTestMessageTraceId(v uuid.UUID) TestMessagePlainOption {
+	return func(out *TestMessagePlain) { out.TraceId = v }
+}
+func WithTestMessageDebug(v string) TestMessagePlainOption {
+	return func(out *TestMessagePlain) { out.Debug = v }
+}
+
+func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlain {
 	if v == nil {
 		return nil
 	}
@@ -205,10 +225,15 @@ func (v *TestMessage) IntoPlain() *TestMessagePlain {
 		val := t.FOneofEnum
 		out.FOneofEnum = &val
 	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(out)
+		}
+	}
 	return out
 }
 
-func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
+func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessagePlain {
 	if v == nil {
 		return nil
 	}
@@ -408,6 +433,11 @@ func (v *TestMessage) IntoPlainDeep() *TestMessagePlain {
 	case *TestMessage_FOneofEnum:
 		val := t.FOneofEnum
 		out.FOneofEnum = &val
+	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(out)
+		}
 	}
 	return out
 }

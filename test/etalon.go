@@ -123,4 +123,9 @@ type TestMessagePlainEtalon struct {
 
 	// NestedMessage.InnerMessage.InnerInnerMessage
 	FDoubleNested *NestedMessage_InnerMessage_InnerInnerMessage
+
+	// Virtual fields.
+	Meta    int64
+	TraceId uuid.UUID
+	Debug   string
 }

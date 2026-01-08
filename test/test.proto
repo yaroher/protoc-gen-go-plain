@@ -11,6 +11,19 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "goplain/goplain.proto";
 
+option (goplain.file).virtual_field = {
+    message: "test.TestMessage"
+    field: { name: "Debug", go_type: { name: "string" } }
+};
+
+option (goplain.file).virtual_message = {
+    name: "VirtualExtra"
+    fields: [
+        { name: "Id", go_type: { name: "string" } },
+        { name: "CreatedAt", go_type: { name: "Time", import_path: "time" } }
+    ]
+};
+
 message OidcIdAlias {
     option (goplain.message).type_alias = true;
     string value = 1;
@@ -28,6 +41,14 @@ message EmbedWithAlias {
 
 message TestMessage {
     option (goplain.message).generate = true;
+    option (goplain.message).virtual_fields = {
+        name: "Meta"
+        go_type: { name: "int64" }
+    };
+    option (goplain.message).virtual_fields = {
+        name: "TraceId"
+        go_type: { name: "UUID", import_path: "github.com/google/uuid" }
+    };
     OidcIdAlias oidc_id = 100;
     IdAlias id = 101;
     EmbedWithAlias embed = 102 [(goplain.field).embedded = true];

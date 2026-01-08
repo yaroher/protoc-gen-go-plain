@@ -9,6 +9,9 @@ type Generator struct {
 	Settings  *PluginSettings
 	Plugin    *protogen.Plugin
 	overrides *overrideRegistry
+
+	virtualFields   []*goplain.VirtualField
+	virtualMessages []*goplain.VirtualMessage
 }
 
 type Option func(*Generator) error
@@ -23,6 +26,20 @@ func WithOverrides(overrides ...*goplain.OverwriteType) Option {
 func WithPlainSuffix(suffix string) Option {
 	return func(g *Generator) error {
 		g.Settings.PlainSuffix = suffix
+		return nil
+	}
+}
+
+func WithVirtualFields(fields ...*goplain.VirtualField) Option {
+	return func(g *Generator) error {
+		g.virtualFields = append(g.virtualFields, fields...)
+		return nil
+	}
+}
+
+func WithVirtualMessages(msgs ...*goplain.VirtualMessage) Option {
+	return func(g *Generator) error {
+		g.virtualMessages = append(g.virtualMessages, msgs...)
 		return nil
 	}
 }
@@ -53,7 +70,11 @@ func (g *Generator) Generate() error {
 		if !f.Generate {
 			continue
 		}
-		fg := newFileGen(g, f)
+		model, err := g.BuildModel(f)
+		if err != nil {
+			return err
+		}
+		fg := newFileGen(g, f, model)
 		fg.genFile()
 	}
 	return nil

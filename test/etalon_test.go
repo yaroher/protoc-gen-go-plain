@@ -45,7 +45,11 @@ func TestPlainStructMatchesEtalon(t *testing.T) {
 
 func TestIntoPlainConversion(t *testing.T) {
 	pb, want := sampleMessage()
-	got := pb.IntoPlain()
+	got := pb.IntoPlain(
+		WithTestMessageMeta(42),
+		WithTestMessageTraceId(want.TraceId),
+		WithTestMessageDebug("debug"),
+	)
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("IntoPlain mismatch:\n got: %#v\nwant: %#v", got, want)
 	}
@@ -53,7 +57,11 @@ func TestIntoPlainConversion(t *testing.T) {
 
 func TestIntoPlainDeepConversion(t *testing.T) {
 	pb, want := sampleMessage()
-	got := pb.IntoPlainDeep()
+	got := pb.IntoPlainDeep(
+		WithTestMessageMeta(42),
+		WithTestMessageTraceId(want.TraceId),
+		WithTestMessageDebug("debug"),
+	)
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("IntoPlainDeep mismatch:\n got: %#v\nwant: %#v", got, want)
 	}
@@ -91,6 +99,7 @@ func collectFieldSigs(t reflect.Type) []fieldSig {
 func sampleMessage() (*TestMessage, *TestMessagePlain) {
 	uuidStr := "550e8400-e29b-41d4-a716-446655440000"
 	uuidVal := uuid.MustParse(uuidStr)
+	traceID := uuid.MustParse("880e8400-e29b-41d4-a716-446655440000")
 
 	oidcID := "oidc-id"
 	id := "id"
@@ -254,6 +263,9 @@ func sampleMessage() (*TestMessage, *TestMessagePlain) {
 	}
 
 	plain := &TestMessagePlain{
+		Meta:                     42,
+		TraceId:                  traceID,
+		Debug:                    "debug",
 		OidcId:                   oidcID,
 		Id:                       id,
 		EmbedOidcId:              embedOidcID,

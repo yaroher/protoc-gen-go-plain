@@ -995,7 +995,7 @@ const file_test_proto_rawDesc = "" +
 	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"q\n" +
 	"\x0eEmbedWithAlias\x125\n" +
 	"\rembed_oidc_id\x18\x01 \x01(\v2\x11.test.OidcIdAliasR\vembedOidcId\x12(\n" +
-	"\bembed_id\x18\x02 \x01(\v2\r.test.IdAliasR\aembedId\"\x85$\n" +
+	"\bembed_id\x18\x02 \x01(\v2\r.test.IdAliasR\aembedId\"\xc1$\n" +
 	"\vTestMessage\x12*\n" +
 	"\aoidc_id\x18d \x01(\v2\x11.test.OidcIdAliasR\x06oidcId\x12\x1d\n" +
 	"\x02id\x18e \x01(\v2\r.test.IdAliasR\x02id\x122\n" +
@@ -1116,7 +1116,11 @@ const file_test_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1aC\n" +
 	"\x15FMapStringStringEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01:\x06\x82\xb5\x18\x02\b\x01B\t\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01:B\x82\xb5\x18>\b\x01\x1a\x0f\n" +
+	"\x04Meta\x12\a\n" +
+	"\x05int64\x1a)\n" +
+	"\aTraceId\x12\x1e\n" +
+	"\x04UUID\x12\x16github.com/google/uuidB\t\n" +
 	"\af_oneofB\x0e\n" +
 	"\f_f_opt_int32B\x0f\n" +
 	"\r_f_opt_stringB\x10\n" +
@@ -1134,7 +1138,15 @@ const file_test_proto_rawDesc = "" +
 	"\bTestEnum\x12\x19\n" +
 	"\x15TEST_ENUM_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rTEST_ENUM_ONE\x10\x01\x12\x11\n" +
-	"\rTEST_ENUM_TWO\x10\x02B-Z+github.com/yaroher/protoc-gen-go-plain/testb\x06proto3"
+	"\rTEST_ENUM_TWO\x10\x02B\x93\x01\x82\xb5\x18b\x12%\n" +
+	"\x10test.TestMessage\x12\x11\n" +
+	"\x05Debug\x12\b\n" +
+	"\x06string\x1a9\n" +
+	"\fVirtualExtra\x12\x0e\n" +
+	"\x02Id\x12\b\n" +
+	"\x06string\x12\x19\n" +
+	"\tCreatedAt\x12\f\n" +
+	"\x04Time\x12\x04timeZ+github.com/yaroher/protoc-gen-go-plain/testb\x06proto3"
 
 var (
 	file_test_proto_rawDescOnce sync.Once

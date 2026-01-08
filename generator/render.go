@@ -213,13 +213,28 @@ type fileGen struct {
 
 	fileOverrides  map[string]*goplain.OverwriteType
 	fieldOverrides map[*protogen.Field]*goplain.OverwriteType
+
+	fileModel       *goplain.FileModel
+	virtualFields   map[protoreflect.FullName][]*goplain.VirtualFieldSpec
+	virtualMessages []*goplain.VirtualMessage
 }
 
-func newFileGen(g *Generator, f *protogen.File) *fileGen {
+func newFileGen(g *Generator, f *protogen.File, model *goplain.FileModel) *fileGen {
 	out := g.Plugin.NewGeneratedFile(f.GeneratedFilenamePrefix+".pb.plain.go", f.GoImportPath)
-	fg := &fileGen{g: g, file: f, out: out}
+	fg := &fileGen{g: g, file: f, out: out, fileModel: model}
 	fg.fileOverrides = newOverrideRegistry(getFileParams(f).GetOverwrite()).byProto
 	fg.buildFieldOverrides(f.Messages)
+	if model != nil {
+		fg.virtualMessages = model.VirtualMessage
+		fg.virtualFields = make(map[protoreflect.FullName][]*goplain.VirtualFieldSpec)
+		for _, msg := range model.Messages {
+			if len(msg.VirtualFields) == 0 {
+				continue
+			}
+			fullName := protoreflect.FullName(msg.FullName)
+			fg.virtualFields[fullName] = append([]*goplain.VirtualFieldSpec(nil), msg.VirtualFields...)
+		}
+	}
 	return fg
 }
 
@@ -251,6 +266,8 @@ func (fg *fileGen) genFile() {
 	fg.P("package ", fg.file.GoPackageName)
 	fg.P()
 
+	fg.emitVirtualMessages()
+
 	for _, msg := range fg.file.Messages {
 		fg.genMessage(msg)
 	}
@@ -262,6 +279,7 @@ func (fg *fileGen) genMessage(msg *protogen.Message) {
 	}
 	if shouldGenerateMessage(msg) {
 		fg.genPlainStruct(msg)
+		fg.genPlainOptions(msg)
 		fg.genIntoPlain(msg, false)
 		fg.genIntoPlain(msg, true)
 		fg.genIntoPb(msg, false)
@@ -270,6 +288,28 @@ func (fg *fileGen) genMessage(msg *protogen.Message) {
 
 	for _, child := range msg.Messages {
 		fg.genMessage(child)
+	}
+}
+
+func (fg *fileGen) emitVirtualMessages() {
+	if len(fg.virtualMessages) == 0 {
+		return
+	}
+	for _, msg := range fg.virtualMessages {
+		name := virtualMessageName(msg.Name)
+		if name == "" {
+			continue
+		}
+		fg.P("type ", name, " struct {")
+		for _, field := range msg.Fields {
+			fieldName := goSanitized(field.GetName())
+			if fieldName == "" {
+				continue
+			}
+			fg.P(fieldName, " ", virtualFieldType(fg.out, field))
+		}
+		fg.P("}")
+		fg.P()
 	}
 }
 
@@ -308,7 +348,34 @@ func (fg *fileGen) genPlainStruct(msg *protogen.Message) {
 		fieldType := fg.plainType(field, ctxField)
 		fg.P(field.GoName, " ", fieldType)
 	}
+
+	if extras := fg.virtualFields[msg.Desc.FullName()]; len(extras) > 0 {
+		for _, field := range extras {
+			fg.P(field.GetName(), " ", virtualFieldType(fg.out, field))
+		}
+	}
 	fg.P("}")
+	fg.P()
+}
+
+func (fg *fileGen) genPlainOptions(msg *protogen.Message) {
+	extras := fg.virtualFields[msg.Desc.FullName()]
+	if len(extras) == 0 {
+		return
+	}
+	plainName := fg.plainMessageName(msg)
+	optionName := plainName + "Option"
+	fg.P("type ", optionName, " func(*", plainName, ")")
+	pbName := msg.GoIdent.GoName
+	for _, field := range extras {
+		fieldName := field.GetName()
+		if fieldName == "" {
+			continue
+		}
+		fg.P("func With", pbName, fieldName, "(v ", virtualFieldType(fg.out, field), ") ", optionName, " {")
+		fg.P("return func(out *", plainName, ") { out.", fieldName, " = v }")
+		fg.P("}")
+	}
 	fg.P()
 }
 
@@ -335,7 +402,12 @@ func (fg *fileGen) genIntoPlain(msg *protogen.Message, deep bool) {
 	if deep {
 		methodName = "IntoPlainDeep"
 	}
-	fg.P("func (v *", pbName, ") ", methodName, "() *", plainName, " {")
+	extras := fg.virtualFields[msg.Desc.FullName()]
+	if len(extras) == 0 {
+		fg.P("func (v *", pbName, ") ", methodName, "() *", plainName, " {")
+	} else {
+		fg.P("func (v *", pbName, ") ", methodName, "(opts ...", plainName, "Option) *", plainName, " {")
+	}
 	fg.P("if v == nil { return nil }")
 	fg.P("out := &", plainName, "{}")
 
@@ -357,6 +429,11 @@ func (fg *fileGen) genIntoPlain(msg *protogen.Message, deep bool) {
 		fg.emitFromPBOneof("out", "v", msg, oneof, deep)
 	}
 
+	if len(extras) > 0 {
+		fg.P("for _, opt := range opts {")
+		fg.P("if opt != nil { opt(out) }")
+		fg.P("}")
+	}
 	fg.P("return out")
 	fg.P("}")
 	fg.P()
@@ -610,6 +687,16 @@ func (fg *fileGen) oneofPlainToPBExpr(field *protogen.Field, src string, deep bo
 }
 
 func (fg *fileGen) pbToPlainExpr(field *protogen.Field, src string, ctx fieldContext, deep bool) string {
+	if fg.overrideForField(field) != nil {
+		if model, ok := fg.model(field); ok {
+			ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
+			if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+				ptr = false
+			}
+			return model.fromPB(fg, field, src, ptr)
+		}
+	}
+
 	if isSerializedMessage(field) {
 		return fg.castIdent("MessageToSliceByte") + "(" + src + ")"
 	}
@@ -638,6 +725,16 @@ func (fg *fileGen) pbToPlainExpr(field *protogen.Field, src string, ctx fieldCon
 }
 
 func (fg *fileGen) plainToPBExpr(field *protogen.Field, src string, ctx fieldContext, deep bool) string {
+	if fg.overrideForField(field) != nil {
+		if model, ok := fg.model(field); ok {
+			ptr := fg.shouldPointer(field, ctx, model.basePlain(fg))
+			if ctx == ctxOneofField && field.Desc.Kind() != protoreflect.MessageKind {
+				ptr = false
+			}
+			return model.toPB(fg, field, src, ptr)
+		}
+	}
+
 	if isSerializedMessage(field) {
 		if isPointerType(fg.plainType(field, ctx)) {
 			src = "*" + src
@@ -693,6 +790,9 @@ func (fg *fileGen) model(field *protogen.Field) (typeModel, bool) {
 }
 
 func (fg *fileGen) requiresConversion(field *protogen.Field) bool {
+	if fg.overrideForField(field) != nil {
+		return true
+	}
 	if isSerializedMessage(field) {
 		return true
 	}
@@ -726,6 +826,9 @@ func (fg *fileGen) plainType(field *protogen.Field, ctx fieldContext) string {
 }
 
 func (fg *fileGen) plainBaseType(field *protogen.Field) string {
+	if ov := fg.overrideForField(field); ov != nil {
+		return fg.overrideBaseType(ov)
+	}
 	if isSerializedMessage(field) {
 		return "[]byte"
 	}
@@ -747,6 +850,12 @@ func (fg *fileGen) plainBaseType(field *protogen.Field) string {
 func (fg *fileGen) shouldPointer(field *protogen.Field, ctx fieldContext, base string) bool {
 	if strings.HasPrefix(base, "*") {
 		return false
+	}
+	if ov := fg.overrideForField(field); ov != nil {
+		if ctx == ctxOneofField {
+			return true
+		}
+		return ov.GetPointer() && ctx == ctxField
 	}
 	if isSerializedMessage(field) {
 		return ctx == ctxOneofField
