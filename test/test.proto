@@ -13,14 +13,14 @@ import "goplain/goplain.proto";
 
 option (goplain.file).virtual_field = {
     message: "test.TestMessage"
-    field: { name: "Debug", go_type: { name: "string" } }
+    field: {name: "Debug", go_type: {name: "string"}}
 };
 
 option (goplain.file).virtual_message = {
     name: "VirtualExtra"
     fields: [
-        { name: "Id", go_type: { name: "string" } },
-        { name: "CreatedAt", go_type: { name: "Time", import_path: "time" } }
+    {name: "Id", go_type: {name: "string"}},
+    {name: "CreatedAt", go_type: {name: "Time", import_path: "time"}}
     ]
 };
 
@@ -43,11 +43,11 @@ message TestMessage {
     option (goplain.message).generate = true;
     option (goplain.message).virtual_fields = {
         name: "Meta"
-        go_type: { name: "int64" }
+        go_type: {name: "int64"}
     };
     option (goplain.message).virtual_fields = {
         name: "TraceId"
-        go_type: { name: "UUID", import_path: "github.com/google/uuid" }
+        go_type: {name: "UUID", import_path: "github.com/google/uuid"}
     };
     OidcIdAlias oidc_id = 100;
     IdAlias id = 101;
@@ -70,7 +70,7 @@ message TestMessage {
     bool f_bool = 13;
     string f_string = 14;
     string f_uuid = 62 [(goplain.field).overwrite = {
-        go_type: { name: "UUID", import_path: "github.com/google/uuid" }
+        go_type: {name: "UUID", import_path: "github.com/google/uuid"}
         to_plain_body: "id, err := uuid.Parse(v)\nif err != nil { panic(err) }\nreturn id"
         to_pb_body: "return v.String()"
     }];
@@ -137,6 +137,10 @@ message TestMessage {
     NestedMessage.InnerMessage.InnerInnerMessage f_double_nested = 64;
 }
 
+message DoubleEmbeddedMessage {
+    string double_embed = 1;
+}
+
 message NestedMessage {
     message InnerMessage {
         message InnerInnerMessage {
@@ -148,6 +152,7 @@ message NestedMessage {
 
     string name = 2;
     InnerMessage inner = 3;
+    DoubleEmbeddedMessage double_embedded = 4 [(goplain.field).embedded = true];
 }
 
 enum TestEnum {

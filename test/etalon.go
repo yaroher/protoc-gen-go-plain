@@ -90,6 +90,8 @@ type TestMessagePlainEtalon struct {
 	Name  string
 	Inner *NestedMessage_InnerMessage
 
+	DoubleEmbed string
+
 	// f_nested_message_serialized (serialized=true) => []byte.
 	FNestedMessageSerialized []byte
 

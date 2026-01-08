@@ -125,6 +125,9 @@ func sampleMessage() (*TestMessage, *TestMessagePlain) {
 				Note:  "inner",
 			},
 		},
+		DoubleEmbedded: &DoubleEmbeddedMessage{
+			DoubleEmbed: "double-embed",
+		},
 	}
 	nestedSerialized := &NestedMessage{Name: "serialized"}
 
@@ -311,6 +314,7 @@ func sampleMessage() (*TestMessage, *TestMessagePlain) {
 		FNestedMessage:           nested,
 		Name:                     embedded.Name,
 		Inner:                    embedded.Inner,
+		DoubleEmbed:              embedded.DoubleEmbedded.DoubleEmbed,
 		FNestedMessageSerialized: cast.MessageToSliceByte(nestedSerialized),
 		FEnum:                    pb.FEnum,
 		FAny:                     cast.MessageToSliceByte(anyMsg),

@@ -486,7 +486,9 @@ func (fg *FileGen) emitEmbeddedAssignFrom(srcVar, outVar string, msg *protogen.M
 			continue
 		}
 		if isEmbeddedMessage(field) {
+			fg.P("if ", srcVar, ".", field.GoName, " != nil {")
 			fg.emitEmbeddedAssignFrom(srcVar+"."+field.GoName, outVar, field.Message, deep)
+			fg.P("}")
 			continue
 		}
 		fg.P(outVar, ".", field.GoName, " = ", fg.pbToPlainExpr(field, srcVar+"."+field.GoName, ctxField, deep))
@@ -505,15 +507,105 @@ func (fg *FileGen) emitEmbeddedAssignTo(tmpVar, srcVar string, msg *protogen.Mes
 			continue
 		}
 		if isEmbeddedMessage(field) {
-			fg.emitEmbeddedAssignTo(tmpVar, srcVar, field.Message, deep)
+			if cond := fg.embeddedHasValueExpr(srcVar, field.Message); cond != "" {
+				fg.P("if ", cond, " {")
+				fg.P("if ", tmpVar, ".", field.GoName, " == nil { ", tmpVar, ".", field.GoName, " = &", fg.out.QualifiedGoIdent(field.Message.GoIdent), "{} }")
+				fg.emitEmbeddedAssignTo(tmpVar+"."+field.GoName, srcVar, field.Message, deep)
+				fg.P("}")
+			}
 			continue
 		}
 		fg.P(tmpVar, ".", field.GoName, " = ", fg.plainToPBExpr(field, srcVar+"."+field.GoName, ctxField, deep))
 	}
 }
 
+func (fg *FileGen) embeddedHasValueExpr(srcVar string, msg *protogen.Message) string {
+	conds := make([]string, 0, len(msg.Fields))
+	for _, field := range msg.Fields {
+		if isRealOneofField(field) {
+			conds = append(conds, srcVar+"."+field.GoName+" != nil")
+			continue
+		}
+		if isEmbeddedMessage(field) {
+			if nested := fg.embeddedHasValueExpr(srcVar, field.Message); nested != "" {
+				conds = append(conds, nested)
+			}
+			continue
+		}
+		if cond := fg.plainFieldNonZeroExpr(field, srcVar+"."+field.GoName); cond != "" {
+			conds = append(conds, cond)
+		}
+	}
+	if len(conds) == 0 {
+		return ""
+	}
+	return strings.Join(conds, " || ")
+}
+
+func (fg *FileGen) plainFieldNonZeroExpr(field *protogen.Field, src string) string {
+	plainType := fg.plainType(field, ctxField)
+	if isPointerType(plainType) {
+		return src + " != nil"
+	}
+	if strings.HasPrefix(plainType, "[]") {
+		return "len(" + src + ") != 0"
+	}
+	if strings.HasPrefix(plainType, "map[") {
+		return "len(" + src + ") != 0"
+	}
+
+	switch plainType {
+	case "string":
+		return src + " != \"\""
+	case "bool":
+		return src
+	case "int", "int32", "int64", "uint", "uint32", "uint64", "float32", "float64":
+		return src + " != 0"
+	}
+
+	switch field.Desc.Kind() {
+	case protoreflect.StringKind:
+		return src + " != \"\""
+	case protoreflect.BoolKind:
+		return src
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
+		protoreflect.Uint32Kind, protoreflect.Fixed32Kind,
+		protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind,
+		protoreflect.Uint64Kind, protoreflect.Fixed64Kind,
+		protoreflect.FloatKind, protoreflect.DoubleKind,
+		protoreflect.EnumKind:
+		return src + " != 0"
+	case protoreflect.BytesKind:
+		return "len(" + src + ") != 0"
+	}
+
+	if isComparablePlainType(plainType) {
+		return "func() bool { var zero " + plainType + "; return " + src + " != zero }()"
+	}
+	return "true"
+}
+
 func isPointerType(typeName string) bool {
 	return strings.HasPrefix(typeName, "*")
+}
+
+func isComparablePlainType(typeName string) bool {
+	if typeName == "struct{}" {
+		return true
+	}
+	if strings.HasPrefix(typeName, "[]") || strings.HasPrefix(typeName, "map[") {
+		return false
+	}
+	if strings.HasPrefix(typeName, "func(") || strings.HasPrefix(typeName, "interface{") {
+		return false
+	}
+	if strings.HasPrefix(typeName, "chan ") {
+		return false
+	}
+	if strings.HasPrefix(typeName, "struct{") {
+		return false
+	}
+	return true
 }
 
 func cloneBytesExpr(src string) string {

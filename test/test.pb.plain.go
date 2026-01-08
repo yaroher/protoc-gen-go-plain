@@ -65,6 +65,7 @@ type TestMessagePlain struct {
 	FNestedMessage           *NestedMessage
 	Name                     string
 	Inner                    *NestedMessage_InnerMessage
+	DoubleEmbed              string
 	FNestedMessageSerialized []byte
 	FEnum                    TestEnum
 	FAny                     []byte
@@ -190,6 +191,9 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 	if v.FNestedMessageEmbedded != nil {
 		out.Name = v.FNestedMessageEmbedded.Name
 		out.Inner = v.FNestedMessageEmbedded.Inner
+		if v.FNestedMessageEmbedded.DoubleEmbedded != nil {
+			out.DoubleEmbed = v.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed
+		}
 	}
 	out.FNestedMessageSerialized = cast.MessageToSliceByte(v.FNestedMessageSerialized)
 	out.FEnum = v.FEnum
@@ -399,6 +403,9 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 	if v.FNestedMessageEmbedded != nil {
 		out.Name = v.FNestedMessageEmbedded.Name
 		out.Inner = v.FNestedMessageEmbedded.Inner
+		if v.FNestedMessageEmbedded.DoubleEmbedded != nil {
+			out.DoubleEmbed = v.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed
+		}
 	}
 	out.FNestedMessageSerialized = cast.MessageToSliceByte(v.FNestedMessageSerialized)
 	out.FEnum = v.FEnum
@@ -497,6 +504,12 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	out.FNestedMessageEmbedded = &NestedMessage{}
 	out.FNestedMessageEmbedded.Name = v.Name
 	out.FNestedMessageEmbedded.Inner = v.Inner
+	if v.DoubleEmbed != "" {
+		if out.FNestedMessageEmbedded.DoubleEmbedded == nil {
+			out.FNestedMessageEmbedded.DoubleEmbedded = &DoubleEmbeddedMessage{}
+		}
+		out.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed = v.DoubleEmbed
+	}
 	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
 	out.FEnum = v.FEnum
 	out.FAny = cast.MessageFromSliceByte[*anypb.Any](v.FAny)
@@ -660,6 +673,12 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	out.FNestedMessageEmbedded = &NestedMessage{}
 	out.FNestedMessageEmbedded.Name = v.Name
 	out.FNestedMessageEmbedded.Inner = v.Inner
+	if v.DoubleEmbed != "" {
+		if out.FNestedMessageEmbedded.DoubleEmbedded == nil {
+			out.FNestedMessageEmbedded.DoubleEmbedded = &DoubleEmbeddedMessage{}
+		}
+		out.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed = v.DoubleEmbed
+	}
 	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
 	out.FEnum = v.FEnum
 	out.FAny = cast.MessageFromSliceByte[*anypb.Any](v.FAny)
