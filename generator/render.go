@@ -646,7 +646,7 @@ func (fg *FileGen) aliasPBToPlainExpr(field, aliasField *protogen.Field, src str
 	plainType := fg.plainType(field, ctx)
 	valExpr := fg.pbToPlainExpr(aliasField, src+".Value", ctx, deep)
 	retExpr := "val"
-	if ctx == ctxOneofField && aliasField.Desc.Kind() != protoreflect.MessageKind {
+	if isPointerType(plainType) && !fg.pbToPlainExprReturnsPointer(aliasField, ctx) {
 		retExpr = "&val"
 	}
 	return "func() " + plainType + " { if " + src + " == nil { var zero " + plainType + "; return zero }; val := " + valExpr + "; return " + retExpr + " }()"
@@ -655,7 +655,7 @@ func (fg *FileGen) aliasPBToPlainExpr(field, aliasField *protogen.Field, src str
 func (fg *FileGen) aliasPlainToPBExpr(field, aliasField *protogen.Field, src string, ctx fieldContext, deep bool) string {
 	plainType := fg.plainType(field, ctx)
 	valSrc := src
-	if ctx == ctxOneofField && aliasField.Desc.Kind() != protoreflect.MessageKind {
+	if isPointerType(plainType) && !fg.plainToPBExprWantsPointer(aliasField, ctx) {
 		valSrc = "*" + src
 	}
 	valExpr := fg.plainToPBExpr(aliasField, valSrc, ctx, deep)
@@ -664,6 +664,48 @@ func (fg *FileGen) aliasPlainToPBExpr(field, aliasField *protogen.Field, src str
 		return "func() *" + msgType + " { if " + src + " == nil { return nil }; return &" + msgType + "{Value: " + valExpr + "} }()"
 	}
 	return "&" + msgType + "{Value: " + valExpr + "}"
+}
+
+func (fg *FileGen) pbToPlainExprReturnsPointer(field *protogen.Field, ctx fieldContext) bool {
+	if fg.overrideForField(field) != nil {
+		if model, ok := fg.model(field); ok {
+			return fg.shouldPointer(field, ctx, model.basePlain(fg))
+		}
+	}
+	if isSerializedMessage(field) {
+		return false
+	}
+	if model, ok := fg.model(field); ok {
+		return fg.shouldPointer(field, ctx, model.basePlain(fg))
+	}
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return isPointerType(fg.plainType(field, ctx))
+	}
+	if field.Desc.Kind() == protoreflect.MessageKind {
+		return true
+	}
+	return false
+}
+
+func (fg *FileGen) plainToPBExprWantsPointer(field *protogen.Field, ctx fieldContext) bool {
+	if fg.overrideForField(field) != nil {
+		if model, ok := fg.model(field); ok {
+			return fg.shouldPointer(field, ctx, model.basePlain(fg))
+		}
+	}
+	if isSerializedMessage(field) {
+		return isPointerType(fg.plainType(field, ctx))
+	}
+	if model, ok := fg.model(field); ok {
+		return fg.shouldPointer(field, ctx, model.basePlain(fg))
+	}
+	if aliasField := fg.aliasValueFieldFromField(field); aliasField != nil {
+		return isPointerType(fg.plainType(field, ctx))
+	}
+	if field.Desc.Kind() == protoreflect.MessageKind {
+		return true
+	}
+	return false
 }
 
 func (fg *FileGen) emitFromPBField(outVar, srcVar string, field *protogen.Field, deep bool) {

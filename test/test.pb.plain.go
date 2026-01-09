@@ -17,9 +17,9 @@ type VirtualExtra struct {
 
 type TestMessagePlain struct {
 	OidcId                   string                                        `json:"oidc_id"`
-	Id                       string                                        `json:"id"`
+	Id                       uuid.UUID                                     `json:"id"`
 	EmbedOidcId              string                                        `json:"embed_oidc_id"`
-	EmbedId                  string                                        `json:"embed_id"`
+	EmbedId                  uuid.UUID                                     `json:"embed_id"`
 	FDouble                  float64                                       `json:"f_double"`
 	FFloat                   float32                                       `json:"f_float"`
 	FInt32                   int32                                         `json:"f_int_32"`
@@ -114,12 +114,18 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 		val := v.OidcId.Value
 		return val
 	}()
-	out.Id = func() string {
+	out.Id = func() uuid.UUID {
 		if v.Id == nil {
-			var zero string
+			var zero uuid.UUID
 			return zero
 		}
-		val := v.Id.Value
+		val := func(v string) uuid.UUID {
+			id, err := uuid.Parse(v)
+			if err != nil {
+				panic(err)
+			}
+			return id
+		}(v.Id.Value)
 		return val
 	}()
 	if v.Embed != nil {
@@ -131,12 +137,18 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 			val := v.Embed.EmbedOidcId.Value
 			return val
 		}()
-		out.EmbedId = func() string {
+		out.EmbedId = func() uuid.UUID {
 			if v.Embed.EmbedId == nil {
-				var zero string
+				var zero uuid.UUID
 				return zero
 			}
-			val := v.Embed.EmbedId.Value
+			val := func(v string) uuid.UUID {
+				id, err := uuid.Parse(v)
+				if err != nil {
+					panic(err)
+				}
+				return id
+			}(v.Embed.EmbedId.Value)
 			return val
 		}()
 	}
@@ -250,12 +262,18 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 		val := v.OidcId.Value
 		return val
 	}()
-	out.Id = func() string {
+	out.Id = func() uuid.UUID {
 		if v.Id == nil {
-			var zero string
+			var zero uuid.UUID
 			return zero
 		}
-		val := v.Id.Value
+		val := func(v string) uuid.UUID {
+			id, err := uuid.Parse(v)
+			if err != nil {
+				panic(err)
+			}
+			return id
+		}(v.Id.Value)
 		return val
 	}()
 	if v.Embed != nil {
@@ -267,12 +285,18 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 			val := v.Embed.EmbedOidcId.Value
 			return val
 		}()
-		out.EmbedId = func() string {
+		out.EmbedId = func() uuid.UUID {
 			if v.Embed.EmbedId == nil {
-				var zero string
+				var zero uuid.UUID
 				return zero
 			}
-			val := v.Embed.EmbedId.Value
+			val := func(v string) uuid.UUID {
+				id, err := uuid.Parse(v)
+				if err != nil {
+					panic(err)
+				}
+				return id
+			}(v.Embed.EmbedId.Value)
 			return val
 		}()
 	}
@@ -455,10 +479,10 @@ func (v *TestMessagePlain) IntoPb() *TestMessage {
 	}
 	out := &TestMessage{}
 	out.OidcId = &OidcIdAlias{Value: v.OidcId}
-	out.Id = &IdAlias{Value: v.Id}
+	out.Id = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.Id)}
 	out.Embed = &EmbedWithAlias{}
 	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
-	out.Embed.EmbedId = &IdAlias{Value: v.EmbedId}
+	out.Embed.EmbedId = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.EmbedId)}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32
@@ -548,10 +572,10 @@ func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
 	}
 	out := &TestMessage{}
 	out.OidcId = &OidcIdAlias{Value: v.OidcId}
-	out.Id = &IdAlias{Value: v.Id}
+	out.Id = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.Id)}
 	out.Embed = &EmbedWithAlias{}
 	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
-	out.Embed.EmbedId = &IdAlias{Value: v.EmbedId}
+	out.Embed.EmbedId = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.EmbedId)}
 	out.FDouble = v.FDouble
 	out.FFloat = v.FFloat
 	out.FInt32 = v.FInt32

@@ -31,7 +31,11 @@ message OidcIdAlias {
 
 message IdAlias {
     option (goplain.message).type_alias = true;
-    string value = 1;
+    string value = 1 [(goplain.field).overwrite = {
+        go_type: {name: "UUID", import_path: "github.com/google/uuid"}
+        to_plain_body: "id, err := uuid.Parse(v)\nif err != nil { panic(err) }\nreturn id"
+        to_pb_body: "return v.String()"
+    }];
 }
 
 message EmbedWithAlias {

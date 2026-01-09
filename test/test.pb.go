@@ -1042,9 +1042,12 @@ const file_test_proto_rawDesc = "" +
 	"\n" +
 	"test.proto\x12\x04test\x1a\x19google/protobuf/any.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x15goplain/goplain.proto\"+\n" +
 	"\vOidcIdAlias\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"'\n" +
-	"\aIdAlias\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"q\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xb5\x18\x02\x10\x01\"\xa4\x01\n" +
+	"\aIdAlias\x12\x90\x01\n" +
+	"\x05value\x18\x01 \x01(\tBz\x82\xb5\x18v\x1at\x12\x1e\n" +
+	"\x04UUID\x12\x16github.com/google/uuid2?id, err := uuid.Parse(v)\n" +
+	"if err != nil { panic(err) }\n" +
+	"return id:\x11return v.String()R\x05value:\x06\x82\xb5\x18\x02\x10\x01\"q\n" +
 	"\x0eEmbedWithAlias\x125\n" +
 	"\rembed_oidc_id\x18\x01 \x01(\v2\x11.test.OidcIdAliasR\vembedOidcId\x12(\n" +
 	"\bembed_id\x18\x02 \x01(\v2\r.test.IdAliasR\aembedId\"\xc1$\n" +
