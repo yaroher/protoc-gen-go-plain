@@ -11,82 +11,82 @@ import (
 )
 
 type VirtualExtra struct {
-	Id        string
-	CreatedAt time.Time
+	Id        string    `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type TestMessagePlain struct {
-	OidcId                   string
-	Id                       string
-	EmbedOidcId              string
-	EmbedId                  string
-	FDouble                  float64
-	FFloat                   float32
-	FInt32                   int32
-	FInt64                   int64
-	FUint32                  uint32
-	FUint64                  uint64
-	FSint32                  int32
-	FSint64                  int64
-	FFixed32                 uint32
-	FFixed64                 uint64
-	FSfixed32                int32
-	FSfixed64                int64
-	FBool                    bool
-	FString                  string
-	FUuid                    uuid.UUID
-	FBytes                   []byte
-	FOptInt32                *int32
-	FOptString               *string
-	FOptMessage              *NestedMessage
-	FOptEnum                 *TestEnum
-	FRepInt32                []int32
-	FRepString               []string
-	FRepMessage              []*NestedMessage
-	FRepMessageSerialized    [][]byte
-	FRepEnum                 []TestEnum
-	FMapInt32String          map[int32]string
-	FMapInt64Int32           map[int64]int32
-	FMapUint32Uint64         map[uint32]uint64
-	FMapUint64Bool           map[uint64]bool
-	FMapSint32Bytes          map[int32][]byte
-	FMapSint64Float          map[int64]float32
-	FMapFixed32Double        map[uint32]float64
-	FMapFixed64Message       map[uint64]*NestedMessage
-	FMapSfixed32Enum         map[int32]TestEnum
-	FMapSfixed64String       map[int64]string
-	FMapBoolInt32            map[bool]int32
-	FMapStringString         map[string]string
-	FOneofInt32              *int32
-	FOneofString             *string
-	FOneofBytes              *[]byte
-	FOneofMessage            *NestedMessage
-	FOneofEnum               *TestEnum
-	FNestedMessage           *NestedMessage
-	Name                     string
-	Inner                    *NestedMessage_InnerMessage
-	DoubleEmbed              string
-	FNestedMessageSerialized []byte
-	FEnum                    TestEnum
-	FAny                     []byte
-	FTimestamp               *time.Time
-	FDuration                *time.Duration
-	FStruct                  map[string]any
-	FValue                   []byte
-	FListValue               []byte
-	FWktDouble               *float64
-	FWktFloat                *float32
-	FWktInt64                *int64
-	FWktUint64               *uint64
-	FWktInt32                *int32
-	FWktUint32               *uint32
-	FWktBool                 *bool
-	FWktString               *string
-	FWktBytes                *[]byte
-	FDoubleNested            *NestedMessage_InnerMessage_InnerInnerMessage
-	Meta                     int64
-	TraceId                  uuid.UUID
-	Debug                    string
+	OidcId                   string                                        `json:"oidc_id"`
+	Id                       string                                        `json:"id"`
+	EmbedOidcId              string                                        `json:"embed_oidc_id"`
+	EmbedId                  string                                        `json:"embed_id"`
+	FDouble                  float64                                       `json:"f_double"`
+	FFloat                   float32                                       `json:"f_float"`
+	FInt32                   int32                                         `json:"f_int_32"`
+	FInt64                   int64                                         `json:"f_int_64"`
+	FUint32                  uint32                                        `json:"f_uint_32"`
+	FUint64                  uint64                                        `json:"f_uint_64"`
+	FSint32                  int32                                         `json:"f_sint_32"`
+	FSint64                  int64                                         `json:"f_sint_64"`
+	FFixed32                 uint32                                        `json:"f_fixed_32"`
+	FFixed64                 uint64                                        `json:"f_fixed_64"`
+	FSfixed32                int32                                         `json:"f_sfixed_32"`
+	FSfixed64                int64                                         `json:"f_sfixed_64"`
+	FBool                    bool                                          `json:"f_bool"`
+	FString                  string                                        `json:"f_string"`
+	FUuid                    uuid.UUID                                     `json:"f_uuid"`
+	FBytes                   []byte                                        `json:"f_bytes"`
+	FOptInt32                *int32                                        `json:"f_opt_int_32"`
+	FOptString               *string                                       `json:"f_opt_string"`
+	FOptMessage              *NestedMessage                                `json:"f_opt_message"`
+	FOptEnum                 *TestEnum                                     `json:"f_opt_enum"`
+	FRepInt32                []int32                                       `json:"f_rep_int_32"`
+	FRepString               []string                                      `json:"f_rep_string"`
+	FRepMessage              []*NestedMessage                              `json:"f_rep_message"`
+	FRepMessageSerialized    [][]byte                                      `json:"f_rep_message_serialized"`
+	FRepEnum                 []TestEnum                                    `json:"f_rep_enum"`
+	FMapInt32String          map[int32]string                              `json:"f_map_int_32_string"`
+	FMapInt64Int32           map[int64]int32                               `json:"f_map_int_64_int_32"`
+	FMapUint32Uint64         map[uint32]uint64                             `json:"f_map_uint_32_uint_64"`
+	FMapUint64Bool           map[uint64]bool                               `json:"f_map_uint_64_bool"`
+	FMapSint32Bytes          map[int32][]byte                              `json:"f_map_sint_32_bytes"`
+	FMapSint64Float          map[int64]float32                             `json:"f_map_sint_64_float"`
+	FMapFixed32Double        map[uint32]float64                            `json:"f_map_fixed_32_double"`
+	FMapFixed64Message       map[uint64]*NestedMessage                     `json:"f_map_fixed_64_message"`
+	FMapSfixed32Enum         map[int32]TestEnum                            `json:"f_map_sfixed_32_enum"`
+	FMapSfixed64String       map[int64]string                              `json:"f_map_sfixed_64_string"`
+	FMapBoolInt32            map[bool]int32                                `json:"f_map_bool_int_32"`
+	FMapStringString         map[string]string                             `json:"f_map_string_string"`
+	FOneofInt32              *int32                                        `json:"f_oneof_int_32"`
+	FOneofString             *string                                       `json:"f_oneof_string"`
+	FOneofBytes              *[]byte                                       `json:"f_oneof_bytes"`
+	FOneofMessage            *NestedMessage                                `json:"f_oneof_message"`
+	FOneofEnum               *TestEnum                                     `json:"f_oneof_enum"`
+	FNestedMessage           *NestedMessage                                `json:"f_nested_message"`
+	Name                     string                                        `json:"name"`
+	Inner                    *NestedMessage_InnerMessage                   `json:"inner"`
+	DoubleEmbed              string                                        `json:"double_embed"`
+	FNestedMessageSerialized []byte                                        `json:"f_nested_message_serialized"`
+	FEnum                    TestEnum                                      `json:"f_enum"`
+	FAny                     []byte                                        `json:"f_any"`
+	FTimestamp               *time.Time                                    `json:"f_timestamp"`
+	FDuration                *time.Duration                                `json:"f_duration"`
+	FStruct                  map[string]any                                `json:"f_struct"`
+	FValue                   []byte                                        `json:"f_value"`
+	FListValue               []byte                                        `json:"f_list_value"`
+	FWktDouble               *float64                                      `json:"f_wkt_double"`
+	FWktFloat                *float32                                      `json:"f_wkt_float"`
+	FWktInt64                *int64                                        `json:"f_wkt_int_64"`
+	FWktUint64               *uint64                                       `json:"f_wkt_uint_64"`
+	FWktInt32                *int32                                        `json:"f_wkt_int_32"`
+	FWktUint32               *uint32                                       `json:"f_wkt_uint_32"`
+	FWktBool                 *bool                                         `json:"f_wkt_bool"`
+	FWktString               *string                                       `json:"f_wkt_string"`
+	FWktBytes                *[]byte                                       `json:"f_wkt_bytes"`
+	FDoubleNested            *NestedMessage_InnerMessage_InnerInnerMessage `json:"f_double_nested"`
+	Meta                     int64                                         `json:"meta"`
+	TraceId                  uuid.UUID                                     `json:"trace_id"`
+	Debug                    string                                        `json:"debug"`
 }
 
 type TestMessagePlainOption func(*TestMessagePlain)

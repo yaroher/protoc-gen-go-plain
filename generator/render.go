@@ -3,6 +3,7 @@ package generator
 import (
 	"strings"
 
+	"github.com/iancoleman/strcase"
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -256,6 +257,10 @@ func (fg *FileGen) timeIdent(name string) string {
 	})
 }
 
+func (fg *FileGen) jsonTag(name string) string {
+	return "`json:\"" + strcase.ToSnake(name) + "\"`"
+}
+
 func (fg *FileGen) GenFile() {
 	if !fg.hasGeneratedMessages(fg.file.Messages) {
 		fg.out.Skip()
@@ -306,7 +311,7 @@ func (fg *FileGen) emitVirtualMessages() {
 			if fieldName == "" {
 				continue
 			}
-			fg.P(fieldName, " ", virtualFieldType(fg.out, field))
+			fg.P(fieldName, " ", virtualFieldType(fg.out, field), " ", fg.jsonTag(fieldName))
 		}
 		fg.P("}")
 		fg.P()
@@ -336,7 +341,7 @@ func (fg *FileGen) genPlainStruct(msg *protogen.Message) {
 		if isRealOneofField(field) {
 			// oneof fields are emitted as standalone nullable fields
 			fieldType := fg.plainType(field, ctxOneofField)
-			fg.P(field.GoName, " ", fieldType)
+			fg.P(field.GoName, " ", fieldType, " ", fg.jsonTag(field.GoName))
 			continue
 		}
 
@@ -346,12 +351,13 @@ func (fg *FileGen) genPlainStruct(msg *protogen.Message) {
 		}
 
 		fieldType := fg.plainType(field, ctxField)
-		fg.P(field.GoName, " ", fieldType)
+		fg.P(field.GoName, " ", fieldType, " ", fg.jsonTag(field.GoName))
 	}
 
 	if extras := fg.virtualFields[msg.Desc.FullName()]; len(extras) > 0 {
 		for _, field := range extras {
-			fg.P(field.GetName(), " ", virtualFieldType(fg.out, field))
+			fieldName := field.GetName()
+			fg.P(fieldName, " ", virtualFieldType(fg.out, field), " ", fg.jsonTag(fieldName))
 		}
 	}
 	fg.P("}")
@@ -383,7 +389,7 @@ func (fg *FileGen) emitEmbeddedFields(msg *protogen.Message) {
 	for _, field := range msg.Fields {
 		if isRealOneofField(field) {
 			fieldType := fg.plainType(field, ctxOneofField)
-			fg.P(field.GoName, " ", fieldType)
+			fg.P(field.GoName, " ", fieldType, " ", fg.jsonTag(field.GoName))
 			continue
 		}
 		if isEmbeddedMessage(field) {
@@ -391,7 +397,7 @@ func (fg *FileGen) emitEmbeddedFields(msg *protogen.Message) {
 			continue
 		}
 		fieldType := fg.plainType(field, ctxField)
-		fg.P(field.GoName, " ", fieldType)
+		fg.P(field.GoName, " ", fieldType, " ", fg.jsonTag(field.GoName))
 	}
 }
 
