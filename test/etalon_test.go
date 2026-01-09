@@ -102,9 +102,11 @@ func sampleMessage() (*TestMessage, *TestMessagePlain) {
 	traceID := uuid.MustParse("880e8400-e29b-41d4-a716-446655440000")
 
 	oidcID := "oidc-id"
-	id := "id"
+	idStr := "11111111-1111-1111-1111-111111111111"
 	embedOidcID := "embed-oidc-id"
-	embedID := "embed-id"
+	embedIDStr := "22222222-2222-2222-2222-222222222222"
+	id := uuid.MustParse(idStr)
+	embedID := uuid.MustParse(embedIDStr)
 
 	optInt32 := int32(123)
 	optString := "optional"
@@ -170,10 +172,10 @@ func sampleMessage() (*TestMessage, *TestMessagePlain) {
 
 	pb := &TestMessage{
 		OidcId: &OidcIdAlias{Value: oidcID},
-		Id:     &IdAlias{Value: id},
+		Id:     &IdAlias{Value: idStr},
 		Embed: &EmbedWithAlias{
 			EmbedOidcId: &OidcIdAlias{Value: embedOidcID},
-			EmbedId:     &IdAlias{Value: embedID},
+			EmbedId:     &IdAlias{Value: embedIDStr},
 		},
 		FDouble:     1.1,
 		FFloat:      2.2,

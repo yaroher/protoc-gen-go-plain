@@ -20,11 +20,11 @@ import (
 // - WKT нормализуем в native Go типы с presence (в основном через указатели)
 // - теги не добавляем
 type TestMessagePlainEtalon struct {
-	OidcId string // alias for oidc_id_alias.value
-	Id     string // alias for id_alias.value
+	OidcId string    // alias for oidc_id_alias.value
+	Id     uuid.UUID // alias for id_alias.value
 	// EmbedWithAlias.
 	EmbedOidcId string
-	EmbedId     string
+	EmbedId     uuid.UUID
 	// Scalar numeric types.
 	FDouble   float64
 	FFloat    float32
