@@ -101,21 +101,21 @@ func WithTestMessageDebug(v string) TestMessagePlainOption {
 	return func(out *TestMessagePlain) { out.Debug = v }
 }
 
-func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlain {
-	if v == nil {
+func (src *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlain {
+	if src == nil {
 		return nil
 	}
 	out := &TestMessagePlain{}
 	out.OidcId = func() string {
-		if v.OidcId == nil {
+		if src.OidcId == nil {
 			var zero string
 			return zero
 		}
-		val := v.OidcId.Value
+		val := src.OidcId.Value
 		return val
 	}()
 	out.Id = func() uuid.UUID {
-		if v.Id == nil {
+		if src.Id == nil {
 			var zero uuid.UUID
 			return zero
 		}
@@ -125,20 +125,20 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 				panic(err)
 			}
 			return id
-		}(v.Id.Value)
+		}(src.Id.Value)
 		return val
 	}()
-	if v.Embed != nil {
+	if src.Embed != nil {
 		out.EmbedOidcId = func() string {
-			if v.Embed.EmbedOidcId == nil {
+			if src.Embed.EmbedOidcId == nil {
 				var zero string
 				return zero
 			}
-			val := v.Embed.EmbedOidcId.Value
+			val := src.Embed.EmbedOidcId.Value
 			return val
 		}()
 		out.EmbedId = func() uuid.UUID {
-			if v.Embed.EmbedId == nil {
+			if src.Embed.EmbedId == nil {
 				var zero uuid.UUID
 				return zero
 			}
@@ -148,84 +148,84 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 					panic(err)
 				}
 				return id
-			}(v.Embed.EmbedId.Value)
+			}(src.Embed.EmbedId.Value)
 			return val
 		}()
 	}
-	out.FDouble = v.FDouble
-	out.FFloat = v.FFloat
-	out.FInt32 = v.FInt32
-	out.FInt64 = v.FInt64
-	out.FUint32 = v.FUint32
-	out.FUint64 = v.FUint64
-	out.FSint32 = v.FSint32
-	out.FSint64 = v.FSint64
-	out.FFixed32 = v.FFixed32
-	out.FFixed64 = v.FFixed64
-	out.FSfixed32 = v.FSfixed32
-	out.FSfixed64 = v.FSfixed64
-	out.FBool = v.FBool
-	out.FString = v.FString
+	out.FDouble = src.FDouble
+	out.FFloat = src.FFloat
+	out.FInt32 = src.FInt32
+	out.FInt64 = src.FInt64
+	out.FUint32 = src.FUint32
+	out.FUint64 = src.FUint64
+	out.FSint32 = src.FSint32
+	out.FSint64 = src.FSint64
+	out.FFixed32 = src.FFixed32
+	out.FFixed64 = src.FFixed64
+	out.FSfixed32 = src.FSfixed32
+	out.FSfixed64 = src.FSfixed64
+	out.FBool = src.FBool
+	out.FString = src.FString
 	out.FUuid = func(v string) uuid.UUID {
 		id, err := uuid.Parse(v)
 		if err != nil {
 			panic(err)
 		}
 		return id
-	}(v.FUuid)
-	out.FBytes = v.FBytes
-	out.FOptInt32 = v.FOptInt32
-	out.FOptString = v.FOptString
-	out.FOptMessage = v.FOptMessage
-	out.FOptEnum = v.FOptEnum
-	out.FRepInt32 = v.FRepInt32
-	out.FRepString = v.FRepString
-	out.FRepMessage = v.FRepMessage
-	if v.FRepMessageSerialized != nil {
-		for _, el := range v.FRepMessageSerialized {
+	}(src.FUuid)
+	out.FBytes = src.FBytes
+	out.FOptInt32 = src.FOptInt32
+	out.FOptString = src.FOptString
+	out.FOptMessage = src.FOptMessage
+	out.FOptEnum = src.FOptEnum
+	out.FRepInt32 = src.FRepInt32
+	out.FRepString = src.FRepString
+	out.FRepMessage = src.FRepMessage
+	if src.FRepMessageSerialized != nil {
+		for _, el := range src.FRepMessageSerialized {
 			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageToSliceByte(el))
 		}
 	}
-	out.FRepEnum = v.FRepEnum
-	out.FMapInt32String = v.FMapInt32String
-	out.FMapInt64Int32 = v.FMapInt64Int32
-	out.FMapUint32Uint64 = v.FMapUint32Uint64
-	out.FMapUint64Bool = v.FMapUint64Bool
-	out.FMapSint32Bytes = v.FMapSint32Bytes
-	out.FMapSint64Float = v.FMapSint64Float
-	out.FMapFixed32Double = v.FMapFixed32Double
-	out.FMapFixed64Message = v.FMapFixed64Message
-	out.FMapSfixed32Enum = v.FMapSfixed32Enum
-	out.FMapSfixed64String = v.FMapSfixed64String
-	out.FMapBoolInt32 = v.FMapBoolInt32
-	out.FMapStringString = v.FMapStringString
-	out.FNestedMessage = v.FNestedMessage
-	if v.FNestedMessageEmbedded != nil {
-		out.Name = v.FNestedMessageEmbedded.Name
-		out.Inner = v.FNestedMessageEmbedded.Inner
-		if v.FNestedMessageEmbedded.DoubleEmbedded != nil {
-			out.DoubleEmbed = v.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed
+	out.FRepEnum = src.FRepEnum
+	out.FMapInt32String = src.FMapInt32String
+	out.FMapInt64Int32 = src.FMapInt64Int32
+	out.FMapUint32Uint64 = src.FMapUint32Uint64
+	out.FMapUint64Bool = src.FMapUint64Bool
+	out.FMapSint32Bytes = src.FMapSint32Bytes
+	out.FMapSint64Float = src.FMapSint64Float
+	out.FMapFixed32Double = src.FMapFixed32Double
+	out.FMapFixed64Message = src.FMapFixed64Message
+	out.FMapSfixed32Enum = src.FMapSfixed32Enum
+	out.FMapSfixed64String = src.FMapSfixed64String
+	out.FMapBoolInt32 = src.FMapBoolInt32
+	out.FMapStringString = src.FMapStringString
+	out.FNestedMessage = src.FNestedMessage
+	if src.FNestedMessageEmbedded != nil {
+		out.Name = src.FNestedMessageEmbedded.Name
+		out.Inner = src.FNestedMessageEmbedded.Inner
+		if src.FNestedMessageEmbedded.DoubleEmbedded != nil {
+			out.DoubleEmbed = src.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed
 		}
 	}
-	out.FNestedMessageSerialized = cast.MessageToSliceByte(v.FNestedMessageSerialized)
-	out.FEnum = v.FEnum
-	out.FAny = cast.MessageToSliceByte(v.FAny)
-	out.FTimestamp = cast.TimestampToPtrTime(v.FTimestamp)
-	out.FDuration = cast.DurationToPtrTime(v.FDuration)
-	out.FStruct = cast.StructToMap(v.FStruct)
-	out.FValue = cast.MessageToSliceByte(v.FValue)
-	out.FListValue = cast.MessageToSliceByte(v.FListValue)
-	out.FWktDouble = cast.DoubleValueToPtrFloat64(v.FWktDouble)
-	out.FWktFloat = cast.FloatValueToPtrFloat32(v.FWktFloat)
-	out.FWktInt64 = cast.Int64ValueToPtrInt64(v.FWktInt64)
-	out.FWktUint64 = cast.UInt64ValueToPtrUint64(v.FWktUint64)
-	out.FWktInt32 = cast.Int32ValueToPtrInt32(v.FWktInt32)
-	out.FWktUint32 = cast.UInt32ValueToPtrUint32(v.FWktUint32)
-	out.FWktBool = cast.BoolValueToPtrBool(v.FWktBool)
-	out.FWktString = cast.StringValueToPtrString(v.FWktString)
-	out.FWktBytes = cast.BytesValueToPtrBytes(v.FWktBytes)
-	out.FDoubleNested = v.FDoubleNested
-	switch t := v.FOneof.(type) {
+	out.FNestedMessageSerialized = cast.MessageToSliceByte(src.FNestedMessageSerialized)
+	out.FEnum = src.FEnum
+	out.FAny = cast.MessageToSliceByte(src.FAny)
+	out.FTimestamp = cast.TimestampToPtrTime(src.FTimestamp)
+	out.FDuration = cast.DurationToPtrTime(src.FDuration)
+	out.FStruct = cast.StructToMap(src.FStruct)
+	out.FValue = cast.MessageToSliceByte(src.FValue)
+	out.FListValue = cast.MessageToSliceByte(src.FListValue)
+	out.FWktDouble = cast.DoubleValueToPtrFloat64(src.FWktDouble)
+	out.FWktFloat = cast.FloatValueToPtrFloat32(src.FWktFloat)
+	out.FWktInt64 = cast.Int64ValueToPtrInt64(src.FWktInt64)
+	out.FWktUint64 = cast.UInt64ValueToPtrUint64(src.FWktUint64)
+	out.FWktInt32 = cast.Int32ValueToPtrInt32(src.FWktInt32)
+	out.FWktUint32 = cast.UInt32ValueToPtrUint32(src.FWktUint32)
+	out.FWktBool = cast.BoolValueToPtrBool(src.FWktBool)
+	out.FWktString = cast.StringValueToPtrString(src.FWktString)
+	out.FWktBytes = cast.BytesValueToPtrBytes(src.FWktBytes)
+	out.FDoubleNested = src.FDoubleNested
+	switch t := src.FOneof.(type) {
 	case *TestMessage_FOneofInt32:
 		val := t.FOneofInt32
 		out.FOneofInt32 = &val
@@ -249,21 +249,21 @@ func (v *TestMessage) IntoPlain(opts ...TestMessagePlainOption) *TestMessagePlai
 	return out
 }
 
-func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessagePlain {
-	if v == nil {
+func (src *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessagePlain {
+	if src == nil {
 		return nil
 	}
 	out := &TestMessagePlain{}
 	out.OidcId = func() string {
-		if v.OidcId == nil {
+		if src.OidcId == nil {
 			var zero string
 			return zero
 		}
-		val := v.OidcId.Value
+		val := src.OidcId.Value
 		return val
 	}()
 	out.Id = func() uuid.UUID {
-		if v.Id == nil {
+		if src.Id == nil {
 			var zero uuid.UUID
 			return zero
 		}
@@ -273,20 +273,20 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 				panic(err)
 			}
 			return id
-		}(v.Id.Value)
+		}(src.Id.Value)
 		return val
 	}()
-	if v.Embed != nil {
+	if src.Embed != nil {
 		out.EmbedOidcId = func() string {
-			if v.Embed.EmbedOidcId == nil {
+			if src.Embed.EmbedOidcId == nil {
 				var zero string
 				return zero
 			}
-			val := v.Embed.EmbedOidcId.Value
+			val := src.Embed.EmbedOidcId.Value
 			return val
 		}()
 		out.EmbedId = func() uuid.UUID {
-			if v.Embed.EmbedId == nil {
+			if src.Embed.EmbedId == nil {
 				var zero uuid.UUID
 				return zero
 			}
@@ -296,160 +296,160 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 					panic(err)
 				}
 				return id
-			}(v.Embed.EmbedId.Value)
+			}(src.Embed.EmbedId.Value)
 			return val
 		}()
 	}
-	out.FDouble = v.FDouble
-	out.FFloat = v.FFloat
-	out.FInt32 = v.FInt32
-	out.FInt64 = v.FInt64
-	out.FUint32 = v.FUint32
-	out.FUint64 = v.FUint64
-	out.FSint32 = v.FSint32
-	out.FSint64 = v.FSint64
-	out.FFixed32 = v.FFixed32
-	out.FFixed64 = v.FFixed64
-	out.FSfixed32 = v.FSfixed32
-	out.FSfixed64 = v.FSfixed64
-	out.FBool = v.FBool
-	out.FString = v.FString
+	out.FDouble = src.FDouble
+	out.FFloat = src.FFloat
+	out.FInt32 = src.FInt32
+	out.FInt64 = src.FInt64
+	out.FUint32 = src.FUint32
+	out.FUint64 = src.FUint64
+	out.FSint32 = src.FSint32
+	out.FSint64 = src.FSint64
+	out.FFixed32 = src.FFixed32
+	out.FFixed64 = src.FFixed64
+	out.FSfixed32 = src.FSfixed32
+	out.FSfixed64 = src.FSfixed64
+	out.FBool = src.FBool
+	out.FString = src.FString
 	out.FUuid = func(v string) uuid.UUID {
 		id, err := uuid.Parse(v)
 		if err != nil {
 			panic(err)
 		}
 		return id
-	}(v.FUuid)
-	out.FBytes = append([]byte(nil), v.FBytes...)
-	out.FOptInt32 = v.FOptInt32
-	out.FOptString = v.FOptString
-	out.FOptMessage = v.FOptMessage
-	out.FOptEnum = v.FOptEnum
-	if v.FRepInt32 != nil {
-		for _, el := range v.FRepInt32 {
+	}(src.FUuid)
+	out.FBytes = append([]byte(nil), src.FBytes...)
+	out.FOptInt32 = src.FOptInt32
+	out.FOptString = src.FOptString
+	out.FOptMessage = src.FOptMessage
+	out.FOptEnum = src.FOptEnum
+	if src.FRepInt32 != nil {
+		for _, el := range src.FRepInt32 {
 			out.FRepInt32 = append(out.FRepInt32, el)
 		}
 	}
-	if v.FRepString != nil {
-		for _, el := range v.FRepString {
+	if src.FRepString != nil {
+		for _, el := range src.FRepString {
 			out.FRepString = append(out.FRepString, el)
 		}
 	}
-	if v.FRepMessage != nil {
-		for _, el := range v.FRepMessage {
+	if src.FRepMessage != nil {
+		for _, el := range src.FRepMessage {
 			out.FRepMessage = append(out.FRepMessage, el)
 		}
 	}
-	if v.FRepMessageSerialized != nil {
-		for _, el := range v.FRepMessageSerialized {
+	if src.FRepMessageSerialized != nil {
+		for _, el := range src.FRepMessageSerialized {
 			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageToSliceByte(el))
 		}
 	}
-	if v.FRepEnum != nil {
-		for _, el := range v.FRepEnum {
+	if src.FRepEnum != nil {
+		for _, el := range src.FRepEnum {
 			out.FRepEnum = append(out.FRepEnum, el)
 		}
 	}
-	if v.FMapInt32String != nil {
-		out.FMapInt32String = make(map[int32]string, len(v.FMapInt32String))
-		for k, val := range v.FMapInt32String {
+	if src.FMapInt32String != nil {
+		out.FMapInt32String = make(map[int32]string, len(src.FMapInt32String))
+		for k, val := range src.FMapInt32String {
 			out.FMapInt32String[k] = val
 		}
 	}
-	if v.FMapInt64Int32 != nil {
-		out.FMapInt64Int32 = make(map[int64]int32, len(v.FMapInt64Int32))
-		for k, val := range v.FMapInt64Int32 {
+	if src.FMapInt64Int32 != nil {
+		out.FMapInt64Int32 = make(map[int64]int32, len(src.FMapInt64Int32))
+		for k, val := range src.FMapInt64Int32 {
 			out.FMapInt64Int32[k] = val
 		}
 	}
-	if v.FMapUint32Uint64 != nil {
-		out.FMapUint32Uint64 = make(map[uint32]uint64, len(v.FMapUint32Uint64))
-		for k, val := range v.FMapUint32Uint64 {
+	if src.FMapUint32Uint64 != nil {
+		out.FMapUint32Uint64 = make(map[uint32]uint64, len(src.FMapUint32Uint64))
+		for k, val := range src.FMapUint32Uint64 {
 			out.FMapUint32Uint64[k] = val
 		}
 	}
-	if v.FMapUint64Bool != nil {
-		out.FMapUint64Bool = make(map[uint64]bool, len(v.FMapUint64Bool))
-		for k, val := range v.FMapUint64Bool {
+	if src.FMapUint64Bool != nil {
+		out.FMapUint64Bool = make(map[uint64]bool, len(src.FMapUint64Bool))
+		for k, val := range src.FMapUint64Bool {
 			out.FMapUint64Bool[k] = val
 		}
 	}
-	if v.FMapSint32Bytes != nil {
-		out.FMapSint32Bytes = make(map[int32][]byte, len(v.FMapSint32Bytes))
-		for k, val := range v.FMapSint32Bytes {
+	if src.FMapSint32Bytes != nil {
+		out.FMapSint32Bytes = make(map[int32][]byte, len(src.FMapSint32Bytes))
+		for k, val := range src.FMapSint32Bytes {
 			out.FMapSint32Bytes[k] = append([]byte(nil), val...)
 		}
 	}
-	if v.FMapSint64Float != nil {
-		out.FMapSint64Float = make(map[int64]float32, len(v.FMapSint64Float))
-		for k, val := range v.FMapSint64Float {
+	if src.FMapSint64Float != nil {
+		out.FMapSint64Float = make(map[int64]float32, len(src.FMapSint64Float))
+		for k, val := range src.FMapSint64Float {
 			out.FMapSint64Float[k] = val
 		}
 	}
-	if v.FMapFixed32Double != nil {
-		out.FMapFixed32Double = make(map[uint32]float64, len(v.FMapFixed32Double))
-		for k, val := range v.FMapFixed32Double {
+	if src.FMapFixed32Double != nil {
+		out.FMapFixed32Double = make(map[uint32]float64, len(src.FMapFixed32Double))
+		for k, val := range src.FMapFixed32Double {
 			out.FMapFixed32Double[k] = val
 		}
 	}
-	if v.FMapFixed64Message != nil {
-		out.FMapFixed64Message = make(map[uint64]*NestedMessage, len(v.FMapFixed64Message))
-		for k, val := range v.FMapFixed64Message {
+	if src.FMapFixed64Message != nil {
+		out.FMapFixed64Message = make(map[uint64]*NestedMessage, len(src.FMapFixed64Message))
+		for k, val := range src.FMapFixed64Message {
 			out.FMapFixed64Message[k] = val
 		}
 	}
-	if v.FMapSfixed32Enum != nil {
-		out.FMapSfixed32Enum = make(map[int32]TestEnum, len(v.FMapSfixed32Enum))
-		for k, val := range v.FMapSfixed32Enum {
+	if src.FMapSfixed32Enum != nil {
+		out.FMapSfixed32Enum = make(map[int32]TestEnum, len(src.FMapSfixed32Enum))
+		for k, val := range src.FMapSfixed32Enum {
 			out.FMapSfixed32Enum[k] = val
 		}
 	}
-	if v.FMapSfixed64String != nil {
-		out.FMapSfixed64String = make(map[int64]string, len(v.FMapSfixed64String))
-		for k, val := range v.FMapSfixed64String {
+	if src.FMapSfixed64String != nil {
+		out.FMapSfixed64String = make(map[int64]string, len(src.FMapSfixed64String))
+		for k, val := range src.FMapSfixed64String {
 			out.FMapSfixed64String[k] = val
 		}
 	}
-	if v.FMapBoolInt32 != nil {
-		out.FMapBoolInt32 = make(map[bool]int32, len(v.FMapBoolInt32))
-		for k, val := range v.FMapBoolInt32 {
+	if src.FMapBoolInt32 != nil {
+		out.FMapBoolInt32 = make(map[bool]int32, len(src.FMapBoolInt32))
+		for k, val := range src.FMapBoolInt32 {
 			out.FMapBoolInt32[k] = val
 		}
 	}
-	if v.FMapStringString != nil {
-		out.FMapStringString = make(map[string]string, len(v.FMapStringString))
-		for k, val := range v.FMapStringString {
+	if src.FMapStringString != nil {
+		out.FMapStringString = make(map[string]string, len(src.FMapStringString))
+		for k, val := range src.FMapStringString {
 			out.FMapStringString[k] = val
 		}
 	}
-	out.FNestedMessage = v.FNestedMessage
-	if v.FNestedMessageEmbedded != nil {
-		out.Name = v.FNestedMessageEmbedded.Name
-		out.Inner = v.FNestedMessageEmbedded.Inner
-		if v.FNestedMessageEmbedded.DoubleEmbedded != nil {
-			out.DoubleEmbed = v.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed
+	out.FNestedMessage = src.FNestedMessage
+	if src.FNestedMessageEmbedded != nil {
+		out.Name = src.FNestedMessageEmbedded.Name
+		out.Inner = src.FNestedMessageEmbedded.Inner
+		if src.FNestedMessageEmbedded.DoubleEmbedded != nil {
+			out.DoubleEmbed = src.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed
 		}
 	}
-	out.FNestedMessageSerialized = cast.MessageToSliceByte(v.FNestedMessageSerialized)
-	out.FEnum = v.FEnum
-	out.FAny = cast.MessageToSliceByte(v.FAny)
-	out.FTimestamp = cast.TimestampToPtrTime(v.FTimestamp)
-	out.FDuration = cast.DurationToPtrTime(v.FDuration)
-	out.FStruct = cast.StructToMap(v.FStruct)
-	out.FValue = cast.MessageToSliceByte(v.FValue)
-	out.FListValue = cast.MessageToSliceByte(v.FListValue)
-	out.FWktDouble = cast.DoubleValueToPtrFloat64(v.FWktDouble)
-	out.FWktFloat = cast.FloatValueToPtrFloat32(v.FWktFloat)
-	out.FWktInt64 = cast.Int64ValueToPtrInt64(v.FWktInt64)
-	out.FWktUint64 = cast.UInt64ValueToPtrUint64(v.FWktUint64)
-	out.FWktInt32 = cast.Int32ValueToPtrInt32(v.FWktInt32)
-	out.FWktUint32 = cast.UInt32ValueToPtrUint32(v.FWktUint32)
-	out.FWktBool = cast.BoolValueToPtrBool(v.FWktBool)
-	out.FWktString = cast.StringValueToPtrString(v.FWktString)
-	out.FWktBytes = cast.BytesValueToPtrBytes(v.FWktBytes)
-	out.FDoubleNested = v.FDoubleNested
-	switch t := v.FOneof.(type) {
+	out.FNestedMessageSerialized = cast.MessageToSliceByte(src.FNestedMessageSerialized)
+	out.FEnum = src.FEnum
+	out.FAny = cast.MessageToSliceByte(src.FAny)
+	out.FTimestamp = cast.TimestampToPtrTime(src.FTimestamp)
+	out.FDuration = cast.DurationToPtrTime(src.FDuration)
+	out.FStruct = cast.StructToMap(src.FStruct)
+	out.FValue = cast.MessageToSliceByte(src.FValue)
+	out.FListValue = cast.MessageToSliceByte(src.FListValue)
+	out.FWktDouble = cast.DoubleValueToPtrFloat64(src.FWktDouble)
+	out.FWktFloat = cast.FloatValueToPtrFloat32(src.FWktFloat)
+	out.FWktInt64 = cast.Int64ValueToPtrInt64(src.FWktInt64)
+	out.FWktUint64 = cast.UInt64ValueToPtrUint64(src.FWktUint64)
+	out.FWktInt32 = cast.Int32ValueToPtrInt32(src.FWktInt32)
+	out.FWktUint32 = cast.UInt32ValueToPtrUint32(src.FWktUint32)
+	out.FWktBool = cast.BoolValueToPtrBool(src.FWktBool)
+	out.FWktString = cast.StringValueToPtrString(src.FWktString)
+	out.FWktBytes = cast.BytesValueToPtrBytes(src.FWktBytes)
+	out.FDoubleNested = src.FDoubleNested
+	switch t := src.FOneof.(type) {
 	case *TestMessage_FOneofInt32:
 		val := t.FOneofInt32
 		out.FOneofInt32 = &val
@@ -473,264 +473,264 @@ func (v *TestMessage) IntoPlainDeep(opts ...TestMessagePlainOption) *TestMessage
 	return out
 }
 
-func (v *TestMessagePlain) IntoPb() *TestMessage {
-	if v == nil {
+func (src *TestMessagePlain) IntoPb() *TestMessage {
+	if src == nil {
 		return nil
 	}
 	out := &TestMessage{}
-	out.OidcId = &OidcIdAlias{Value: v.OidcId}
-	out.Id = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.Id)}
+	out.OidcId = &OidcIdAlias{Value: src.OidcId}
+	out.Id = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(src.Id)}
 	out.Embed = &EmbedWithAlias{}
-	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
-	out.Embed.EmbedId = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.EmbedId)}
-	out.FDouble = v.FDouble
-	out.FFloat = v.FFloat
-	out.FInt32 = v.FInt32
-	out.FInt64 = v.FInt64
-	out.FUint32 = v.FUint32
-	out.FUint64 = v.FUint64
-	out.FSint32 = v.FSint32
-	out.FSint64 = v.FSint64
-	out.FFixed32 = v.FFixed32
-	out.FFixed64 = v.FFixed64
-	out.FSfixed32 = v.FSfixed32
-	out.FSfixed64 = v.FSfixed64
-	out.FBool = v.FBool
-	out.FString = v.FString
-	out.FUuid = func(v uuid.UUID) string { return v.String() }(v.FUuid)
-	out.FBytes = v.FBytes
-	out.FOptInt32 = v.FOptInt32
-	out.FOptString = v.FOptString
-	out.FOptMessage = v.FOptMessage
-	out.FOptEnum = v.FOptEnum
-	out.FRepInt32 = v.FRepInt32
-	out.FRepString = v.FRepString
-	out.FRepMessage = v.FRepMessage
-	if v.FRepMessageSerialized != nil {
-		for _, el := range v.FRepMessageSerialized {
+	out.Embed.EmbedOidcId = &OidcIdAlias{Value: src.EmbedOidcId}
+	out.Embed.EmbedId = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(src.EmbedId)}
+	out.FDouble = src.FDouble
+	out.FFloat = src.FFloat
+	out.FInt32 = src.FInt32
+	out.FInt64 = src.FInt64
+	out.FUint32 = src.FUint32
+	out.FUint64 = src.FUint64
+	out.FSint32 = src.FSint32
+	out.FSint64 = src.FSint64
+	out.FFixed32 = src.FFixed32
+	out.FFixed64 = src.FFixed64
+	out.FSfixed32 = src.FSfixed32
+	out.FSfixed64 = src.FSfixed64
+	out.FBool = src.FBool
+	out.FString = src.FString
+	out.FUuid = func(v uuid.UUID) string { return v.String() }(src.FUuid)
+	out.FBytes = src.FBytes
+	out.FOptInt32 = src.FOptInt32
+	out.FOptString = src.FOptString
+	out.FOptMessage = src.FOptMessage
+	out.FOptEnum = src.FOptEnum
+	out.FRepInt32 = src.FRepInt32
+	out.FRepString = src.FRepString
+	out.FRepMessage = src.FRepMessage
+	if src.FRepMessageSerialized != nil {
+		for _, el := range src.FRepMessageSerialized {
 			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageFromSliceByte[*NestedMessage](el))
 		}
 	}
-	out.FRepEnum = v.FRepEnum
-	out.FMapInt32String = v.FMapInt32String
-	out.FMapInt64Int32 = v.FMapInt64Int32
-	out.FMapUint32Uint64 = v.FMapUint32Uint64
-	out.FMapUint64Bool = v.FMapUint64Bool
-	out.FMapSint32Bytes = v.FMapSint32Bytes
-	out.FMapSint64Float = v.FMapSint64Float
-	out.FMapFixed32Double = v.FMapFixed32Double
-	out.FMapFixed64Message = v.FMapFixed64Message
-	out.FMapSfixed32Enum = v.FMapSfixed32Enum
-	out.FMapSfixed64String = v.FMapSfixed64String
-	out.FMapBoolInt32 = v.FMapBoolInt32
-	out.FMapStringString = v.FMapStringString
-	out.FNestedMessage = v.FNestedMessage
+	out.FRepEnum = src.FRepEnum
+	out.FMapInt32String = src.FMapInt32String
+	out.FMapInt64Int32 = src.FMapInt64Int32
+	out.FMapUint32Uint64 = src.FMapUint32Uint64
+	out.FMapUint64Bool = src.FMapUint64Bool
+	out.FMapSint32Bytes = src.FMapSint32Bytes
+	out.FMapSint64Float = src.FMapSint64Float
+	out.FMapFixed32Double = src.FMapFixed32Double
+	out.FMapFixed64Message = src.FMapFixed64Message
+	out.FMapSfixed32Enum = src.FMapSfixed32Enum
+	out.FMapSfixed64String = src.FMapSfixed64String
+	out.FMapBoolInt32 = src.FMapBoolInt32
+	out.FMapStringString = src.FMapStringString
+	out.FNestedMessage = src.FNestedMessage
 	out.FNestedMessageEmbedded = &NestedMessage{}
-	out.FNestedMessageEmbedded.Name = v.Name
-	out.FNestedMessageEmbedded.Inner = v.Inner
-	if v.DoubleEmbed != "" {
+	out.FNestedMessageEmbedded.Name = src.Name
+	out.FNestedMessageEmbedded.Inner = src.Inner
+	if src.DoubleEmbed != "" {
 		if out.FNestedMessageEmbedded.DoubleEmbedded == nil {
 			out.FNestedMessageEmbedded.DoubleEmbedded = &DoubleEmbeddedMessage{}
 		}
-		out.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed = v.DoubleEmbed
+		out.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed = src.DoubleEmbed
 	}
-	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
-	out.FEnum = v.FEnum
-	out.FAny = cast.MessageFromSliceByte[*anypb.Any](v.FAny)
-	out.FTimestamp = cast.TimestampFromPtrTime(v.FTimestamp)
-	out.FDuration = cast.DurationFromPtrTime(v.FDuration)
-	out.FStruct = cast.StructFromMap(v.FStruct)
-	out.FValue = cast.MessageFromSliceByte[*structpb.Value](v.FValue)
-	out.FListValue = cast.MessageFromSliceByte[*structpb.ListValue](v.FListValue)
-	out.FWktDouble = cast.DoubleValueFromPtrFloat64(v.FWktDouble)
-	out.FWktFloat = cast.FloatValueFromPtrFloat32(v.FWktFloat)
-	out.FWktInt64 = cast.Int64ValueFromPtrInt64(v.FWktInt64)
-	out.FWktUint64 = cast.UInt64ValueFromPtrUint64(v.FWktUint64)
-	out.FWktInt32 = cast.Int32ValueFromPtrInt32(v.FWktInt32)
-	out.FWktUint32 = cast.UInt32ValueFromPtrUint32(v.FWktUint32)
-	out.FWktBool = cast.BoolValueFromPtrBool(v.FWktBool)
-	out.FWktString = cast.StringValueFromPtrString(v.FWktString)
-	out.FWktBytes = cast.BytesValueFromPtrBytes(v.FWktBytes)
-	out.FDoubleNested = v.FDoubleNested
-	if v.FOneofInt32 != nil {
-		out.FOneof = &TestMessage_FOneofInt32{FOneofInt32: *v.FOneofInt32}
-	} else if v.FOneofString != nil {
-		out.FOneof = &TestMessage_FOneofString{FOneofString: *v.FOneofString}
-	} else if v.FOneofBytes != nil {
-		out.FOneof = &TestMessage_FOneofBytes{FOneofBytes: *v.FOneofBytes}
-	} else if v.FOneofMessage != nil {
-		out.FOneof = &TestMessage_FOneofMessage{FOneofMessage: v.FOneofMessage}
-	} else if v.FOneofEnum != nil {
-		out.FOneof = &TestMessage_FOneofEnum{FOneofEnum: *v.FOneofEnum}
+	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](src.FNestedMessageSerialized)
+	out.FEnum = src.FEnum
+	out.FAny = cast.MessageFromSliceByte[*anypb.Any](src.FAny)
+	out.FTimestamp = cast.TimestampFromPtrTime(src.FTimestamp)
+	out.FDuration = cast.DurationFromPtrTime(src.FDuration)
+	out.FStruct = cast.StructFromMap(src.FStruct)
+	out.FValue = cast.MessageFromSliceByte[*structpb.Value](src.FValue)
+	out.FListValue = cast.MessageFromSliceByte[*structpb.ListValue](src.FListValue)
+	out.FWktDouble = cast.DoubleValueFromPtrFloat64(src.FWktDouble)
+	out.FWktFloat = cast.FloatValueFromPtrFloat32(src.FWktFloat)
+	out.FWktInt64 = cast.Int64ValueFromPtrInt64(src.FWktInt64)
+	out.FWktUint64 = cast.UInt64ValueFromPtrUint64(src.FWktUint64)
+	out.FWktInt32 = cast.Int32ValueFromPtrInt32(src.FWktInt32)
+	out.FWktUint32 = cast.UInt32ValueFromPtrUint32(src.FWktUint32)
+	out.FWktBool = cast.BoolValueFromPtrBool(src.FWktBool)
+	out.FWktString = cast.StringValueFromPtrString(src.FWktString)
+	out.FWktBytes = cast.BytesValueFromPtrBytes(src.FWktBytes)
+	out.FDoubleNested = src.FDoubleNested
+	if src.FOneofInt32 != nil {
+		out.FOneof = &TestMessage_FOneofInt32{FOneofInt32: *src.FOneofInt32}
+	} else if src.FOneofString != nil {
+		out.FOneof = &TestMessage_FOneofString{FOneofString: *src.FOneofString}
+	} else if src.FOneofBytes != nil {
+		out.FOneof = &TestMessage_FOneofBytes{FOneofBytes: *src.FOneofBytes}
+	} else if src.FOneofMessage != nil {
+		out.FOneof = &TestMessage_FOneofMessage{FOneofMessage: src.FOneofMessage}
+	} else if src.FOneofEnum != nil {
+		out.FOneof = &TestMessage_FOneofEnum{FOneofEnum: *src.FOneofEnum}
 	}
 	return out
 }
 
-func (v *TestMessagePlain) IntoPbDeep() *TestMessage {
-	if v == nil {
+func (src *TestMessagePlain) IntoPbDeep() *TestMessage {
+	if src == nil {
 		return nil
 	}
 	out := &TestMessage{}
-	out.OidcId = &OidcIdAlias{Value: v.OidcId}
-	out.Id = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.Id)}
+	out.OidcId = &OidcIdAlias{Value: src.OidcId}
+	out.Id = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(src.Id)}
 	out.Embed = &EmbedWithAlias{}
-	out.Embed.EmbedOidcId = &OidcIdAlias{Value: v.EmbedOidcId}
-	out.Embed.EmbedId = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(v.EmbedId)}
-	out.FDouble = v.FDouble
-	out.FFloat = v.FFloat
-	out.FInt32 = v.FInt32
-	out.FInt64 = v.FInt64
-	out.FUint32 = v.FUint32
-	out.FUint64 = v.FUint64
-	out.FSint32 = v.FSint32
-	out.FSint64 = v.FSint64
-	out.FFixed32 = v.FFixed32
-	out.FFixed64 = v.FFixed64
-	out.FSfixed32 = v.FSfixed32
-	out.FSfixed64 = v.FSfixed64
-	out.FBool = v.FBool
-	out.FString = v.FString
-	out.FUuid = func(v uuid.UUID) string { return v.String() }(v.FUuid)
-	out.FBytes = append([]byte(nil), v.FBytes...)
-	out.FOptInt32 = v.FOptInt32
-	out.FOptString = v.FOptString
-	out.FOptMessage = v.FOptMessage
-	out.FOptEnum = v.FOptEnum
-	if v.FRepInt32 != nil {
-		for _, el := range v.FRepInt32 {
+	out.Embed.EmbedOidcId = &OidcIdAlias{Value: src.EmbedOidcId}
+	out.Embed.EmbedId = &IdAlias{Value: func(v uuid.UUID) string { return v.String() }(src.EmbedId)}
+	out.FDouble = src.FDouble
+	out.FFloat = src.FFloat
+	out.FInt32 = src.FInt32
+	out.FInt64 = src.FInt64
+	out.FUint32 = src.FUint32
+	out.FUint64 = src.FUint64
+	out.FSint32 = src.FSint32
+	out.FSint64 = src.FSint64
+	out.FFixed32 = src.FFixed32
+	out.FFixed64 = src.FFixed64
+	out.FSfixed32 = src.FSfixed32
+	out.FSfixed64 = src.FSfixed64
+	out.FBool = src.FBool
+	out.FString = src.FString
+	out.FUuid = func(v uuid.UUID) string { return v.String() }(src.FUuid)
+	out.FBytes = append([]byte(nil), src.FBytes...)
+	out.FOptInt32 = src.FOptInt32
+	out.FOptString = src.FOptString
+	out.FOptMessage = src.FOptMessage
+	out.FOptEnum = src.FOptEnum
+	if src.FRepInt32 != nil {
+		for _, el := range src.FRepInt32 {
 			out.FRepInt32 = append(out.FRepInt32, el)
 		}
 	}
-	if v.FRepString != nil {
-		for _, el := range v.FRepString {
+	if src.FRepString != nil {
+		for _, el := range src.FRepString {
 			out.FRepString = append(out.FRepString, el)
 		}
 	}
-	if v.FRepMessage != nil {
-		for _, el := range v.FRepMessage {
+	if src.FRepMessage != nil {
+		for _, el := range src.FRepMessage {
 			out.FRepMessage = append(out.FRepMessage, el)
 		}
 	}
-	if v.FRepMessageSerialized != nil {
-		for _, el := range v.FRepMessageSerialized {
+	if src.FRepMessageSerialized != nil {
+		for _, el := range src.FRepMessageSerialized {
 			out.FRepMessageSerialized = append(out.FRepMessageSerialized, cast.MessageFromSliceByte[*NestedMessage](el))
 		}
 	}
-	if v.FRepEnum != nil {
-		for _, el := range v.FRepEnum {
+	if src.FRepEnum != nil {
+		for _, el := range src.FRepEnum {
 			out.FRepEnum = append(out.FRepEnum, el)
 		}
 	}
-	if v.FMapInt32String != nil {
-		out.FMapInt32String = make(map[int32]string, len(v.FMapInt32String))
-		for k, val := range v.FMapInt32String {
+	if src.FMapInt32String != nil {
+		out.FMapInt32String = make(map[int32]string, len(src.FMapInt32String))
+		for k, val := range src.FMapInt32String {
 			out.FMapInt32String[k] = val
 		}
 	}
-	if v.FMapInt64Int32 != nil {
-		out.FMapInt64Int32 = make(map[int64]int32, len(v.FMapInt64Int32))
-		for k, val := range v.FMapInt64Int32 {
+	if src.FMapInt64Int32 != nil {
+		out.FMapInt64Int32 = make(map[int64]int32, len(src.FMapInt64Int32))
+		for k, val := range src.FMapInt64Int32 {
 			out.FMapInt64Int32[k] = val
 		}
 	}
-	if v.FMapUint32Uint64 != nil {
-		out.FMapUint32Uint64 = make(map[uint32]uint64, len(v.FMapUint32Uint64))
-		for k, val := range v.FMapUint32Uint64 {
+	if src.FMapUint32Uint64 != nil {
+		out.FMapUint32Uint64 = make(map[uint32]uint64, len(src.FMapUint32Uint64))
+		for k, val := range src.FMapUint32Uint64 {
 			out.FMapUint32Uint64[k] = val
 		}
 	}
-	if v.FMapUint64Bool != nil {
-		out.FMapUint64Bool = make(map[uint64]bool, len(v.FMapUint64Bool))
-		for k, val := range v.FMapUint64Bool {
+	if src.FMapUint64Bool != nil {
+		out.FMapUint64Bool = make(map[uint64]bool, len(src.FMapUint64Bool))
+		for k, val := range src.FMapUint64Bool {
 			out.FMapUint64Bool[k] = val
 		}
 	}
-	if v.FMapSint32Bytes != nil {
-		out.FMapSint32Bytes = make(map[int32][]byte, len(v.FMapSint32Bytes))
-		for k, val := range v.FMapSint32Bytes {
+	if src.FMapSint32Bytes != nil {
+		out.FMapSint32Bytes = make(map[int32][]byte, len(src.FMapSint32Bytes))
+		for k, val := range src.FMapSint32Bytes {
 			out.FMapSint32Bytes[k] = append([]byte(nil), val...)
 		}
 	}
-	if v.FMapSint64Float != nil {
-		out.FMapSint64Float = make(map[int64]float32, len(v.FMapSint64Float))
-		for k, val := range v.FMapSint64Float {
+	if src.FMapSint64Float != nil {
+		out.FMapSint64Float = make(map[int64]float32, len(src.FMapSint64Float))
+		for k, val := range src.FMapSint64Float {
 			out.FMapSint64Float[k] = val
 		}
 	}
-	if v.FMapFixed32Double != nil {
-		out.FMapFixed32Double = make(map[uint32]float64, len(v.FMapFixed32Double))
-		for k, val := range v.FMapFixed32Double {
+	if src.FMapFixed32Double != nil {
+		out.FMapFixed32Double = make(map[uint32]float64, len(src.FMapFixed32Double))
+		for k, val := range src.FMapFixed32Double {
 			out.FMapFixed32Double[k] = val
 		}
 	}
-	if v.FMapFixed64Message != nil {
-		out.FMapFixed64Message = make(map[uint64]*NestedMessage, len(v.FMapFixed64Message))
-		for k, val := range v.FMapFixed64Message {
+	if src.FMapFixed64Message != nil {
+		out.FMapFixed64Message = make(map[uint64]*NestedMessage, len(src.FMapFixed64Message))
+		for k, val := range src.FMapFixed64Message {
 			out.FMapFixed64Message[k] = val
 		}
 	}
-	if v.FMapSfixed32Enum != nil {
-		out.FMapSfixed32Enum = make(map[int32]TestEnum, len(v.FMapSfixed32Enum))
-		for k, val := range v.FMapSfixed32Enum {
+	if src.FMapSfixed32Enum != nil {
+		out.FMapSfixed32Enum = make(map[int32]TestEnum, len(src.FMapSfixed32Enum))
+		for k, val := range src.FMapSfixed32Enum {
 			out.FMapSfixed32Enum[k] = val
 		}
 	}
-	if v.FMapSfixed64String != nil {
-		out.FMapSfixed64String = make(map[int64]string, len(v.FMapSfixed64String))
-		for k, val := range v.FMapSfixed64String {
+	if src.FMapSfixed64String != nil {
+		out.FMapSfixed64String = make(map[int64]string, len(src.FMapSfixed64String))
+		for k, val := range src.FMapSfixed64String {
 			out.FMapSfixed64String[k] = val
 		}
 	}
-	if v.FMapBoolInt32 != nil {
-		out.FMapBoolInt32 = make(map[bool]int32, len(v.FMapBoolInt32))
-		for k, val := range v.FMapBoolInt32 {
+	if src.FMapBoolInt32 != nil {
+		out.FMapBoolInt32 = make(map[bool]int32, len(src.FMapBoolInt32))
+		for k, val := range src.FMapBoolInt32 {
 			out.FMapBoolInt32[k] = val
 		}
 	}
-	if v.FMapStringString != nil {
-		out.FMapStringString = make(map[string]string, len(v.FMapStringString))
-		for k, val := range v.FMapStringString {
+	if src.FMapStringString != nil {
+		out.FMapStringString = make(map[string]string, len(src.FMapStringString))
+		for k, val := range src.FMapStringString {
 			out.FMapStringString[k] = val
 		}
 	}
-	out.FNestedMessage = v.FNestedMessage
+	out.FNestedMessage = src.FNestedMessage
 	out.FNestedMessageEmbedded = &NestedMessage{}
-	out.FNestedMessageEmbedded.Name = v.Name
-	out.FNestedMessageEmbedded.Inner = v.Inner
-	if v.DoubleEmbed != "" {
+	out.FNestedMessageEmbedded.Name = src.Name
+	out.FNestedMessageEmbedded.Inner = src.Inner
+	if src.DoubleEmbed != "" {
 		if out.FNestedMessageEmbedded.DoubleEmbedded == nil {
 			out.FNestedMessageEmbedded.DoubleEmbedded = &DoubleEmbeddedMessage{}
 		}
-		out.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed = v.DoubleEmbed
+		out.FNestedMessageEmbedded.DoubleEmbedded.DoubleEmbed = src.DoubleEmbed
 	}
-	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](v.FNestedMessageSerialized)
-	out.FEnum = v.FEnum
-	out.FAny = cast.MessageFromSliceByte[*anypb.Any](v.FAny)
-	out.FTimestamp = cast.TimestampFromPtrTime(v.FTimestamp)
-	out.FDuration = cast.DurationFromPtrTime(v.FDuration)
-	out.FStruct = cast.StructFromMap(v.FStruct)
-	out.FValue = cast.MessageFromSliceByte[*structpb.Value](v.FValue)
-	out.FListValue = cast.MessageFromSliceByte[*structpb.ListValue](v.FListValue)
-	out.FWktDouble = cast.DoubleValueFromPtrFloat64(v.FWktDouble)
-	out.FWktFloat = cast.FloatValueFromPtrFloat32(v.FWktFloat)
-	out.FWktInt64 = cast.Int64ValueFromPtrInt64(v.FWktInt64)
-	out.FWktUint64 = cast.UInt64ValueFromPtrUint64(v.FWktUint64)
-	out.FWktInt32 = cast.Int32ValueFromPtrInt32(v.FWktInt32)
-	out.FWktUint32 = cast.UInt32ValueFromPtrUint32(v.FWktUint32)
-	out.FWktBool = cast.BoolValueFromPtrBool(v.FWktBool)
-	out.FWktString = cast.StringValueFromPtrString(v.FWktString)
-	out.FWktBytes = cast.BytesValueFromPtrBytes(v.FWktBytes)
-	out.FDoubleNested = v.FDoubleNested
-	if v.FOneofInt32 != nil {
-		out.FOneof = &TestMessage_FOneofInt32{FOneofInt32: *v.FOneofInt32}
-	} else if v.FOneofString != nil {
-		out.FOneof = &TestMessage_FOneofString{FOneofString: *v.FOneofString}
-	} else if v.FOneofBytes != nil {
-		out.FOneof = &TestMessage_FOneofBytes{FOneofBytes: append([]byte(nil), *v.FOneofBytes...)}
-	} else if v.FOneofMessage != nil {
-		out.FOneof = &TestMessage_FOneofMessage{FOneofMessage: v.FOneofMessage}
-	} else if v.FOneofEnum != nil {
-		out.FOneof = &TestMessage_FOneofEnum{FOneofEnum: *v.FOneofEnum}
+	out.FNestedMessageSerialized = cast.MessageFromSliceByte[*NestedMessage](src.FNestedMessageSerialized)
+	out.FEnum = src.FEnum
+	out.FAny = cast.MessageFromSliceByte[*anypb.Any](src.FAny)
+	out.FTimestamp = cast.TimestampFromPtrTime(src.FTimestamp)
+	out.FDuration = cast.DurationFromPtrTime(src.FDuration)
+	out.FStruct = cast.StructFromMap(src.FStruct)
+	out.FValue = cast.MessageFromSliceByte[*structpb.Value](src.FValue)
+	out.FListValue = cast.MessageFromSliceByte[*structpb.ListValue](src.FListValue)
+	out.FWktDouble = cast.DoubleValueFromPtrFloat64(src.FWktDouble)
+	out.FWktFloat = cast.FloatValueFromPtrFloat32(src.FWktFloat)
+	out.FWktInt64 = cast.Int64ValueFromPtrInt64(src.FWktInt64)
+	out.FWktUint64 = cast.UInt64ValueFromPtrUint64(src.FWktUint64)
+	out.FWktInt32 = cast.Int32ValueFromPtrInt32(src.FWktInt32)
+	out.FWktUint32 = cast.UInt32ValueFromPtrUint32(src.FWktUint32)
+	out.FWktBool = cast.BoolValueFromPtrBool(src.FWktBool)
+	out.FWktString = cast.StringValueFromPtrString(src.FWktString)
+	out.FWktBytes = cast.BytesValueFromPtrBytes(src.FWktBytes)
+	out.FDoubleNested = src.FDoubleNested
+	if src.FOneofInt32 != nil {
+		out.FOneof = &TestMessage_FOneofInt32{FOneofInt32: *src.FOneofInt32}
+	} else if src.FOneofString != nil {
+		out.FOneof = &TestMessage_FOneofString{FOneofString: *src.FOneofString}
+	} else if src.FOneofBytes != nil {
+		out.FOneof = &TestMessage_FOneofBytes{FOneofBytes: append([]byte(nil), *src.FOneofBytes...)}
+	} else if src.FOneofMessage != nil {
+		out.FOneof = &TestMessage_FOneofMessage{FOneofMessage: src.FOneofMessage}
+	} else if src.FOneofEnum != nil {
+		out.FOneof = &TestMessage_FOneofEnum{FOneofEnum: *src.FOneofEnum}
 	}
 	return out
 }

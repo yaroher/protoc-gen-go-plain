@@ -410,11 +410,11 @@ func (fg *FileGen) genIntoPlain(msg *protogen.Message, deep bool) {
 	}
 	extras := fg.virtualFields[msg.Desc.FullName()]
 	if len(extras) == 0 {
-		fg.P("func (v *", pbName, ") ", methodName, "() *", plainName, " {")
+		fg.P("func (src *", pbName, ") ", methodName, "() *", plainName, " {")
 	} else {
-		fg.P("func (v *", pbName, ") ", methodName, "(opts ...", plainName, "Option) *", plainName, " {")
+		fg.P("func (src *", pbName, ") ", methodName, "(opts ...", plainName, "Option) *", plainName, " {")
 	}
-	fg.P("if v == nil { return nil }")
+	fg.P("if src == nil { return nil }")
 	fg.P("out := &", plainName, "{}")
 
 	for _, field := range msg.Fields {
@@ -422,17 +422,17 @@ func (fg *FileGen) genIntoPlain(msg *protogen.Message, deep bool) {
 			continue
 		}
 		if isEmbeddedMessage(field) {
-			fg.emitFromPBEmbedded("out", "v", field, deep)
+			fg.emitFromPBEmbedded("out", "src", field, deep)
 			continue
 		}
-		fg.emitFromPBField("out", "v", field, deep)
+		fg.emitFromPBField("out", "src", field, deep)
 	}
 
 	for _, oneof := range msg.Oneofs {
 		if oneof.Desc.IsSynthetic() {
 			continue
 		}
-		fg.emitFromPBOneof("out", "v", msg, oneof, deep)
+		fg.emitFromPBOneof("out", "src", msg, oneof, deep)
 	}
 
 	if len(extras) > 0 {
@@ -452,8 +452,8 @@ func (fg *FileGen) genIntoPb(msg *protogen.Message, deep bool) {
 	if deep {
 		methodName = "IntoPbDeep"
 	}
-	fg.P("func (v *", plainName, ") ", methodName, "() *", pbName, " {")
-	fg.P("if v == nil { return nil }")
+	fg.P("func (src *", plainName, ") ", methodName, "() *", pbName, " {")
+	fg.P("if src == nil { return nil }")
 	fg.P("out := &", pbName, "{}")
 
 	for _, field := range msg.Fields {
@@ -461,17 +461,17 @@ func (fg *FileGen) genIntoPb(msg *protogen.Message, deep bool) {
 			continue
 		}
 		if isEmbeddedMessage(field) {
-			fg.emitToPBEmbedded("out", "v", field, deep)
+			fg.emitToPBEmbedded("out", "src", field, deep)
 			continue
 		}
-		fg.emitToPBField("out", "v", field, deep)
+		fg.emitToPBField("out", "src", field, deep)
 	}
 
 	for _, oneof := range msg.Oneofs {
 		if oneof.Desc.IsSynthetic() {
 			continue
 		}
-		fg.emitToPBOneof("out", "v", msg, oneof, deep)
+		fg.emitToPBOneof("out", "src", msg, oneof, deep)
 	}
 
 	fg.P("return out")
