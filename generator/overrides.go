@@ -87,6 +87,10 @@ func (fg *FileGen) overrideForField(field *protogen.Field) *goplain.OverwriteTyp
 	if ov := fg.fieldOverride(field); ov != nil {
 		return ov
 	}
+	// Field overrides from imported messages won't be in fieldOverrides map.
+	if ov := getFieldOverwrite(field); ov != nil {
+		return ov
+	}
 	if ov := fg.fileOverride(field); ov != nil {
 		return ov
 	}
