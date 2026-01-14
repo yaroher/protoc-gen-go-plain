@@ -734,3 +734,655 @@ func (src *TestMessagePlain) IntoPbDeep() *TestMessage {
 	}
 	return out
 }
+
+func (src *TestMessagePlain) IntoMap() map[string]any {
+	return src.intoMap(false, false)
+}
+
+func (src *TestMessagePlain) IntoMapSkipZero() map[string]any {
+	return src.intoMap(true, false)
+}
+
+func (src *TestMessagePlain) IntoMapDeep() map[string]any {
+	return src.intoMap(false, true)
+}
+
+func (src *TestMessagePlain) IntoMapDeepSkipZero() map[string]any {
+	return src.intoMap(true, true)
+}
+
+func (src *TestMessagePlain) intoMap(skipZero, deep bool) map[string]any {
+	if src == nil {
+		return nil
+	}
+	out := make(map[string]any, 71)
+	if !skipZero || src.OidcId != "" {
+		if !deep {
+			out["oidc_id"] = src.OidcId
+		} else {
+			out["oidc_id"] = src.OidcId
+		}
+	}
+	if !skipZero || func() bool { var zero uuid.UUID; return src.Id != zero }() {
+		if !deep {
+			out["id"] = src.Id
+		} else {
+			out["id"] = src.Id
+		}
+	}
+	if !skipZero || src.EmbedOidcId != "" {
+		if !deep {
+			out["embed_oidc_id"] = src.EmbedOidcId
+		} else {
+			out["embed_oidc_id"] = src.EmbedOidcId
+		}
+	}
+	if !skipZero || func() bool { var zero uuid.UUID; return src.EmbedId != zero }() {
+		if !deep {
+			out["embed_id"] = src.EmbedId
+		} else {
+			out["embed_id"] = src.EmbedId
+		}
+	}
+	if !skipZero || src.FDouble != 0 {
+		if !deep {
+			out["f_double"] = src.FDouble
+		} else {
+			out["f_double"] = src.FDouble
+		}
+	}
+	if !skipZero || src.FFloat != 0 {
+		if !deep {
+			out["f_float"] = src.FFloat
+		} else {
+			out["f_float"] = src.FFloat
+		}
+	}
+	if !skipZero || src.FInt32 != 0 {
+		if !deep {
+			out["f_int_32"] = src.FInt32
+		} else {
+			out["f_int_32"] = src.FInt32
+		}
+	}
+	if !skipZero || src.FInt64 != 0 {
+		if !deep {
+			out["f_int_64"] = src.FInt64
+		} else {
+			out["f_int_64"] = src.FInt64
+		}
+	}
+	if !skipZero || src.FUint32 != 0 {
+		if !deep {
+			out["f_uint_32"] = src.FUint32
+		} else {
+			out["f_uint_32"] = src.FUint32
+		}
+	}
+	if !skipZero || src.FUint64 != 0 {
+		if !deep {
+			out["f_uint_64"] = src.FUint64
+		} else {
+			out["f_uint_64"] = src.FUint64
+		}
+	}
+	if !skipZero || src.FSint32 != 0 {
+		if !deep {
+			out["f_sint_32"] = src.FSint32
+		} else {
+			out["f_sint_32"] = src.FSint32
+		}
+	}
+	if !skipZero || src.FSint64 != 0 {
+		if !deep {
+			out["f_sint_64"] = src.FSint64
+		} else {
+			out["f_sint_64"] = src.FSint64
+		}
+	}
+	if !skipZero || src.FFixed32 != 0 {
+		if !deep {
+			out["f_fixed_32"] = src.FFixed32
+		} else {
+			out["f_fixed_32"] = src.FFixed32
+		}
+	}
+	if !skipZero || src.FFixed64 != 0 {
+		if !deep {
+			out["f_fixed_64"] = src.FFixed64
+		} else {
+			out["f_fixed_64"] = src.FFixed64
+		}
+	}
+	if !skipZero || src.FSfixed32 != 0 {
+		if !deep {
+			out["f_sfixed_32"] = src.FSfixed32
+		} else {
+			out["f_sfixed_32"] = src.FSfixed32
+		}
+	}
+	if !skipZero || src.FSfixed64 != 0 {
+		if !deep {
+			out["f_sfixed_64"] = src.FSfixed64
+		} else {
+			out["f_sfixed_64"] = src.FSfixed64
+		}
+	}
+	if !skipZero || src.FBool {
+		if !deep {
+			out["f_bool"] = src.FBool
+		} else {
+			out["f_bool"] = src.FBool
+		}
+	}
+	if !skipZero || src.FString != "" {
+		if !deep {
+			out["f_string"] = src.FString
+		} else {
+			out["f_string"] = src.FString
+		}
+	}
+	if !skipZero || func() bool { var zero uuid.UUID; return src.FUuid != zero }() {
+		if !deep {
+			out["f_uuid"] = src.FUuid
+		} else {
+			out["f_uuid"] = src.FUuid
+		}
+	}
+	if !skipZero || len(src.FBytes) != 0 {
+		if !deep {
+			out["f_bytes"] = src.FBytes
+		} else {
+			out["f_bytes"] = append([]byte(nil), src.FBytes...)
+		}
+	}
+	if !skipZero || src.FOptInt32 != nil {
+		if !deep {
+			out["f_opt_int_32"] = src.FOptInt32
+		} else {
+			out["f_opt_int_32"] = src.FOptInt32
+		}
+	}
+	if !skipZero || src.FOptString != nil {
+		if !deep {
+			out["f_opt_string"] = src.FOptString
+		} else {
+			out["f_opt_string"] = src.FOptString
+		}
+	}
+	if !skipZero || src.FOptMessage != nil {
+		if !deep {
+			out["f_opt_message"] = src.FOptMessage
+		} else {
+			out["f_opt_message"] = src.FOptMessage
+		}
+	}
+	if !skipZero || src.FOptEnum != nil {
+		if !deep {
+			out["f_opt_enum"] = src.FOptEnum
+		} else {
+			out["f_opt_enum"] = src.FOptEnum
+		}
+	}
+	if !skipZero || len(src.FRepInt32) != 0 {
+		if !deep {
+			out["f_rep_int_32"] = src.FRepInt32
+		} else {
+			var v []int32
+			if src.FRepInt32 != nil {
+				v = make([]int32, 0, len(src.FRepInt32))
+				for _, val := range src.FRepInt32 {
+					v = append(v, val)
+				}
+			}
+			out["f_rep_int_32"] = v
+		}
+	}
+	if !skipZero || len(src.FRepString) != 0 {
+		if !deep {
+			out["f_rep_string"] = src.FRepString
+		} else {
+			var v []string
+			if src.FRepString != nil {
+				v = make([]string, 0, len(src.FRepString))
+				for _, val := range src.FRepString {
+					v = append(v, val)
+				}
+			}
+			out["f_rep_string"] = v
+		}
+	}
+	if !skipZero || len(src.FRepMessage) != 0 {
+		if !deep {
+			out["f_rep_message"] = src.FRepMessage
+		} else {
+			var v []*NestedMessage
+			if src.FRepMessage != nil {
+				v = make([]*NestedMessage, 0, len(src.FRepMessage))
+				for _, val := range src.FRepMessage {
+					v = append(v, val)
+				}
+			}
+			out["f_rep_message"] = v
+		}
+	}
+	if !skipZero || len(src.FRepMessageSerialized) != 0 {
+		if !deep {
+			out["f_rep_message_serialized"] = src.FRepMessageSerialized
+		} else {
+			var v [][]byte
+			if src.FRepMessageSerialized != nil {
+				v = make([][]byte, 0, len(src.FRepMessageSerialized))
+				for _, val := range src.FRepMessageSerialized {
+					v = append(v, append([]byte(nil), val...))
+				}
+			}
+			out["f_rep_message_serialized"] = v
+		}
+	}
+	if !skipZero || len(src.FRepEnum) != 0 {
+		if !deep {
+			out["f_rep_enum"] = src.FRepEnum
+		} else {
+			var v []TestEnum
+			if src.FRepEnum != nil {
+				v = make([]TestEnum, 0, len(src.FRepEnum))
+				for _, val := range src.FRepEnum {
+					v = append(v, val)
+				}
+			}
+			out["f_rep_enum"] = v
+		}
+	}
+	if !skipZero || len(src.FMapInt32String) != 0 {
+		if !deep {
+			out["f_map_int_32_string"] = src.FMapInt32String
+		} else {
+			var v map[int32]string
+			if src.FMapInt32String != nil {
+				v = make(map[int32]string, len(src.FMapInt32String))
+				for k, val := range src.FMapInt32String {
+					v[k] = val
+				}
+			}
+			out["f_map_int_32_string"] = v
+		}
+	}
+	if !skipZero || len(src.FMapInt64Int32) != 0 {
+		if !deep {
+			out["f_map_int_64_int_32"] = src.FMapInt64Int32
+		} else {
+			var v map[int64]int32
+			if src.FMapInt64Int32 != nil {
+				v = make(map[int64]int32, len(src.FMapInt64Int32))
+				for k, val := range src.FMapInt64Int32 {
+					v[k] = val
+				}
+			}
+			out["f_map_int_64_int_32"] = v
+		}
+	}
+	if !skipZero || len(src.FMapUint32Uint64) != 0 {
+		if !deep {
+			out["f_map_uint_32_uint_64"] = src.FMapUint32Uint64
+		} else {
+			var v map[uint32]uint64
+			if src.FMapUint32Uint64 != nil {
+				v = make(map[uint32]uint64, len(src.FMapUint32Uint64))
+				for k, val := range src.FMapUint32Uint64 {
+					v[k] = val
+				}
+			}
+			out["f_map_uint_32_uint_64"] = v
+		}
+	}
+	if !skipZero || len(src.FMapUint64Bool) != 0 {
+		if !deep {
+			out["f_map_uint_64_bool"] = src.FMapUint64Bool
+		} else {
+			var v map[uint64]bool
+			if src.FMapUint64Bool != nil {
+				v = make(map[uint64]bool, len(src.FMapUint64Bool))
+				for k, val := range src.FMapUint64Bool {
+					v[k] = val
+				}
+			}
+			out["f_map_uint_64_bool"] = v
+		}
+	}
+	if !skipZero || len(src.FMapSint32Bytes) != 0 {
+		if !deep {
+			out["f_map_sint_32_bytes"] = src.FMapSint32Bytes
+		} else {
+			var v map[int32][]byte
+			if src.FMapSint32Bytes != nil {
+				v = make(map[int32][]byte, len(src.FMapSint32Bytes))
+				for k, val := range src.FMapSint32Bytes {
+					v[k] = append([]byte(nil), val...)
+				}
+			}
+			out["f_map_sint_32_bytes"] = v
+		}
+	}
+	if !skipZero || len(src.FMapSint64Float) != 0 {
+		if !deep {
+			out["f_map_sint_64_float"] = src.FMapSint64Float
+		} else {
+			var v map[int64]float32
+			if src.FMapSint64Float != nil {
+				v = make(map[int64]float32, len(src.FMapSint64Float))
+				for k, val := range src.FMapSint64Float {
+					v[k] = val
+				}
+			}
+			out["f_map_sint_64_float"] = v
+		}
+	}
+	if !skipZero || len(src.FMapFixed32Double) != 0 {
+		if !deep {
+			out["f_map_fixed_32_double"] = src.FMapFixed32Double
+		} else {
+			var v map[uint32]float64
+			if src.FMapFixed32Double != nil {
+				v = make(map[uint32]float64, len(src.FMapFixed32Double))
+				for k, val := range src.FMapFixed32Double {
+					v[k] = val
+				}
+			}
+			out["f_map_fixed_32_double"] = v
+		}
+	}
+	if !skipZero || len(src.FMapFixed64Message) != 0 {
+		if !deep {
+			out["f_map_fixed_64_message"] = src.FMapFixed64Message
+		} else {
+			var v map[uint64]*NestedMessage
+			if src.FMapFixed64Message != nil {
+				v = make(map[uint64]*NestedMessage, len(src.FMapFixed64Message))
+				for k, val := range src.FMapFixed64Message {
+					v[k] = val
+				}
+			}
+			out["f_map_fixed_64_message"] = v
+		}
+	}
+	if !skipZero || len(src.FMapSfixed32Enum) != 0 {
+		if !deep {
+			out["f_map_sfixed_32_enum"] = src.FMapSfixed32Enum
+		} else {
+			var v map[int32]TestEnum
+			if src.FMapSfixed32Enum != nil {
+				v = make(map[int32]TestEnum, len(src.FMapSfixed32Enum))
+				for k, val := range src.FMapSfixed32Enum {
+					v[k] = val
+				}
+			}
+			out["f_map_sfixed_32_enum"] = v
+		}
+	}
+	if !skipZero || len(src.FMapSfixed64String) != 0 {
+		if !deep {
+			out["f_map_sfixed_64_string"] = src.FMapSfixed64String
+		} else {
+			var v map[int64]string
+			if src.FMapSfixed64String != nil {
+				v = make(map[int64]string, len(src.FMapSfixed64String))
+				for k, val := range src.FMapSfixed64String {
+					v[k] = val
+				}
+			}
+			out["f_map_sfixed_64_string"] = v
+		}
+	}
+	if !skipZero || len(src.FMapBoolInt32) != 0 {
+		if !deep {
+			out["f_map_bool_int_32"] = src.FMapBoolInt32
+		} else {
+			var v map[bool]int32
+			if src.FMapBoolInt32 != nil {
+				v = make(map[bool]int32, len(src.FMapBoolInt32))
+				for k, val := range src.FMapBoolInt32 {
+					v[k] = val
+				}
+			}
+			out["f_map_bool_int_32"] = v
+		}
+	}
+	if !skipZero || len(src.FMapStringString) != 0 {
+		if !deep {
+			out["f_map_string_string"] = src.FMapStringString
+		} else {
+			var v map[string]string
+			if src.FMapStringString != nil {
+				v = make(map[string]string, len(src.FMapStringString))
+				for k, val := range src.FMapStringString {
+					v[k] = val
+				}
+			}
+			out["f_map_string_string"] = v
+		}
+	}
+	if !skipZero || src.FOneofInt32 != nil {
+		if !deep {
+			out["f_oneof_int_32"] = src.FOneofInt32
+		} else {
+			out["f_oneof_int_32"] = src.FOneofInt32
+		}
+	}
+	if !skipZero || src.FOneofString != nil {
+		if !deep {
+			out["f_oneof_string"] = src.FOneofString
+		} else {
+			out["f_oneof_string"] = src.FOneofString
+		}
+	}
+	if !skipZero || src.FOneofBytes != nil {
+		if !deep {
+			out["f_oneof_bytes"] = src.FOneofBytes
+		} else {
+			out["f_oneof_bytes"] = func() *[]byte {
+				if src.FOneofBytes == nil {
+					return nil
+				}
+				v := append([]byte(nil), (*src.FOneofBytes)...)
+				return &v
+			}()
+		}
+	}
+	if !skipZero || src.FOneofMessage != nil {
+		if !deep {
+			out["f_oneof_message"] = src.FOneofMessage
+		} else {
+			out["f_oneof_message"] = src.FOneofMessage
+		}
+	}
+	if !skipZero || src.FOneofEnum != nil {
+		if !deep {
+			out["f_oneof_enum"] = src.FOneofEnum
+		} else {
+			out["f_oneof_enum"] = src.FOneofEnum
+		}
+	}
+	if !skipZero || src.FNestedMessage != nil {
+		if !deep {
+			out["f_nested_message"] = src.FNestedMessage
+		} else {
+			out["f_nested_message"] = src.FNestedMessage
+		}
+	}
+	if !skipZero || src.Name != "" {
+		if !deep {
+			out["name"] = src.Name
+		} else {
+			out["name"] = src.Name
+		}
+	}
+	if !skipZero || src.Inner != nil {
+		if !deep {
+			out["inner"] = src.Inner
+		} else {
+			out["inner"] = src.Inner
+		}
+	}
+	if !skipZero || src.DoubleEmbed != "" {
+		if !deep {
+			out["double_embed"] = src.DoubleEmbed
+		} else {
+			out["double_embed"] = src.DoubleEmbed
+		}
+	}
+	if !skipZero || len(src.FNestedMessageSerialized) != 0 {
+		if !deep {
+			out["f_nested_message_serialized"] = src.FNestedMessageSerialized
+		} else {
+			out["f_nested_message_serialized"] = append([]byte(nil), src.FNestedMessageSerialized...)
+		}
+	}
+	if !skipZero || func() bool { var zero TestEnum; return src.FEnum != zero }() {
+		if !deep {
+			out["f_enum"] = src.FEnum
+		} else {
+			out["f_enum"] = src.FEnum
+		}
+	}
+	if !skipZero || len(src.FAny) != 0 {
+		if !deep {
+			out["f_any"] = src.FAny
+		} else {
+			out["f_any"] = append([]byte(nil), src.FAny...)
+		}
+	}
+	if !skipZero || src.FTimestamp != nil {
+		if !deep {
+			out["f_timestamp"] = src.FTimestamp
+		} else {
+			out["f_timestamp"] = src.FTimestamp
+		}
+	}
+	if !skipZero || src.FDuration != nil {
+		if !deep {
+			out["f_duration"] = src.FDuration
+		} else {
+			out["f_duration"] = src.FDuration
+		}
+	}
+	if !skipZero || len(src.FStruct) != 0 {
+		if !deep {
+			out["f_struct"] = src.FStruct
+		} else {
+			out["f_struct"] = src.FStruct
+		}
+	}
+	if !skipZero || len(src.FValue) != 0 {
+		if !deep {
+			out["f_value"] = src.FValue
+		} else {
+			out["f_value"] = append([]byte(nil), src.FValue...)
+		}
+	}
+	if !skipZero || len(src.FListValue) != 0 {
+		if !deep {
+			out["f_list_value"] = src.FListValue
+		} else {
+			out["f_list_value"] = append([]byte(nil), src.FListValue...)
+		}
+	}
+	if !skipZero || src.FWktDouble != nil {
+		if !deep {
+			out["f_wkt_double"] = src.FWktDouble
+		} else {
+			out["f_wkt_double"] = src.FWktDouble
+		}
+	}
+	if !skipZero || src.FWktFloat != nil {
+		if !deep {
+			out["f_wkt_float"] = src.FWktFloat
+		} else {
+			out["f_wkt_float"] = src.FWktFloat
+		}
+	}
+	if !skipZero || src.FWktInt64 != nil {
+		if !deep {
+			out["f_wkt_int_64"] = src.FWktInt64
+		} else {
+			out["f_wkt_int_64"] = src.FWktInt64
+		}
+	}
+	if !skipZero || src.FWktUint64 != nil {
+		if !deep {
+			out["f_wkt_uint_64"] = src.FWktUint64
+		} else {
+			out["f_wkt_uint_64"] = src.FWktUint64
+		}
+	}
+	if !skipZero || src.FWktInt32 != nil {
+		if !deep {
+			out["f_wkt_int_32"] = src.FWktInt32
+		} else {
+			out["f_wkt_int_32"] = src.FWktInt32
+		}
+	}
+	if !skipZero || src.FWktUint32 != nil {
+		if !deep {
+			out["f_wkt_uint_32"] = src.FWktUint32
+		} else {
+			out["f_wkt_uint_32"] = src.FWktUint32
+		}
+	}
+	if !skipZero || src.FWktBool != nil {
+		if !deep {
+			out["f_wkt_bool"] = src.FWktBool
+		} else {
+			out["f_wkt_bool"] = src.FWktBool
+		}
+	}
+	if !skipZero || src.FWktString != nil {
+		if !deep {
+			out["f_wkt_string"] = src.FWktString
+		} else {
+			out["f_wkt_string"] = src.FWktString
+		}
+	}
+	if !skipZero || src.FWktBytes != nil {
+		if !deep {
+			out["f_wkt_bytes"] = src.FWktBytes
+		} else {
+			out["f_wkt_bytes"] = func() *[]byte {
+				if src.FWktBytes == nil {
+					return nil
+				}
+				v := append([]byte(nil), (*src.FWktBytes)...)
+				return &v
+			}()
+		}
+	}
+	if !skipZero || src.FDoubleNested != nil {
+		if !deep {
+			out["f_double_nested"] = src.FDoubleNested
+		} else {
+			out["f_double_nested"] = src.FDoubleNested
+		}
+	}
+	if !skipZero || src.Meta != 0 {
+		if deep {
+			out["meta"] = src.Meta
+		} else {
+			out["meta"] = src.Meta
+		}
+	}
+	if !skipZero || func() bool { var zero uuid.UUID; return src.TraceId != zero }() {
+		if deep {
+			out["trace_id"] = src.TraceId
+		} else {
+			out["trace_id"] = src.TraceId
+		}
+	}
+	if !skipZero || src.Debug != "" {
+		if deep {
+			out["debug"] = src.Debug
+		} else {
+			out["debug"] = src.Debug
+		}
+	}
+	return out
+}

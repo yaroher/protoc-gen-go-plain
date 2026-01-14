@@ -2,6 +2,7 @@ package test
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -83,6 +84,71 @@ func TestIntoPbDeepConversion(t *testing.T) {
 	}
 }
 
+func TestIntoMap(t *testing.T) {
+	_, plain := sampleMessage()
+	got := plain.IntoMap()
+	want := plainStructToMap(plain, false)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("IntoMap mismatch:\n got: %#v\nwant: %#v", got, want)
+	}
+}
+
+func TestIntoMapSkipZero(t *testing.T) {
+	opt := ""
+	plain := &TestMessagePlain{
+		FString:          "value",
+		FBytes:           []byte{},
+		FRepString:       []string{},
+		FMapStringString: map[string]string{"k": "v"},
+		FOptString:       &opt,
+	}
+	got := plain.IntoMapSkipZero()
+	want := plainStructToMap(plain, true)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("IntoMapSkipZero mismatch:\n got: %#v\nwant: %#v", got, want)
+	}
+}
+
+func TestIntoMapDeep(t *testing.T) {
+	_, plain := sampleMessage()
+	got := plain.IntoMapDeep()
+
+	gotBytes := got["f_bytes"].([]byte)
+	plain.FBytes[0] = 0x99
+	if gotBytes[0] == plain.FBytes[0] {
+		t.Fatalf("IntoMapDeep did not clone bytes")
+	}
+
+	gotRep := got["f_rep_string"].([]string)
+	plain.FRepString[0] = "changed"
+	if gotRep[0] == plain.FRepString[0] {
+		t.Fatalf("IntoMapDeep did not clone string slice")
+	}
+
+	gotMap := got["f_map_int_32_string"].(map[int32]string)
+	plain.FMapInt32String[1] = "changed"
+	if gotMap[1] == "changed" {
+		t.Fatalf("IntoMapDeep did not clone map")
+	}
+
+	gotMapBytes := got["f_map_sint_32_bytes"].(map[int32][]byte)
+	origMapByte := gotMapBytes[7][0]
+	plain.FMapSint32Bytes[7][0] = origMapByte + 1
+	if gotMapBytes[7][0] != origMapByte {
+		t.Fatalf("IntoMapDeep did not clone map byte values")
+	}
+
+	gotRepBytes := got["f_rep_message_serialized"].([][]byte)
+	if len(gotRepBytes) == 0 {
+		t.Fatalf("IntoMapDeep missing repeated bytes")
+	}
+	origRepByte := gotRepBytes[0][0]
+	plain.FRepMessageSerialized[0][0] = origRepByte + 1
+	if gotRepBytes[0][0] != origRepByte {
+		t.Fatalf("IntoMapDeep did not clone repeated bytes")
+	}
+}
+
 func collectFieldSigs(t reflect.Type) []fieldSig {
 	fields := make([]fieldSig, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
@@ -94,6 +160,50 @@ func collectFieldSigs(t reflect.Type) []fieldSig {
 		})
 	}
 	return fields
+}
+
+func plainStructToMap(plain *TestMessagePlain, skipZero bool) map[string]any {
+	if plain == nil {
+		return nil
+	}
+	rv := reflect.ValueOf(plain).Elem()
+	rt := rv.Type()
+	out := make(map[string]any, rt.NumField())
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		tag := field.Tag.Get("json")
+		key := strings.Split(tag, ",")[0]
+		val := rv.Field(i)
+		if skipZero && isZeroForMap(val) {
+			continue
+		}
+		out[key] = val.Interface()
+	}
+	return out
+}
+
+func isZeroForMap(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Pointer, reflect.Interface, reflect.Func:
+		return v.IsNil()
+	case reflect.Map, reflect.Slice:
+		if v.IsNil() {
+			return true
+		}
+		return v.Len() == 0
+	case reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			if !isZeroForMap(v.Index(i)) {
+				return false
+			}
+		}
+		return true
+	case reflect.Struct:
+		zero := reflect.Zero(v.Type())
+		return reflect.DeepEqual(v.Interface(), zero.Interface())
+	default:
+		return v.IsZero()
+	}
 }
 
 func sampleMessage() (*TestMessage, *TestMessagePlain) {

@@ -289,6 +289,7 @@ func (fg *FileGen) genMessage(msg *protogen.Message) {
 		fg.genIntoPlain(msg, true)
 		fg.genIntoPb(msg, false)
 		fg.genIntoPb(msg, true)
+		fg.genIntoMap(msg)
 	}
 
 	for _, child := range msg.Messages {
@@ -479,6 +480,159 @@ func (fg *FileGen) genIntoPb(msg *protogen.Message, deep bool) {
 	fg.P()
 }
 
+func (fg *FileGen) genIntoMap(msg *protogen.Message) {
+	plainName := fg.plainMessageName(msg)
+	fg.P("func (src *", plainName, ") IntoMap() map[string]any {")
+	fg.P("return src.intoMap(false, false)")
+	fg.P("}")
+	fg.P()
+	fg.P("func (src *", plainName, ") IntoMapSkipZero() map[string]any {")
+	fg.P("return src.intoMap(true, false)")
+	fg.P("}")
+	fg.P()
+	fg.P("func (src *", plainName, ") IntoMapDeep() map[string]any {")
+	fg.P("return src.intoMap(false, true)")
+	fg.P("}")
+	fg.P()
+	fg.P("func (src *", plainName, ") IntoMapDeepSkipZero() map[string]any {")
+	fg.P("return src.intoMap(true, true)")
+	fg.P("}")
+	fg.P()
+	fg.P("func (src *", plainName, ") intoMap(skipZero, deep bool) map[string]any {")
+	fg.P("if src == nil { return nil }")
+	fieldCount := fg.countPlainFields(msg)
+	if fieldCount > 0 {
+		fg.P("out := make(map[string]any, ", fieldCount, ")")
+	} else {
+		fg.P("out := make(map[string]any)")
+	}
+	fg.emitIntoMapFields("out", "src", msg.Fields)
+
+	if extras := fg.virtualFields[msg.Desc.FullName()]; len(extras) > 0 {
+		for _, field := range extras {
+			fieldName := field.GetName()
+			if fieldName == "" {
+				continue
+			}
+			fieldType := virtualFieldType(fg.out, field)
+			srcExpr := "src." + fieldName
+			cond := plainTypeNonZeroExpr(fieldType, srcExpr)
+			fg.P("if !skipZero || ", cond, " {")
+			fg.P("if deep {")
+			fg.P("out[\"", strcase.ToSnake(fieldName), "\"] = ", fg.virtualMapValueExpr(fieldType, srcExpr, true))
+			fg.P("} else {")
+			fg.P("out[\"", strcase.ToSnake(fieldName), "\"] = ", srcExpr)
+			fg.P("}")
+			fg.P("}")
+		}
+	}
+	fg.P("return out")
+	fg.P("}")
+	fg.P()
+}
+
+func (fg *FileGen) emitIntoMapFields(outVar, srcVar string, fields []*protogen.Field) {
+	for _, field := range fields {
+		if isRealOneofField(field) {
+			fg.emitIntoMapAssign(outVar, srcVar, field, ctxOneofField)
+			continue
+		}
+		if isEmbeddedMessage(field) {
+			fg.emitIntoMapEmbedded(outVar, srcVar, field.Message)
+			continue
+		}
+		fg.emitIntoMapAssign(outVar, srcVar, field, ctxField)
+	}
+}
+
+func (fg *FileGen) emitIntoMapEmbedded(outVar, srcVar string, msg *protogen.Message) {
+	for _, field := range msg.Fields {
+		if isRealOneofField(field) {
+			fg.emitIntoMapAssign(outVar, srcVar, field, ctxOneofField)
+			continue
+		}
+		if isEmbeddedMessage(field) {
+			fg.emitIntoMapEmbedded(outVar, srcVar, field.Message)
+			continue
+		}
+		fg.emitIntoMapAssign(outVar, srcVar, field, ctxField)
+	}
+}
+
+func (fg *FileGen) emitIntoMapAssign(outVar, srcVar string, field *protogen.Field, ctx fieldContext) {
+	key := strcase.ToSnake(field.GoName)
+	srcExpr := srcVar + "." + field.GoName
+	cond := fg.plainFieldNonZeroExprWithCtx(field, srcExpr, ctx)
+	fg.P("if !skipZero || ", cond, " {")
+	fg.P("if !deep {")
+	fg.P(outVar, "[\"", key, "\"] = ", srcExpr)
+	fg.P("} else {")
+
+	if ctx == ctxField && field.Desc.IsMap() {
+		keyField := field.Message.Fields[0]
+		valField := field.Message.Fields[1]
+		keyType := fg.mapKeyType(keyField)
+		valType := fg.plainType(valField, ctxMapValue)
+		fg.P("var v map[", keyType, "]", valType)
+		fg.P("if ", srcExpr, " != nil {")
+		fg.P("v = make(map[", keyType, "]", valType, ", len(", srcExpr, "))")
+		fg.P("for k, val := range ", srcExpr, " {")
+		if fg.isBytesPlainType(valField) {
+			fg.P("v[k] = ", fg.deepCopyBytesExpr(valField, "val", ctxMapValue))
+		} else {
+			fg.P("v[k] = val")
+		}
+		fg.P("}")
+		fg.P("}")
+		fg.P(outVar, "[\"", key, "\"] = v")
+	} else if ctx == ctxField && field.Desc.IsList() {
+		elemType := fg.plainType(field, ctxListElem)
+		fg.P("var v []", elemType)
+		fg.P("if ", srcExpr, " != nil {")
+		fg.P("v = make([]", elemType, ", 0, len(", srcExpr, "))")
+		fg.P("for _, val := range ", srcExpr, " {")
+		if fg.isBytesPlainType(field) {
+			fg.P("v = append(v, ", fg.deepCopyBytesExpr(field, "val", ctxListElem), ")")
+		} else {
+			fg.P("v = append(v, val)")
+		}
+		fg.P("}")
+		fg.P("}")
+		fg.P(outVar, "[\"", key, "\"] = v")
+	} else if fg.isBytesPlainType(field) {
+		fg.P(outVar, "[\"", key, "\"] = ", fg.deepCopyBytesExpr(field, srcExpr, ctx))
+	} else {
+		fg.P(outVar, "[\"", key, "\"] = ", srcExpr)
+	}
+	fg.P("}")
+	fg.P("}")
+}
+
+func (fg *FileGen) countPlainFields(msg *protogen.Message) int {
+	count := 0
+	for _, field := range msg.Fields {
+		if isEmbeddedMessage(field) {
+			count += fg.countEmbeddedFields(field.Message)
+			continue
+		}
+		count++
+	}
+	count += len(fg.virtualFields[msg.Desc.FullName()])
+	return count
+}
+
+func (fg *FileGen) countEmbeddedFields(msg *protogen.Message) int {
+	count := 0
+	for _, field := range msg.Fields {
+		if isEmbeddedMessage(field) {
+			count += fg.countEmbeddedFields(field.Message)
+			continue
+		}
+		count++
+	}
+	return count
+}
+
 func (fg *FileGen) emitFromPBEmbedded(outVar, srcVar string, field *protogen.Field, deep bool) {
 	fg.P("if ", srcVar, ".", field.GoName, " != nil {")
 	fg.emitEmbeddedAssignFrom(srcVar+"."+field.GoName, outVar, field.Message, deep)
@@ -549,7 +703,11 @@ func (fg *FileGen) embeddedHasValueExpr(srcVar string, msg *protogen.Message) st
 }
 
 func (fg *FileGen) plainFieldNonZeroExpr(field *protogen.Field, src string) string {
-	plainType := fg.plainType(field, ctxField)
+	return fg.plainFieldNonZeroExprWithCtx(field, src, ctxField)
+}
+
+func (fg *FileGen) plainFieldNonZeroExprWithCtx(field *protogen.Field, src string, ctx fieldContext) string {
+	plainType := fg.plainType(field, ctx)
 	if isPointerType(plainType) {
 		return src + " != nil"
 	}
@@ -569,20 +727,34 @@ func (fg *FileGen) plainFieldNonZeroExpr(field *protogen.Field, src string) stri
 		return src + " != 0"
 	}
 
-	switch field.Desc.Kind() {
-	case protoreflect.StringKind:
-		return src + " != \"\""
-	case protoreflect.BoolKind:
-		return src
-	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
-		protoreflect.Uint32Kind, protoreflect.Fixed32Kind,
-		protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind,
-		protoreflect.Uint64Kind, protoreflect.Fixed64Kind,
-		protoreflect.FloatKind, protoreflect.DoubleKind,
-		protoreflect.EnumKind:
-		return src + " != 0"
-	case protoreflect.BytesKind:
+	if field.Desc.Kind() == protoreflect.BytesKind {
 		return "len(" + src + ") != 0"
+	}
+
+	if isComparablePlainType(plainType) {
+		return "func() bool { var zero " + plainType + "; return " + src + " != zero }()"
+	}
+	return "true"
+}
+
+func plainTypeNonZeroExpr(plainType, src string) string {
+	if strings.HasPrefix(plainType, "*") {
+		return src + " != nil"
+	}
+	if strings.HasPrefix(plainType, "[]") {
+		return "len(" + src + ") != 0"
+	}
+	if strings.HasPrefix(plainType, "map[") {
+		return "len(" + src + ") != 0"
+	}
+
+	switch plainType {
+	case "string":
+		return src + " != \"\""
+	case "bool":
+		return src
+	case "int", "int32", "int64", "uint", "uint32", "uint64", "float32", "float64":
+		return src + " != 0"
 	}
 
 	if isComparablePlainType(plainType) {
@@ -616,6 +788,30 @@ func isComparablePlainType(typeName string) bool {
 
 func cloneBytesExpr(src string) string {
 	return "append([]byte(nil), " + src + "...)"
+}
+
+func (fg *FileGen) isBytesPlainType(field *protogen.Field) bool {
+	return fg.plainBaseType(field) == "[]byte"
+}
+
+func (fg *FileGen) deepCopyBytesExpr(field *protogen.Field, src string, ctx fieldContext) string {
+	if isPointerType(fg.plainType(field, ctx)) {
+		return "func() *[]byte { if " + src + " == nil { return nil }; v := " + cloneBytesExpr("(*"+src+")") + "; return &v }()"
+	}
+	return cloneBytesExpr(src)
+}
+
+func (fg *FileGen) virtualMapValueExpr(typeName, src string, deep bool) string {
+	if !deep {
+		return src
+	}
+	if typeName == "[]byte" {
+		return cloneBytesExpr(src)
+	}
+	if typeName == "*[]byte" {
+		return "func() *[]byte { if " + src + " == nil { return nil }; v := " + cloneBytesExpr("(*"+src+")") + "; return &v }()"
+	}
+	return src
 }
 
 func (fg *FileGen) aliasValueField(msg *protogen.Message) *protogen.Field {
