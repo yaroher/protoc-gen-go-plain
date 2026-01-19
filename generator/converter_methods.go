@@ -6,6 +6,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
+	"github.com/yaroher/protoc-gen-plain/converter"
 	"github.com/yaroher/protoc-gen-plain/plain"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
@@ -217,7 +218,11 @@ func findPbFieldForPlainField(plainField *protogen.Field, pbFieldMap map[string]
 }
 
 // generateConverterMethods генерирует методы конверсии для сообщения
-func generateConverterMethods(g *protogen.GeneratedFile, msg *protogen.Message, pbMsg *protogen.Message, typeAliasOverrides map[string]*goplain.GoIdent) {
+func generateConverterMethods(g *protogen.GeneratedFile, msg *protogen.Message, msgMeta *converter.MessageMetadata, typeAliasOverrides map[string]*goplain.GoIdent) {
+	if msgMeta == nil || msgMeta.OriginalMessage == nil {
+		return
+	}
+	pbMsg := msgMeta.OriginalMessage
 	conversions := getFieldConversions(msg, pbMsg, typeAliasOverrides)
 
 	// Генерируем IntoPlain и IntoPlainErr

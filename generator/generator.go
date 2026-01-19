@@ -1,8 +1,6 @@
 package generator
 
 import (
-	"strings"
-
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
 	"github.com/yaroher/protoc-gen-plain/converter"
 	"google.golang.org/protobuf/compiler/protogen"
@@ -68,21 +66,10 @@ func (g *Generator) Generate() error {
 	// Собираем type alias overrides ДО конверсии
 	typeAliasOverrides := buildTypeAliasOverrides(g.Plugin)
 
-	// Собираем pb messages ДО конверсии
-	pbMessages := make(map[string]*protogen.Message)
-	for _, fd := range g.Plugin.Files {
-		if fd.Generate {
-			collectMessages(fd.Messages, pbMessages)
-		}
-	}
-
-	newPlugin, err := converter.Convert(g.Plugin, converter.WithPlainSuffix(g.suffix))
+	newPlugin, metadata, err := converter.Convert(g.Plugin, converter.WithPlainSuffix(g.suffix))
 	if err != nil {
 		return err
 	}
-
-	// Строим мапу plain message -> pb message
-	plainToPbMap := linkPlainMessagesWithPb(newPlugin, pbMessages)
 
 	for _, fd := range newPlugin.Files {
 		plainFile := g.Plugin.NewGeneratedFile(fd.GeneratedFilenamePrefix+".pb.go_plain.go", fd.GoImportPath)
@@ -96,10 +83,15 @@ func (g *Generator) Generate() error {
 			if !msgGenerate.GetGenerate() {
 				continue
 			}
+			msgMeta := metadata.GetMessageMetadata(string(m.Desc.FullName()))
+			if msgMeta == nil || msgMeta.OriginalMessage == nil {
+				continue
+			}
+
 			genCounter++
 
 			// Генерируем структуру и методы для сообщения
-			generateMessageAndMethods(plainFile, m, plainToPbMap, typeAliasOverrides)
+			generateMessageAndMethods(plainFile, m, msgMeta, typeAliasOverrides)
 		}
 		if genCounter == 0 {
 			plainFile.Skip()
@@ -108,57 +100,18 @@ func (g *Generator) Generate() error {
 	return nil
 }
 
-// linkPlainMessagesWithPb создает мапу plain message name -> pb message
-func linkPlainMessagesWithPb(plainPlugin *protogen.Plugin, pbMessages map[string]*protogen.Message) map[string]*protogen.Message {
-	result := make(map[string]*protogen.Message)
-
-	// Связываем plain messages с pb messages
-	for _, fd := range plainPlugin.Files {
-		if fd.Generate {
-			linkPlainToPb(fd.Messages, pbMessages, result)
-		}
-	}
-
-	return result
-}
-
-// collectMessages рекурсивно собирает все pb сообщения
-func collectMessages(messages []*protogen.Message, pbMessages map[string]*protogen.Message) {
-	for _, m := range messages {
-		pbMessages[m.GoIdent.GoName] = m
-		// Рекурсивно обрабатываем вложенные сообщения
-		collectMessages(m.Messages, pbMessages)
-	}
-}
-
-// linkPlainToPb рекурсивно связывает plain messages с pb messages
-func linkPlainToPb(messages []*protogen.Message, pbMessages map[string]*protogen.Message, result map[string]*protogen.Message) {
-	for _, m := range messages {
-		// Убираем суффикс "Plain" из конца имени
-		goName := m.GoIdent.GoName
-		if strings.HasSuffix(goName, "Plain") {
-			pbName := strings.TrimSuffix(goName, "Plain")
-			if pbMsg, ok := pbMessages[pbName]; ok {
-				result[goName] = pbMsg
-			}
-		}
-		// Рекурсивно обрабатываем вложенные сообщения
-		linkPlainToPb(m.Messages, pbMessages, result)
-	}
-}
-
 // generateMessageAndMethods генерирует структуру и методы конверсии для сообщения
-func generateMessageAndMethods(g *protogen.GeneratedFile, m *protogen.Message, plainToPbMap map[string]*protogen.Message, typeAliasOverrides map[string]*goplain.GoIdent) {
+func generateMessageAndMethods(g *protogen.GeneratedFile, m *protogen.Message, msgMeta *converter.MessageMetadata, typeAliasOverrides map[string]*goplain.GoIdent) {
 	// Генерируем структуру
 	g.P("type " + m.GoIdent.GoName + " struct {\n")
 	for _, f := range m.Fields {
-		fieldType := getFieldGoTypeWithFile(g, f, typeAliasOverrides)
+		fieldType := getFieldGoTypeWithMetadata(g, f, msgMeta)
 		g.P("\t" + f.GoName + " " + fieldType)
 	}
 	g.P("}\n\n")
 
 	// Генерируем методы конверсии
-	if pbMsg, ok := plainToPbMap[m.GoIdent.GoName]; ok {
-		generateConverterMethods(g, m, pbMsg, typeAliasOverrides)
+	if msgMeta != nil && msgMeta.OriginalMessage != nil {
+		generateConverterMethods(g, m, msgMeta, typeAliasOverrides)
 	}
 }

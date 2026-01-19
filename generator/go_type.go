@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
+	"github.com/yaroher/protoc-gen-plain/converter"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -171,4 +172,27 @@ func getFieldGoTypeWithFile(g *protogen.GeneratedFile, field *protogen.Field, ty
 	}
 
 	return goType
+}
+
+// getFieldGoTypeWithMetadata возвращает Go тип поля с учётом metadata
+func getFieldGoTypeWithMetadata(g *protogen.GeneratedFile, field *protogen.Field, msgMeta *converter.MessageMetadata) string {
+	if msgMeta != nil {
+		for _, fieldMeta := range msgMeta.Fields {
+			if fieldMeta.PlainField != nil && fieldMeta.PlainField.GoName == field.GoName {
+				fieldOpts := field.Desc.Options().(*descriptorpb.FieldOptions)
+				if proto.HasExtension(fieldOpts, goplain.E_Field) {
+					fieldGoPlainOpts := proto.GetExtension(fieldOpts, goplain.E_Field).(*goplain.FieldOptions)
+					if override := fieldGoPlainOpts.GetOverrideType(); override != nil {
+						return g.QualifiedGoIdent(protogen.GoIdent{
+							GoName:       override.GetName(),
+							GoImportPath: protogen.GoImportPath(override.GetImportPath()),
+						})
+					}
+				}
+				break
+			}
+		}
+	}
+
+	return getFieldGoTypeWithFile(g, field, nil)
 }
