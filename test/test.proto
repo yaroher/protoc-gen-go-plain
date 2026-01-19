@@ -10,32 +10,16 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "goplain/goplain.proto";
-
-option (goplain.file).virtual_field = {
-    message: "test.TestMessage"
-    field: {name: "Debug", go_type: {name: "string"}}
-};
-
-option (goplain.file).virtual_message = {
-    name: "VirtualExtra"
-    fields: [
-    {name: "Id", go_type: {name: "string"}},
-    {name: "CreatedAt", go_type: {name: "Time", import_path: "time"}}
-    ]
-};
+import "plain/options.proto";
 
 message OidcIdAlias {
-    option (goplain.message).type_alias = true;
+    option (plain.message).type_alias = true;
     string value = 1;
 }
 
 message IdAlias {
-    option (goplain.message).type_alias = true;
-    string value = 1 [(goplain.field).overwrite = {
-        go_type: {name: "UUID", import_path: "github.com/google/uuid"}
-        to_plain_body: "id, err := uuid.Parse(v)\nif err != nil { panic(err) }\nreturn id"
-        to_pb_body: "return v.String()"
-    }];
+    option (plain.message).type_alias = true;
+    string value = 1 [(goplain.field).override_type = {name: "UUID", import_path: "github.com/google/uuid"}];
 }
 
 message EmbedWithAlias {
@@ -45,17 +29,20 @@ message EmbedWithAlias {
 
 message TestMessage {
     option (goplain.message).generate = true;
-    option (goplain.message).virtual_fields = {
+    option (plain.message).generate = true;
+    option (plain.message).virtual_fields = {
         name: "Meta"
-        go_type: {name: "int64"}
+        kind: TYPE_INT64
+        number: 1000
     };
-    option (goplain.message).virtual_fields = {
+    option (plain.message).virtual_fields = {
         name: "TraceId"
-        go_type: {name: "UUID", import_path: "github.com/google/uuid"}
+        kind: TYPE_STRING
+        number: 1001
     };
     OidcIdAlias oidc_id = 100;
     IdAlias id = 101;
-    EmbedWithAlias embed = 102 [(goplain.field).embedded = true];
+    EmbedWithAlias embed = 102 [(plain.field).embed = true];
     // Scalar numeric types.
     double f_double = 1;
     float f_float = 2;
@@ -73,11 +60,7 @@ message TestMessage {
     // Scalar non-numeric types.
     bool f_bool = 13;
     string f_string = 14;
-    string f_uuid = 62 [(goplain.field).overwrite = {
-        go_type: {name: "UUID", import_path: "github.com/google/uuid"}
-        to_plain_body: "id, err := uuid.Parse(v)\nif err != nil { panic(err) }\nreturn id"
-        to_pb_body: "return v.String()"
-    }];
+    string f_uuid = 62 [(goplain.field).override_type = {name: "UUID", import_path: "github.com/google/uuid"}];
     bytes f_bytes = 15;
 
     // Optional fields (proto3 optional).
@@ -90,7 +73,7 @@ message TestMessage {
     repeated int32 f_rep_int32 = 19;
     repeated string f_rep_string = 20;
     repeated NestedMessage f_rep_message = 21;
-    repeated NestedMessage f_rep_message_serialized = 220 [(goplain.field).serialized = true];
+    repeated NestedMessage f_rep_message_serialized = 220 [(plain.field).serialize = true];
     repeated TestEnum f_rep_enum = 22;
 
     // Map fields (all allowed key types shown across maps).
@@ -118,8 +101,8 @@ message TestMessage {
 
     // Nested message and enum fields.
     NestedMessage f_nested_message = 40;
-    NestedMessage f_nested_message_embedded = 42 [(goplain.field).embedded = true];
-    NestedMessage f_nested_message_serialized = 43 [(goplain.field).serialized = true];
+    NestedMessage f_nested_message_embedded = 42 [(plain.field).embed = true];
+    NestedMessage f_nested_message_serialized = 43 [(plain.field).serialize = true];
     TestEnum f_enum = 41;
 
     // Well-known types (WKT).
@@ -139,6 +122,9 @@ message TestMessage {
     google.protobuf.StringValue f_wkt_string = 60;
     google.protobuf.BytesValue f_wkt_bytes = 61;
     NestedMessage.InnerMessage.InnerInnerMessage f_double_nested = 64;
+
+    google.protobuf.Timestamp f_created_at = 72;
+    google.protobuf.Timestamp f_edited_at = 73;
 }
 
 message DoubleEmbeddedMessage {
@@ -156,7 +142,7 @@ message NestedMessage {
 
     string name = 2;
     InnerMessage inner = 3;
-    DoubleEmbeddedMessage double_embedded = 4 [(goplain.field).embedded = true];
+    DoubleEmbeddedMessage double_embedded = 4 [(plain.field).embed = true];
 }
 
 enum TestEnum {

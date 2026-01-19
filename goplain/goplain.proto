@@ -5,96 +5,46 @@ option go_package = "github.com/yaroher/protoc-gen-go-plain/goplain";
 package goplain;
 
 import "google/protobuf/descriptor.proto";
-
+import "google/protobuf/type.proto";
 
 message GoIdent {
     string name = 1;
     string import_path = 2;
 }
 
-message OverwriteType {
-    // For file/global overrides: proto full name (e.g. "google.protobuf.Timestamp" or "pkg.Message").
-    // For field overrides this can be empty.
-    string proto_type = 1;
-    GoIdent go_type = 2;
-    GoIdent to_plain = 3;
-    GoIdent to_pb = 4;
-    bool pointer = 5;
-    string to_plain_body = 6;
-    string to_pb_body = 7;
+message OverrideSelector {
+    optional string target_full_path = 1;
+    // from google.protobuf.Field
+    optional google.protobuf.Field.Kind field_kind = 2;
+    optional google.protobuf.Field.Cardinality field_cardinality = 3;
+    optional string field_type_url = 4;
 }
 
-message VirtualFieldSpec {
-    string name = 1;
-    GoIdent go_type = 2;
+message TypeOverride {
+    OverrideSelector selector = 1;
+    GoIdent target_go_type = 2;
 }
 
-message VirtualField {
-    string message = 1;
-    VirtualFieldSpec field = 2;
+message MessageOptions {
+    bool generate = 1;
 }
 
-message VirtualMessage {
-    string name = 1;
-    repeated VirtualFieldSpec fields = 2;
-}
-
-message PlainFieldParams {
-    bool embedded = 1;
-    bool serialized = 2;
-    OverwriteType overwrite = 3;
-}
-
-extend google.protobuf.FieldOptions {
-    PlainFieldParams field = 50000;
-}
-
-message PlainFileParams {
-    repeated OverwriteType overwrite = 1;
-    repeated VirtualField virtual_field = 2;
-    repeated VirtualMessage virtual_message = 3;
+message FileOptions {
+    repeated TypeOverride go_types_overrides = 1;
 }
 
 extend google.protobuf.FileOptions {
-    PlainFileParams file = 50000;
-}
-
-message PlainMessageParams {
-    bool generate = 1;
-    bool type_alias = 2;
-    repeated VirtualFieldSpec virtual_fields = 3;
-}
-
-message FieldModel {
-    string proto_name = 1;
-    string go_name = 2;
-    string kind = 3;
-    bool is_list = 4;
-    bool is_map = 5;
-    bool is_optional = 6;
-    bool is_embedded = 7;
-    bool is_serialized = 8;
-    string message_full_name = 9;
-    string enum_full_name = 10;
-}
-
-message MessageModel {
-    string full_name = 1;
-    string go_name = 2;
-    string plain_name = 3;
-    bool generate = 4;
-    repeated FieldModel fields = 5;
-    repeated VirtualFieldSpec virtual_fields = 6;
-}
-
-message FileModel {
-    string go_package = 1;
-    string plain_suffix = 2;
-    repeated OverwriteType overwrite = 3;
-    repeated VirtualMessage virtual_message = 4;
-    repeated MessageModel messages = 5;
+    FileOptions file = 60000;
 }
 
 extend google.protobuf.MessageOptions {
-    PlainMessageParams message = 50000;
+    MessageOptions message = 60000;
+}
+
+message FieldOptions {
+    GoIdent override_type = 1;
+}
+
+extend google.protobuf.FieldOptions {
+    FieldOptions field = 60000;
 }

@@ -1,19 +1,17 @@
 package generator
 
 import (
-	"os"
+	"fmt"
 	"strings"
 
-	"github.com/yaroher/protoc-gen-go-plain/goplain"
-	"github.com/yaroher/protoc-gen-go-plain/internal/logger"
+	"github.com/yaroher/protoc-gen-plain/logger"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/compiler/protogen"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type PluginSettings struct {
-	TypeOverrides []*goplain.OverwriteType
-	PlainSuffix   string
+	EnumAsString bool
+	EnumAsInt    bool
 }
 
 func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue string) string {
@@ -37,20 +35,11 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{
-		PlainSuffix: "Plain",
+		EnumAsString: mapGetOrDefault(paramsMap, "enum_as_string", "false") == "true",
+		EnumAsInt:    mapGetOrDefault(paramsMap, "enum_as_int", "false") == "true",
 	}
-
-	if overridesPath, ok := paramsMap["overrides_file"]; ok && overridesPath != "" {
-		raw, err := os.ReadFile(overridesPath)
-		if err != nil {
-			return nil, err
-		}
-		var params goplain.PlainFileParams
-		if err := protojson.Unmarshal(raw, &params); err != nil {
-			return nil, err
-		}
-		settings.TypeOverrides = params.GetOverwrite()
+	if settings.EnumAsString && settings.EnumAsInt {
+		return nil, fmt.Errorf("enum_as_string and enum_as_int cannot be both true")
 	}
-
 	return settings, nil
 }
