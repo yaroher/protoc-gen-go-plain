@@ -1,13 +1,11 @@
 package generator
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
-	"github.com/yaroher/protoc-gen-plain/logger"
+	"github.com/yaroher/protoc-gen-plain/plain"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -49,8 +47,6 @@ func foundFieldInMessage(m *protogen.Message, field *protogen.Field) *protogen.F
 
 // Merge overrides from the plugin and the file-level overrides.
 func mergeOverrides(overrides []*goplain.TypeOverride, newOverrides []*goplain.TypeOverride) []*goplain.TypeOverride {
-	logger.Info(fmt.Sprintf("mergeOverrides: existing=%d, new=%d", len(overrides), len(newOverrides)))
-
 	selectorEq := func(a, b *goplain.OverrideSelector) bool {
 		if a == nil || b == nil {
 			return false
@@ -60,22 +56,16 @@ func mergeOverrides(overrides []*goplain.TypeOverride, newOverrides []*goplain.T
 		aPath := a.GetTargetFullPath()
 		bPath := b.GetTargetFullPath()
 		if aPath != "" && bPath != "" {
-			result := aPath == bPath
-			logger.Info(fmt.Sprintf("    selectorEq (by path): a=%s b=%s result=%v", aPath, bPath, result))
-			return result
+			return aPath == bPath
 		}
 
 		// Иначе сравниваем по полям Kind, Cardinality и TypeUrl
 		kindMatch := a.GetFieldKind() == b.GetFieldKind()
 		cardMatch := a.GetFieldCardinality() == b.GetFieldCardinality()
 		typeUrlMatch := a.GetFieldTypeUrl() == b.GetFieldTypeUrl()
-		result := kindMatch && cardMatch && typeUrlMatch
-
-		logger.Info(fmt.Sprintf("    selectorEq (by kind/card/url): kindMatch=%v cardMatch=%v typeUrlMatch=%v result=%v",
-			kindMatch, cardMatch, typeUrlMatch, result))
-
-		return result
+		return kindMatch && cardMatch && typeUrlMatch
 	}
+
 	for _, newOverride := range newOverrides {
 		found := false
 		for _, override := range overrides {
@@ -85,77 +75,44 @@ func mergeOverrides(overrides []*goplain.TypeOverride, newOverrides []*goplain.T
 			}
 		}
 		if !found {
-			logger.Info(fmt.Sprintf("  Adding override for: %s", newOverride.Selector.GetTargetFullPath()))
 			overrides = append(overrides, newOverride)
-		} else {
-			logger.Info(fmt.Sprintf("  Skipping duplicate override for: %s", newOverride.Selector.GetTargetFullPath()))
 		}
 	}
 
-	logger.Info(fmt.Sprintf("mergeOverrides: result=%d", len(overrides)))
 	return overrides
 }
 
 // getPluginOverrides returns all type overrides defined in the plugin.
 func getPluginOverrides(plugin *protogen.Plugin) []*goplain.TypeOverride {
-	logger.Info("=== getPluginOverrides started ===")
 	var overrides []*goplain.TypeOverride
 
-	logger.Info(fmt.Sprintf("Processing %d files", len(plugin.Files)))
-	logger.Info(fmt.Sprintf("Plugin has %d files to generate", len(plugin.Files)))
 	for _, f := range plugin.Files {
-		logger.Info(fmt.Sprintf("File: %s, Generate=%v", f.Desc.Path(), f.Generate))
-	}
-
-	for _, f := range plugin.Files {
-		logger.Info(fmt.Sprintf("Processing file: %s (Generate=%v)", f.Desc.Path(), f.Generate))
-
 		fileOpts := f.Desc.Options().(*descriptorpb.FileOptions)
 		fileOverrides := proto.GetExtension(fileOpts, goplain.E_File).(*goplain.FileOptions)
 
-		logger.Info(fmt.Sprintf("File options: %v", fileOverrides))
-
 		if fileOverrides != nil {
-			logger.Info(fmt.Sprintf("Found %d file-level overrides", len(fileOverrides.GetGoTypesOverrides())))
 			overrides = append(overrides, fileOverrides.GetGoTypesOverrides()...)
-		} else {
-			logger.Info("No file-level overrides found")
 		}
 
-		logger.Info(fmt.Sprintf("Processing %d messages in file", len(f.Messages)))
 		for _, m := range f.Messages {
 			processMessageOverrides(m, &overrides)
 		}
 	}
 
-	logger.Info(fmt.Sprintf("=== getPluginOverrides finished, found %d total overrides ===", len(overrides)))
 	return overrides
 }
 
 // processMessageOverrides рекурсивно обрабатывает overrides для сообщения и всех его вложенных сообщений
 func processMessageOverrides(m *protogen.Message, overrides *[]*goplain.TypeOverride) {
-	logger.Info(fmt.Sprintf("  Processing message: %s (fields: %d, nested: %d)", m.Desc.FullName(), len(m.Fields), len(m.Messages)))
-
 	for _, f := range m.Fields {
 		fieldOpts := f.Desc.Options().(*descriptorpb.FieldOptions)
 
-		// Проверяем, есть ли расширение
-		hasExt := proto.HasExtension(fieldOpts, goplain.E_Field)
-		logger.Info(fmt.Sprintf("    Field: %s, hasExtension: %v", f.Desc.FullName(), hasExt))
-
-		if !hasExt {
+		if !proto.HasExtension(fieldOpts, goplain.E_Field) {
 			continue
 		}
 
 		fieldOverride := proto.GetExtension(fieldOpts, goplain.E_Field).(*goplain.FieldOptions)
-		logger.Info(fmt.Sprintf("    Field: %s, override value: %v, overrideType: %v",
-			f.Desc.FullName(), fieldOverride, fieldOverride.GetOverrideType()))
-
-		if fieldOverride != nil {
-			logger.Info(fmt.Sprintf("    ✓ Found field override for: %s -> %s.%s",
-				f.Desc.FullName(),
-				fieldOverride.GetOverrideType().GetImportPath(),
-				fieldOverride.GetOverrideType().GetName()))
+		if fieldOverride != nil && fieldOverride.GetOverrideType() != nil {
 			*overrides = append(*overrides, &goplain.TypeOverride{
 				Selector: &goplain.OverrideSelector{
 					TargetFullPath: strToPtr(string(f.Desc.FullName())),
@@ -171,24 +128,87 @@ func processMessageOverrides(m *protogen.Message, overrides *[]*goplain.TypeOver
 	}
 }
 
-// buildFieldMap рекурсивно строит мапу полей до конверсии
-// Ключ: будущее полное имя после конверсии (с Plain суффиксом)
-// Значение: оригинальное полное имя до конверсии
-func buildFieldMap(m *protogen.Message, fieldMap map[string]string) {
-	// Текущее и будущее имена сообщения
-	origMsgFullName := string(m.Desc.FullName())
-	plainMsgFullName := origMsgFullName + "Plain"
+// buildTypeAliasOverrides собирает overrides из type alias полей ДО конверсии
+func buildTypeAliasOverrides(plugin *protogen.Plugin) map[string]*goplain.GoIdent {
+	result := make(map[string]*goplain.GoIdent)
 
-	// Мапим все поля
-	for _, f := range m.Fields {
-		origFieldFullName := string(f.Desc.FullName())
-		// Заменяем имя сообщения в полном имени поля
-		plainFieldFullName := strings.Replace(origFieldFullName, origMsgFullName, plainMsgFullName, 1)
-		fieldMap[plainFieldFullName] = origFieldFullName
+	for _, file := range plugin.Files {
+		for _, msg := range file.Messages {
+			collectTypeAliasOverridesFromMessage(msg, result)
+		}
+	}
+
+	// Добавляем overrides для embedded полей
+	for _, file := range plugin.Files {
+		for _, msg := range file.Messages {
+			collectEmbeddedFieldOverrides(msg, result)
+		}
+	}
+
+	return result
+}
+
+// collectTypeAliasOverridesFromMessage рекурсивно собирает overrides из полей сообщения
+func collectTypeAliasOverridesFromMessage(msg *protogen.Message, result map[string]*goplain.GoIdent) {
+	for _, field := range msg.Fields {
+		// Проверяем, является ли тип поля MESSAGE (потенциальный type alias)
+		if field.Desc.Kind() == protoreflect.MessageKind && field.Message != nil {
+			// Проверяем, является ли это type alias
+			msgOpts := field.Message.Desc.Options().(*descriptorpb.MessageOptions)
+
+			if proto.HasExtension(msgOpts, plain.E_Message) {
+				plainMsgOpts := proto.GetExtension(msgOpts, plain.E_Message).(*plain.MessageOptions)
+				if plainMsgOpts.GetTypeAlias() && len(field.Message.Fields) >= 1 {
+					valueField := field.Message.Fields[0]
+					if valueField.GoName == "Value" {
+						valueOpts := valueField.Desc.Options().(*descriptorpb.FieldOptions)
+
+						if proto.HasExtension(valueOpts, goplain.E_Field) {
+							valueExtOpts := proto.GetExtension(valueOpts, goplain.E_Field).(*goplain.FieldOptions)
+							if overrideType := valueExtOpts.GetOverrideType(); overrideType != nil {
+								fieldFullName := string(field.Desc.FullName())
+								result[fieldFullName] = overrideType
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Рекурсивно обрабатываем вложенные сообщения
-	for _, nested := range m.Messages {
-		buildFieldMap(nested, fieldMap)
+	for _, nested := range msg.Messages {
+		collectTypeAliasOverridesFromMessage(nested, result)
+	}
+}
+
+// collectEmbeddedFieldOverrides добавляет overrides для embedded полей
+func collectEmbeddedFieldOverrides(msg *protogen.Message, overrides map[string]*goplain.GoIdent) {
+	msgFullName := string(msg.Desc.FullName())
+
+	for _, field := range msg.Fields {
+		// Проверяем, есть ли у поля опция embed
+		fieldOpts := field.Desc.Options().(*descriptorpb.FieldOptions)
+		if proto.HasExtension(fieldOpts, plain.E_Field) {
+			plainFieldOpts := proto.GetExtension(fieldOpts, plain.E_Field).(*plain.FieldOptions)
+			if plainFieldOpts.GetEmbed() && field.Message != nil {
+				// Для каждого поля в embedded сообщении
+				for _, embeddedField := range field.Message.Fields {
+					embeddedFieldFullName := string(embeddedField.Desc.FullName())
+
+					// Проверяем, есть ли override для этого embedded поля
+					if override, found := overrides[embeddedFieldFullName]; found {
+						// Добавляем override с новым именем после embed
+						newFieldFullName := msgFullName + "." + string(embeddedField.Desc.Name())
+						overrides[newFieldFullName] = override
+					}
+				}
+			}
+		}
+	}
+
+	// Рекурсивно обрабатываем вложенные сообщения
+	for _, nested := range msg.Messages {
+		collectEmbeddedFieldOverrides(nested, overrides)
 	}
 }

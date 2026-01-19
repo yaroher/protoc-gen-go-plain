@@ -9,8 +9,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
-	"github.com/yaroher/protoc-gen-plain/logger"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -101,20 +99,11 @@ func getFieldGoType(field *protogen.Field) string {
 // getFieldGoTypeWithFile использует GeneratedFile для правильной работы с импортами
 // typeAliasOverrides - мапа overrides из type alias полей (собранная ДО конверсии)
 func getFieldGoTypeWithFile(g *protogen.GeneratedFile, field *protogen.Field, typeAliasOverrides map[string]*goplain.GoIdent) string {
-	logger.Debug("getFieldGoTypeWithFile called",
-		zap.String("field", string(field.Desc.FullName())),
-		zap.String("kind", field.Desc.Kind().String()))
-
 	// 1. Сначала проверяем прямые опции у поля
 	fieldOpts := field.Desc.Options().(*descriptorpb.FieldOptions)
 	if proto.HasExtension(fieldOpts, goplain.E_Field) {
 		fieldExtOpts := proto.GetExtension(fieldOpts, goplain.E_Field).(*goplain.FieldOptions)
 		if overrideType := fieldExtOpts.GetOverrideType(); overrideType != nil {
-			logger.Info("✓ Applied override from field options",
-				zap.String("field", string(field.Desc.FullName())),
-				zap.String("type", overrideType.GetName()),
-				zap.String("importPath", overrideType.GetImportPath()))
-
 			goIdent := protogen.GoIdent{
 				GoName:       overrideType.GetName(),
 				GoImportPath: protogen.GoImportPath(overrideType.GetImportPath()),
@@ -128,23 +117,13 @@ func getFieldGoTypeWithFile(g *protogen.GeneratedFile, field *protogen.Field, ty
 	plainFieldName := string(field.Desc.FullName())
 	origFieldName := strings.Replace(plainFieldName, "Plain.", ".", 1)
 
-	logger.Debug("Checking type alias override",
-		zap.String("plainField", plainFieldName),
-		zap.String("origField", origFieldName))
-
 	if origOverride, found := typeAliasOverrides[origFieldName]; found {
-		logger.Info("✓ Applied override from type alias",
-			zap.String("field", origFieldName),
-			zap.String("type", origOverride.GetName()),
-			zap.String("importPath", origOverride.GetImportPath()))
-
 		goIdent := protogen.GoIdent{
 			GoName:       origOverride.GetName(),
 			GoImportPath: protogen.GoImportPath(origOverride.GetImportPath()),
 		}
 		return g.QualifiedGoIdent(goIdent)
 	}
-	logger.Debug("No type alias override found", zap.String("origField", origFieldName))
 
 	goType := ""
 	isScalar := true
