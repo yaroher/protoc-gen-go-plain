@@ -117,8 +117,8 @@ func (m *PaymentPlain) IntoPb() *Payment {
 		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
 	}
 	return &Payment{
-		BackupMethod: oneof_backupMethod,
 		Method:       oneof_method,
+		BackupMethod: oneof_backupMethod,
 	}
 }
 

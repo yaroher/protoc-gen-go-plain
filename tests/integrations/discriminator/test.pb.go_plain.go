@@ -17,13 +17,13 @@ type UserPlain struct {
 	// src: .test.discriminator.User.id_kind; transform: none
 	IdKind IdKind
 	// src: <virtual>; transform: virtual|override_type
-	IdentityDisc oneoff.EnumDiscriminator
-	// src: <virtual>; transform: virtual|override_type
-	Identity any
-	// src: <virtual>; transform: virtual|override_type
 	ContactDisc oneoff.EnumDiscriminator
 	// src: <virtual>; transform: virtual|override_type
 	Contact any
+	// src: <virtual>; transform: virtual|override_type
+	IdentityDisc oneoff.EnumDiscriminator
+	// src: <virtual>; transform: virtual|override_type
+	Identity any
 }
 
 const enumFull_TestDiscriminatorContactKind = "test.discriminator.ContactKind"
@@ -53,25 +53,16 @@ func (m *User) IntoPlain() *UserPlain {
 	return &UserPlain{
 		ContactKind:  m.GetContactKind(),
 		IdKind:       m.GetIdKind(),
-		IdentityDisc: disc_identityDisc,
-		Identity:     oneof_identity,
 		ContactDisc:  disc_contactDisc,
 		Contact:      oneof_contact,
+		IdentityDisc: disc_identityDisc,
+		Identity:     oneof_identity,
 	}
 }
 
 func (m *User) IntoPlainErr() (*UserPlain, error) {
 	if m == nil {
 		return nil, nil
-	}
-	var disc_identityDisc oneoff.EnumDiscriminator
-	var oneof_identity any
-	var matched_identity bool
-	switch x := m.GetIdentity().(type) {
-	case *User_UserId:
-		oneof_identity = x.UserId
-		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
-		matched_identity = true
 	}
 	var disc_contactDisc oneoff.EnumDiscriminator
 	var oneof_contact any
@@ -86,19 +77,28 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_PHONE)
 		matched_contact = true
 	}
-	if m.GetIdentity() != nil && !matched_identity {
-		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Identity")
+	var disc_identityDisc oneoff.EnumDiscriminator
+	var oneof_identity any
+	var matched_identity bool
+	switch x := m.GetIdentity().(type) {
+	case *User_UserId:
+		oneof_identity = x.UserId
+		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
+		matched_identity = true
 	}
 	if m.GetContact() != nil && !matched_contact {
 		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Contact")
 	}
+	if m.GetIdentity() != nil && !matched_identity {
+		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Identity")
+	}
 	return &UserPlain{
 		ContactKind:  m.GetContactKind(),
 		IdKind:       m.GetIdKind(),
-		IdentityDisc: disc_identityDisc,
-		Identity:     oneof_identity,
 		ContactDisc:  disc_contactDisc,
 		Contact:      oneof_contact,
+		IdentityDisc: disc_identityDisc,
+		Identity:     oneof_identity,
 	}, nil
 }
 
@@ -130,8 +130,8 @@ func (m *UserPlain) IntoPb() *User {
 	return &User{
 		ContactKind: m.ContactKind,
 		IdKind:      m.IdKind,
-		Contact:     oneof_contact,
 		Identity:    oneof_identity,
+		Contact:     oneof_contact,
 	}
 }
 
@@ -201,18 +201,6 @@ func (m *UserPlain) MarshalJSON() ([]byte, error) {
 	e.Int32(int32(m.ContactKind))
 	e.FieldStart("idKind")
 	e.Int32(int32(m.IdKind))
-	e.FieldStart("identityDisc")
-	e.Str(string(m.IdentityDisc))
-	e.FieldStart("identity")
-	if m.Identity == nil {
-		e.Null()
-	} else {
-		if b, err := json.Marshal(m.Identity); err != nil {
-			return nil, err
-		} else {
-			e.Raw(b)
-		}
-	}
 	e.FieldStart("contactDisc")
 	e.Str(string(m.ContactDisc))
 	e.FieldStart("contact")
@@ -220,6 +208,18 @@ func (m *UserPlain) MarshalJSON() ([]byte, error) {
 		e.Null()
 	} else {
 		if b, err := json.Marshal(m.Contact); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("identityDisc")
+	e.Str(string(m.IdentityDisc))
+	e.FieldStart("identity")
+	if m.Identity == nil {
+		e.Null()
+	} else {
+		if b, err := json.Marshal(m.Identity); err != nil {
 			return nil, err
 		} else {
 			e.Raw(b)
@@ -252,28 +252,6 @@ func (m *UserPlain) UnmarshalJSON(data []byte) error {
 			}
 			m.IdKind = IdKind(v)
 			return nil
-		case "identityDisc":
-			v, err := d.Str()
-			if err != nil {
-				return err
-			}
-			m.IdentityDisc = oneoff.EnumDiscriminator(v)
-			return nil
-		case "identity":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
-			if string(raw) == "null" {
-				m.Identity = nil
-				return nil
-			}
-			var v any
-			if err := json.Unmarshal(raw, &v); err != nil {
-				return err
-			}
-			m.Identity = v
-			return nil
 		case "contactDisc":
 			v, err := d.Str()
 			if err != nil {
@@ -295,6 +273,28 @@ func (m *UserPlain) UnmarshalJSON(data []byte) error {
 				return err
 			}
 			m.Contact = v
+			return nil
+		case "identityDisc":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.IdentityDisc = oneoff.EnumDiscriminator(v)
+			return nil
+		case "identity":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.Identity = nil
+				return nil
+			}
+			var v any
+			if err := json.Unmarshal(raw, &v); err != nil {
+				return err
+			}
+			m.Identity = v
 			return nil
 		default:
 			return d.Skip()

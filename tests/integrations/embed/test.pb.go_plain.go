@@ -184,13 +184,6 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	embed_address = &Address{Street: m.Street, City: m.City}
 	var embed_work_address *Address
 	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity}
-	var oneof_contact isUser_Contact
-	switch m.ContactType {
-	case ContactType_CONTACT_TYPE_EMAIL:
-		oneof_contact = &User_Email{Email: m.Email}
-	case ContactType_CONTACT_TYPE_PHONE:
-		oneof_contact = &User_Phone{Phone: m.Phone}
-	}
 	var oneof_backupContact isUser_BackupContact
 	switch m.ContactType {
 	case ContactType_CONTACT_TYPE_EMAIL:
@@ -198,13 +191,20 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	case ContactType_CONTACT_TYPE_PHONE:
 		oneof_backupContact = &User_BackupPhone{BackupPhone: m.BackupContactBackupPhone}
 	}
+	var oneof_contact isUser_Contact
+	switch m.ContactType {
+	case ContactType_CONTACT_TYPE_EMAIL:
+		oneof_contact = &User_Email{Email: m.Email}
+	case ContactType_CONTACT_TYPE_PHONE:
+		oneof_contact = &User_Phone{Phone: m.Phone}
+	}
 	return &User{
 		Name:          m.Name,
 		ContactType:   m.ContactType,
-		WorkAddress:   embed_work_address,
 		Address:       embed_address,
-		Contact:       oneof_contact,
+		WorkAddress:   embed_work_address,
 		BackupContact: oneof_backupContact,
+		Contact:       oneof_contact,
 	}, nil
 }
 
