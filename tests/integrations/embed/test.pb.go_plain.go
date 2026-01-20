@@ -171,8 +171,8 @@ func (m *UserPlain) IntoPb() *User {
 		ContactType:   m.ContactType,
 		Address:       embed_address,
 		WorkAddress:   embed_work_address,
-		Contact:       oneof_contact,
 		BackupContact: oneof_backupContact,
+		Contact:       oneof_contact,
 	}
 }
 

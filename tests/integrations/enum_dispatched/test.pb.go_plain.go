@@ -126,13 +126,6 @@ func (m *PaymentPlain) IntoPbErr() (*Payment, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var oneof_method isPayment_Method
-	if m.Card != nil {
-		oneof_method = &Payment_Card{Card: m.Card}
-	}
-	if m.Crypto != nil {
-		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
-	}
 	var oneof_backupMethod isPayment_BackupMethod
 	if m.BackupMethodBackupCard != nil {
 		oneof_backupMethod = &Payment_BackupCard{BackupCard: m.BackupMethodBackupCard}
@@ -140,9 +133,16 @@ func (m *PaymentPlain) IntoPbErr() (*Payment, error) {
 	if m.BackupMethodBackupCrypto != nil {
 		oneof_backupMethod = &Payment_BackupCrypto{BackupCrypto: m.BackupMethodBackupCrypto}
 	}
+	var oneof_method isPayment_Method
+	if m.Card != nil {
+		oneof_method = &Payment_Card{Card: m.Card}
+	}
+	if m.Crypto != nil {
+		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
+	}
 	return &Payment{
-		Method:       oneof_method,
 		BackupMethod: oneof_backupMethod,
+		Method:       oneof_method,
 	}, nil
 }
 

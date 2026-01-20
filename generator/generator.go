@@ -142,7 +142,7 @@ func (g *Generator) Generate() error {
 				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues, enumByFull)
 			}
 			if g.Settings != nil && g.Settings.JSONJX {
-				generateJSONMethods(plainFile, m, msgIR)
+				generateJSONMethods(plainFile, m, pbMsg, msgIR)
 			}
 		}
 		if fileCount == 0 {

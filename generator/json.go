@@ -1,14 +1,16 @@
 package generator
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/yaroher/protoc-gen-go-plain/ir"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-func generateJSONMethods(g *protogen.GeneratedFile, plainMsg *protogen.Message, msgIR *ir.MessageIR) {
+func generateJSONMethods(g *protogen.GeneratedFile, plainMsg *protogen.Message, pbMsg *protogen.Message, msgIR *ir.MessageIR) {
 	if g == nil || plainMsg == nil || msgIR == nil {
 		return
 	}
@@ -19,8 +21,16 @@ func generateJSONMethods(g *protogen.GeneratedFile, plainMsg *protogen.Message, 
 		}
 		fieldPlans[fp.NewField.Name] = fp
 	}
+	pbFields := map[string]*protogen.Field{}
+	if pbMsg != nil {
+		for _, f := range pbMsg.Fields {
+			pbFields[string(f.Desc.Name())] = f
+		}
+	}
 	generateMarshalJSON(g, plainMsg, msgIR, fieldPlans)
 	generateUnmarshalJSON(g, plainMsg, msgIR, fieldPlans)
+	generateMarshalJSONWith(g, plainMsg, fieldPlans, pbFields)
+	generateUnmarshalJSONWith(g, plainMsg, fieldPlans, pbFields)
 }
 
 func generateMarshalJSON(g *protogen.GeneratedFile, plainMsg *protogen.Message, msgIR *ir.MessageIR, fieldPlans map[string]*ir.FieldPlan) {
@@ -63,6 +73,79 @@ func generateUnmarshalJSON(g *protogen.GeneratedFile, plainMsg *protogen.Message
 		jsonName := string(f.Desc.JSONName())
 		g.P("\t\tcase ", strconv.Quote(jsonName), ":")
 		fp := fieldPlans[string(f.Desc.Name())]
+		emitJSONDecodeField(g, f, fp, protojsonUnmarshal, jsonUnmarshal)
+	}
+	g.P("\t\tdefault:")
+	g.P("\t\t\treturn d.Skip()")
+	g.P("\t\t}")
+	g.P("\t})")
+	g.P("}")
+	g.P("")
+}
+
+func generateMarshalJSONWith(g *protogen.GeneratedFile, plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field) {
+	params := buildJxCodecParams(g, plainMsg, fieldPlans, pbFields, false)
+	if len(params) == 0 {
+		return
+	}
+	jxEnc := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Encoder", GoImportPath: "github.com/go-faster/jx"})
+	protojsonMarshal := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Marshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"})
+	jsonMarshal := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Marshal", GoImportPath: "encoding/json"})
+	g.P("func (m *", plainMsg.GoIdent.GoName, ") MarshalJSONWith(", strings.Join(params, ", "), ") ([]byte, error) {")
+	g.P("\tif m == nil { return []byte(\"null\"), nil }")
+	g.P("\t_ = ", protojsonMarshal)
+	g.P("\t_ = ", jsonMarshal)
+	g.P("\tvar e ", jxEnc)
+	g.P("\te.ObjStart()")
+	codecs := codecNameMap(plainMsg, fieldPlans)
+	for _, f := range plainMsg.Fields {
+		jsonName := string(f.Desc.JSONName())
+		g.P("\te.FieldStart(", strconv.Quote(jsonName), ")")
+		fp := fieldPlans[string(f.Desc.Name())]
+		if fp != nil && hasOverride(fp) {
+			if name, ok := codecs[f.GoName]; ok {
+				g.P("\t", name, ".EncodeJx(&e, m.", f.GoName, ")")
+				continue
+			}
+		}
+		emitJSONEncodeField(g, f, fp, protojsonMarshal, jsonMarshal)
+	}
+	g.P("\te.ObjEnd()")
+	g.P("\treturn e.Bytes(), nil")
+	g.P("}")
+	g.P("")
+}
+
+func generateUnmarshalJSONWith(g *protogen.GeneratedFile, plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field) {
+	params := buildJxCodecParams(g, plainMsg, fieldPlans, pbFields, true)
+	if len(params) == 0 {
+		return
+	}
+	jxDecode := g.QualifiedGoIdent(protogen.GoIdent{GoName: "DecodeBytes", GoImportPath: "github.com/go-faster/jx"})
+	jxDecoder := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Decoder", GoImportPath: "github.com/go-faster/jx"})
+	protojsonUnmarshal := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"})
+	jsonUnmarshal := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "encoding/json"})
+	g.P("func (m *", plainMsg.GoIdent.GoName, ") UnmarshalJSONWith(data []byte, ", strings.Join(params, ", "), ") error {")
+	g.P("\tif m == nil { return nil }")
+	g.P("\t_ = ", protojsonUnmarshal)
+	g.P("\t_ = ", jsonUnmarshal)
+	g.P("\td := ", jxDecode, "(data)")
+	g.P("\treturn d.Obj(func(d *", jxDecoder, ", key string) error {")
+	g.P("\t\tswitch key {")
+	codecs := codecNameMap(plainMsg, fieldPlans)
+	for _, f := range plainMsg.Fields {
+		jsonName := string(f.Desc.JSONName())
+		g.P("\t\tcase ", strconv.Quote(jsonName), ":")
+		fp := fieldPlans[string(f.Desc.Name())]
+		if fp != nil && hasOverride(fp) {
+			if name, ok := codecs[f.GoName]; ok {
+				g.P("\t\t\tv, err := ", name, ".DecodeJx(d)")
+				g.P("\t\t\tif err != nil { return err }")
+				g.P("\t\t\tm.", f.GoName, " = v")
+				g.P("\t\t\treturn nil")
+				continue
+			}
+		}
 		emitJSONDecodeField(g, f, fp, protojsonUnmarshal, jsonUnmarshal)
 	}
 	g.P("\t\tdefault:")
@@ -483,4 +566,48 @@ func getOverrideName(fp *ir.FieldPlan) string {
 		return op.Data["name"]
 	}
 	return ""
+}
+
+func buildJxCodecParams(g *protogen.GeneratedFile, plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, withErr bool) []string {
+	params := []string{}
+	casterIdent := ""
+	for _, f := range plainMsg.Fields {
+		fp := fieldPlans[string(f.Desc.Name())]
+		if fp == nil || fp.OrigField == nil {
+			continue
+		}
+		if !hasOverride(fp) {
+			continue
+		}
+		if casterIdent == "" {
+			if withErr {
+				casterIdent = g.QualifiedGoIdent(protogen.GoIdent{GoName: "CasterCodecErrJX", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+			} else {
+				casterIdent = g.QualifiedGoIdent(protogen.GoIdent{GoName: "CasterCodecJX", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+			}
+		}
+		pbField := pbFields[fp.OrigField.FieldName]
+		if pbField == nil {
+			continue
+		}
+		srcType := getFieldGoTypeForGen(g, pbField)
+		dstType := getOverrideGoType(g, f, fp)
+		params = append(params, fmt.Sprintf("%s %s[%s, %s]", casterName(f), casterIdent, srcType, dstType))
+	}
+	return params
+}
+
+func codecNameMap(plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan) map[string]string {
+	result := map[string]string{}
+	if plainMsg == nil {
+		return result
+	}
+	for _, f := range plainMsg.Fields {
+		fp := fieldPlans[string(f.Desc.Name())]
+		if fp == nil || !hasOverride(fp) {
+			continue
+		}
+		result[f.GoName] = casterName(f)
+	}
+	return result
 }

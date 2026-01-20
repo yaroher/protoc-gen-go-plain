@@ -25,8 +25,8 @@ func (m *User) IntoPlain(rawIdCast cast.Caster[string, uuid.UUID], createdAtCast
 		return nil
 	}
 	return &UserPlain{
-		RawId:     rawIdCast(m.GetRawId()),
-		CreatedAt: createdAtCast(m.GetCreatedAt()),
+		RawId:     rawIdCast.Cast(m.GetRawId()),
+		CreatedAt: createdAtCast.Cast(m.GetCreatedAt()),
 	}
 }
 
@@ -34,11 +34,11 @@ func (m *User) IntoPlainErr(rawIdCast cast.CasterErr[string, uuid.UUID], created
 	if m == nil {
 		return nil, nil
 	}
-	RawIdVal, err := rawIdCast(m.GetRawId())
+	RawIdVal, err := rawIdCast.CastErr(m.GetRawId())
 	if err != nil {
 		return nil, err
 	}
-	CreatedAtVal, err := createdAtCast(m.GetCreatedAt())
+	CreatedAtVal, err := createdAtCast.CastErr(m.GetCreatedAt())
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func (m *UserPlain) IntoPb(rawIdCast cast.Caster[uuid.UUID, string], createdAtCa
 		return nil
 	}
 	return &User{
-		RawId:     rawIdCast(m.RawId),
-		CreatedAt: createdAtCast(m.CreatedAt),
+		RawId:     rawIdCast.Cast(m.RawId),
+		CreatedAt: createdAtCast.Cast(m.CreatedAt),
 	}
 }
 
@@ -62,11 +62,11 @@ func (m *UserPlain) IntoPbErr(rawIdCast cast.CasterErr[uuid.UUID, string], creat
 	if m == nil {
 		return nil, nil
 	}
-	RawIdVal, err := rawIdCast(m.RawId)
+	RawIdVal, err := rawIdCast.CastErr(m.RawId)
 	if err != nil {
 		return nil, err
 	}
-	CreatedAtVal, err := createdAtCast(m.CreatedAt)
+	CreatedAtVal, err := createdAtCast.CastErr(m.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +121,51 @@ func (m *UserPlain) UnmarshalJSON(data []byte) error {
 				return err
 			}
 			return json.Unmarshal(raw, &m.CreatedAt)
+		default:
+			return d.Skip()
+		}
+	})
+}
+
+func (m *UserPlain) MarshalJSONWith(rawIdCast cast.CasterCodecJX[string, uuid.UUID], createdAtCast cast.CasterCodecJX[*timestamppb.Timestamp, time.Time]) ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("rawId")
+	rawIdCast.EncodeJx(&e, m.RawId)
+	e.FieldStart("createdAt")
+	createdAtCast.EncodeJx(&e, m.CreatedAt)
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSONWith(data []byte, rawIdCast cast.CasterCodecErrJX[string, uuid.UUID], createdAtCast cast.CasterCodecErrJX[*timestamppb.Timestamp, time.Time]) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "rawId":
+			v, err := rawIdCast.DecodeJx(d)
+			if err != nil {
+				return err
+			}
+			m.RawId = v
+			return nil
+		case "createdAt":
+			v, err := createdAtCast.DecodeJx(d)
+			if err != nil {
+				return err
+			}
+			m.CreatedAt = v
+			return nil
 		default:
 			return d.Skip()
 		}

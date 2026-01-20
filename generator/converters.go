@@ -159,7 +159,7 @@ func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 			continue
 		}
 		if hasOverride(fp) {
-			expr = casterName(f) + "(" + expr + ")"
+			expr = casterName(f) + ".Cast(" + expr + ")"
 		}
 		g.P("\t\t", f.GoName, ": ", expr, ",")
 	}
@@ -213,7 +213,7 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 		}
 		if hasOverride(fp) {
 			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
-			g.P("\t", f.GoName, "Val, err := ", casterName(f), "(", expr, ")")
+			g.P("\t", f.GoName, "Val, err := ", casterName(f), ".CastErr(", expr, ")")
 			g.P("\tif err != nil { return nil, err }")
 		}
 	}
@@ -335,7 +335,7 @@ func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message
 			continue
 		}
 		if hasOverride(fp) {
-			g.P("\t\t", pbField.GoName, ": ", casterName(f), "(m.", f.GoName, "),")
+			g.P("\t\t", pbField.GoName, ": ", casterName(f), ".Cast(m.", f.GoName, "),")
 			continue
 		}
 		expr := pbFieldValueExpr(g, f, fp, pbField, false)
@@ -407,7 +407,7 @@ func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 			continue
 		}
 		if hasOverride(fp) {
-			g.P("\t", f.GoName, "Val, err := ", casterName(f), "(m.", f.GoName, ")")
+			g.P("\t", f.GoName, "Val, err := ", casterName(f), ".CastErr(m.", f.GoName, ")")
 			g.P("\tif err != nil { return nil, err }")
 		}
 	}
