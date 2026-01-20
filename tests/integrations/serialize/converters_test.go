@@ -1,18 +1,23 @@
 package serialize
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+)
 
 func TestUserRoundTrip(t *testing.T) {
 	pb := &User{Settings: &Settings{Locale: "ru"}}
 	plain := pb.IntoPlain()
-	if plain == nil {
-		t.Fatal("plain is nil")
-	}
-	if len(plain.Settings) == 0 {
-		t.Fatal("settings not serialized")
-	}
+	require.NotNil(t, plain)
 	pb2 := plain.IntoPb()
-	if pb2.GetSettings() == nil || pb2.GetSettings().GetLocale() != "ru" {
-		t.Fatalf("pb settings roundtrip failed: %#v", pb2.GetSettings())
-	}
+	require.True(t, proto.Equal(pb, pb2))
+
+	data, err := plain.MarshalJSON()
+	require.NoError(t, err)
+	var plain2 UserPlain
+	require.NoError(t, plain2.UnmarshalJSON(data))
+	pb3 := plain2.IntoPb()
+	require.True(t, proto.Equal(pb, pb3))
 }

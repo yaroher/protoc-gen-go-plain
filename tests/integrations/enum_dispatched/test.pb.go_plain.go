@@ -102,19 +102,19 @@ func (m *PaymentPlain) IntoPb() *Payment {
 	if m == nil {
 		return nil
 	}
-	var oneof_backupMethod isPayment_BackupMethod
-	if m.BackupMethodBackupCard != nil {
-		oneof_backupMethod = &Payment_BackupCard{BackupCard: m.BackupMethodBackupCard}
-	}
-	if m.BackupMethodBackupCrypto != nil {
-		oneof_backupMethod = &Payment_BackupCrypto{BackupCrypto: m.BackupMethodBackupCrypto}
-	}
 	var oneof_method isPayment_Method
 	if m.Card != nil {
 		oneof_method = &Payment_Card{Card: m.Card}
 	}
 	if m.Crypto != nil {
 		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
+	}
+	var oneof_backupMethod isPayment_BackupMethod
+	if m.BackupMethodBackupCard != nil {
+		oneof_backupMethod = &Payment_BackupCard{BackupCard: m.BackupMethodBackupCard}
+	}
+	if m.BackupMethodBackupCrypto != nil {
+		oneof_backupMethod = &Payment_BackupCrypto{BackupCrypto: m.BackupMethodBackupCrypto}
 	}
 	return &Payment{
 		BackupMethod: oneof_backupMethod,

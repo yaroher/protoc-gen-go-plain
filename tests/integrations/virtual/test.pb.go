@@ -10,7 +10,6 @@ import (
 	_ "github.com/yaroher/protoc-gen-go-plain/goplain"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/known/typepb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -161,7 +160,7 @@ var File_tests_integrations_virtual_test_proto protoreflect.FileDescriptor
 
 const file_tests_integrations_virtual_test_proto_rawDesc = "" +
 	"\n" +
-	"%tests/integrations/virtual/test.proto\x12\ftest.virtual\x1a\x15goplain/goplain.proto\x1a\x1agoogle/protobuf/type.proto\"!\n" +
+	"%tests/integrations/virtual/test.proto\x12\ftest.virtual\x1a\x15goplain/goplain.proto\"!\n" +
 	"\aAddress\x12\x16\n" +
 	"\x06street\x18\x01 \x01(\tR\x06street\"o\n" +
 	"\x04User\x12\x12\n" +

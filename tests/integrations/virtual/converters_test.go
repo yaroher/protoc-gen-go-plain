@@ -1,6 +1,11 @@
 package virtual
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+)
 
 func TestUserRoundTrip(t *testing.T) {
 	plain := &UserPlain{
@@ -9,11 +14,13 @@ func TestUserRoundTrip(t *testing.T) {
 		VirtStatus: Status_STATUS_ACTIVE,
 	}
 	pb := plain.IntoPb()
-	if pb.GetName() != "Jane" {
-		t.Fatalf("pb name mismatch: %q", pb.GetName())
-	}
-	plain2 := pb.IntoPlain()
-	if plain2.Name != "Jane" {
-		t.Fatalf("plain name mismatch: %q", plain2.Name)
-	}
+	pb2 := pb.IntoPlain().IntoPb()
+	require.True(t, proto.Equal(pb, pb2))
+
+	data, err := plain.MarshalJSON()
+	require.NoError(t, err)
+	var plain2 UserPlain
+	require.NoError(t, plain2.UnmarshalJSON(data))
+	pb3 := plain2.IntoPb()
+	require.True(t, proto.Equal(pb, pb3))
 }

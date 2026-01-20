@@ -1,6 +1,11 @@
 package enum_dispatched
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+)
 
 func TestPaymentRoundTrip(t *testing.T) {
 	pb := &Payment{
@@ -8,20 +13,14 @@ func TestPaymentRoundTrip(t *testing.T) {
 		BackupMethod: &Payment_BackupCrypto{BackupCrypto: &PaymentCrypto{Address: "0xabc"}},
 	}
 	plain := pb.IntoPlain()
-	if plain == nil {
-		t.Fatal("plain is nil")
-	}
-	if plain.Card == nil || plain.Card.Number != "4111" {
-		t.Fatalf("card not copied: %#v", plain.Card)
-	}
-	if plain.BackupMethodBackupCrypto == nil || plain.BackupMethodBackupCrypto.Address != "0xabc" {
-		t.Fatalf("backup crypto not copied: %#v", plain.BackupMethodBackupCrypto)
-	}
+	require.NotNil(t, plain)
 	pb2 := plain.IntoPb()
-	if pb2.GetCard() == nil || pb2.GetCard().Number != "4111" {
-		t.Fatalf("pb card roundtrip failed: %#v", pb2.GetCard())
-	}
-	if pb2.GetBackupCrypto() == nil || pb2.GetBackupCrypto().Address != "0xabc" {
-		t.Fatalf("pb backup crypto roundtrip failed: %#v", pb2.GetBackupCrypto())
-	}
+	require.True(t, proto.Equal(pb, pb2))
+
+	data, err := plain.MarshalJSON()
+	require.NoError(t, err)
+	var plain2 PaymentPlain
+	require.NoError(t, plain2.UnmarshalJSON(data))
+	pb3 := plain2.IntoPb()
+	require.True(t, proto.Equal(pb, pb3))
 }

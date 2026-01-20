@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -68,26 +70,21 @@ func TestUserRoundTrip(t *testing.T) {
 	ts := timestamppb.New(time.Unix(1, 0))
 	pb := &User{RawId: id.String(), CreatedAt: ts}
 	plain := pb.IntoPlain(uuidFromString{}, tsToTime{})
-	if plain == nil {
-		t.Fatal("plain is nil")
-	}
-	if plain.RawId != id {
-		t.Fatalf("raw_id mismatch: %v", plain.RawId)
-	}
+	require.NotNil(t, plain)
 	pb2 := plain.IntoPb(uuidToString{}, timeToTs{})
-	if pb2.GetRawId() != id.String() {
-		t.Fatalf("pb raw_id roundtrip failed: %q", pb2.GetRawId())
-	}
-	if !pb2.GetCreatedAt().AsTime().Equal(ts.AsTime()) {
-		t.Fatalf("pb created_at roundtrip failed: %v", pb2.GetCreatedAt())
-	}
+	require.True(t, proto.Equal(pb, pb2))
 
-	plain2, err := pb.IntoPlainErr(uuidFromStringErr{}, tsToTimeErr{})
-	if err != nil || plain2 == nil {
-		t.Fatalf("IntoPlainErr failed: %v", err)
+	data, err := plain.MarshalJSON()
+	require.NoError(t, err)
+	var plain2 UserPlain
+	require.NoError(t, plain2.UnmarshalJSON(data))
+	pb3 := plain2.IntoPb(uuidToString{}, timeToTs{})
+	require.True(t, proto.Equal(pb, pb3))
+
+	plainErr, err := pb.IntoPlainErr(uuidFromStringErr{}, tsToTimeErr{})
+	if err != nil || plainErr == nil {
+		require.NoError(t, err)
 	}
-	_, err = plain2.IntoPbErr(uuidToStringErr{}, timeToTsErr{})
-	if err != nil {
-		t.Fatalf("IntoPbErr failed: %v", err)
-	}
+	_, err = plainErr.IntoPbErr(uuidToStringErr{}, timeToTsErr{})
+	require.NoError(t, err)
 }

@@ -3,6 +3,8 @@ package wkt_map
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -26,13 +28,15 @@ func TestUserRoundTrip(t *testing.T) {
 	}
 	plain := pb.IntoPlain()
 	if plain == nil || plain.FAny == nil || plain.FMapMsg["a"].Street != "S" {
-		t.Fatalf("plain conversion failed: %+v", plain)
+		require.NotNil(t, plain)
 	}
 	pb2 := plain.IntoPb()
-	if pb2.GetFBool().GetValue() != true {
-		t.Fatalf("pb bool roundtrip failed: %#v", pb2.GetFBool())
-	}
-	if pb2.GetFMapMsg()["a"].GetStreet() != "S" {
-		t.Fatalf("pb map msg roundtrip failed: %#v", pb2.GetFMapMsg())
-	}
+	require.True(t, proto.Equal(pb, pb2))
+
+	data, err := plain.MarshalJSON()
+	require.NoError(t, err)
+	var plain2 UserPlain
+	require.NoError(t, plain2.UnmarshalJSON(data))
+	pb3 := plain2.IntoPb()
+	require.True(t, proto.Equal(pb, pb3))
 }

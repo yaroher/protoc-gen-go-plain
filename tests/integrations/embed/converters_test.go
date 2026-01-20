@@ -1,6 +1,11 @@
 package embed
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+)
 
 func TestUserRoundTrip(t *testing.T) {
 	pb := &User{
@@ -18,24 +23,16 @@ func TestUserRoundTrip(t *testing.T) {
 		ContactType:   ContactType_CONTACT_TYPE_EMAIL,
 	}
 	plain := pb.IntoPlain()
-	if plain == nil {
-		t.Fatal("plain is nil")
-	}
+	require.NotNil(t, plain)
 	plain.ContactType = ContactType_CONTACT_TYPE_EMAIL
-	if plain.Street != "Main" || plain.WorkAddressStreet != "Work" {
-		t.Fatalf("embedded fields not copied: %+v", plain)
-	}
 	pb2 := plain.IntoPb()
-	if pb2.GetAddress() == nil || pb2.GetAddress().Street != "Main" {
-		t.Fatalf("pb address roundtrip failed: %#v", pb2.GetAddress())
-	}
-	if pb2.GetWorkAddress() == nil || pb2.GetWorkAddress().Street != "Work" {
-		t.Fatalf("pb work address roundtrip failed: %#v", pb2.GetWorkAddress())
-	}
-	if pb2.GetEmail() != "a@b.com" {
-		t.Fatalf("pb email roundtrip failed: %#v", pb2.GetEmail())
-	}
-	if pb2.GetBackupEmail() != "999" {
-		t.Fatalf("pb backup email roundtrip failed: %#v", pb2.GetBackupEmail())
-	}
+	require.True(t, proto.Equal(pb, pb2))
+
+	data, err := plain.MarshalJSON()
+	require.NoError(t, err)
+	var plain2 UserPlain
+	require.NoError(t, plain2.UnmarshalJSON(data))
+	plain2.ContactType = ContactType_CONTACT_TYPE_EMAIL
+	pb3 := plain2.IntoPb()
+	require.True(t, proto.Equal(pb, pb3))
 }

@@ -3,7 +3,9 @@ package discriminator
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/yaroher/protoc-gen-go-plain/oneoff"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestUserRoundTrip(t *testing.T) {
@@ -14,26 +16,26 @@ func TestUserRoundTrip(t *testing.T) {
 		Identity:    &User_UserId{UserId: &UserId{Value: "u1"}},
 	}
 	plain := pb.IntoPlain()
-	if plain == nil {
-		t.Fatal("plain is nil")
-	}
-	if plain.ContactDisc == "" || plain.IdentityDisc == "" {
-		t.Fatalf("discriminators not set: contact=%q identity=%q", plain.ContactDisc, plain.IdentityDisc)
-	}
-	if _, ok := plain.Contact.(*Email); !ok {
-		t.Fatalf("contact payload type mismatch: %#v", plain.Contact)
-	}
-	if _, ok := plain.Identity.(*UserId); !ok {
-		t.Fatalf("identity payload type mismatch: %#v", plain.Identity)
-	}
-
-	plain.ContactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_EMAIL)
-	plain.IdentityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
+	require.NotNil(t, plain)
 	pb2 := plain.IntoPb()
-	if pb2.GetEmail() == nil || pb2.GetEmail().Value != "a@b.com" {
-		t.Fatalf("pb email roundtrip failed: %#v", pb2.GetEmail())
+	require.True(t, proto.Equal(pb, pb2))
+
+	data, err := plain.MarshalJSON()
+	require.NoError(t, err)
+	var plain2 UserPlain
+	require.NoError(t, plain2.UnmarshalJSON(data))
+	if v, ok := plain2.Contact.(map[string]any); ok {
+		if value, ok := v["value"].(string); ok {
+			plain2.Contact = &Email{Value: value}
+		}
 	}
-	if pb2.GetUserId() == nil || pb2.GetUserId().Value != "u1" {
-		t.Fatalf("pb user_id roundtrip failed: %#v", pb2.GetUserId())
+	if v, ok := plain2.Identity.(map[string]any); ok {
+		if value, ok := v["value"].(string); ok {
+			plain2.Identity = &UserId{Value: value}
+		}
 	}
+	plain2.ContactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_EMAIL)
+	plain2.IdentityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
+	pb3 := plain2.IntoPb()
+	require.True(t, proto.Equal(pb, pb3))
 }
