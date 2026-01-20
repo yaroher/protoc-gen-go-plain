@@ -184,8 +184,8 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	return &User{
 		ContactKind: m.ContactKind,
 		IdKind:      m.IdKind,
-		Identity:    oneof_identity,
 		Contact:     oneof_contact,
+		Identity:    oneof_identity,
 	}, nil
 }
 

@@ -94,14 +94,6 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 		return nil, nil
 	}
 	var disc_contactType ContactType
-	var oneof_backupContactBackupEmail string
-	var oneof_backupContactBackupPhone string
-	switch x := m.GetBackupContact().(type) {
-	case *User_BackupEmail:
-		oneof_backupContactBackupEmail = x.BackupEmail
-	case *User_BackupPhone:
-		oneof_backupContactBackupPhone = x.BackupPhone
-	}
 	var oneof_email string
 	var oneof_phone string
 	switch x := m.GetContact().(type) {
@@ -109,6 +101,14 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 		oneof_email = x.Email
 	case *User_Phone:
 		oneof_phone = x.Phone
+	}
+	var oneof_backupContactBackupEmail string
+	var oneof_backupContactBackupPhone string
+	switch x := m.GetBackupContact().(type) {
+	case *User_BackupEmail:
+		oneof_backupContactBackupEmail = x.BackupEmail
+	case *User_BackupPhone:
+		oneof_backupContactBackupPhone = x.BackupPhone
 	}
 	return &UserPlain{
 		Name: m.GetName(),
@@ -201,8 +201,8 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	return &User{
 		Name:          m.Name,
 		ContactType:   m.ContactType,
-		Address:       embed_address,
 		WorkAddress:   embed_work_address,
+		Address:       embed_address,
 		Contact:       oneof_contact,
 		BackupContact: oneof_backupContact,
 	}, nil

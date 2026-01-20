@@ -27,17 +27,17 @@ const (
 type PaymentPlain struct {
 
 	// src: <virtual>; transform: virtual
-	MethodType PaymentPlain_MethodType
-	// src: .test.enum_dispatched.Payment.card; transform: oneof
-	Card *PaymentCard
-	// src: .test.enum_dispatched.Payment.crypto; transform: oneof
-	Crypto *PaymentCrypto
-	// src: <virtual>; transform: virtual
 	BackupMethodBackupMethodType PaymentPlain_BackupMethodType
 	// src: .test.enum_dispatched.Payment.backup_card; transform: oneof
 	BackupMethodBackupCard *PaymentCard
 	// src: .test.enum_dispatched.Payment.backup_crypto; transform: oneof
 	BackupMethodBackupCrypto *PaymentCrypto
+	// src: <virtual>; transform: virtual
+	MethodType PaymentPlain_MethodType
+	// src: .test.enum_dispatched.Payment.card; transform: oneof
+	Card *PaymentCard
+	// src: .test.enum_dispatched.Payment.crypto; transform: oneof
+	Crypto *PaymentCrypto
 }
 
 const enumFull_TestEnumDispatchedMethodType = "test.enum_dispatched.MethodType"
@@ -46,14 +46,6 @@ func (m *Payment) IntoPlain() *PaymentPlain {
 	if m == nil {
 		return nil
 	}
-	var oneof_card *PaymentCard
-	var oneof_crypto *PaymentCrypto
-	switch x := m.GetMethod().(type) {
-	case *Payment_Card:
-		oneof_card = x.Card
-	case *Payment_Crypto:
-		oneof_crypto = x.Crypto
-	}
 	var oneof_backupMethodBackupCard *PaymentCard
 	var oneof_backupMethodBackupCrypto *PaymentCrypto
 	switch x := m.GetBackupMethod().(type) {
@@ -62,11 +54,19 @@ func (m *Payment) IntoPlain() *PaymentPlain {
 	case *Payment_BackupCrypto:
 		oneof_backupMethodBackupCrypto = x.BackupCrypto
 	}
+	var oneof_card *PaymentCard
+	var oneof_crypto *PaymentCrypto
+	switch x := m.GetMethod().(type) {
+	case *Payment_Card:
+		oneof_card = x.Card
+	case *Payment_Crypto:
+		oneof_crypto = x.Crypto
+	}
 	return &PaymentPlain{
-		Card:                     oneof_card,
-		Crypto:                   oneof_crypto,
 		BackupMethodBackupCard:   oneof_backupMethodBackupCard,
 		BackupMethodBackupCrypto: oneof_backupMethodBackupCrypto,
+		Card:                     oneof_card,
+		Crypto:                   oneof_crypto,
 	}
 }
 
@@ -74,14 +74,6 @@ func (m *Payment) IntoPlainErr() (*PaymentPlain, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var oneof_card *PaymentCard
-	var oneof_crypto *PaymentCrypto
-	switch x := m.GetMethod().(type) {
-	case *Payment_Card:
-		oneof_card = x.Card
-	case *Payment_Crypto:
-		oneof_crypto = x.Crypto
-	}
 	var oneof_backupMethodBackupCard *PaymentCard
 	var oneof_backupMethodBackupCrypto *PaymentCrypto
 	switch x := m.GetBackupMethod().(type) {
@@ -90,11 +82,19 @@ func (m *Payment) IntoPlainErr() (*PaymentPlain, error) {
 	case *Payment_BackupCrypto:
 		oneof_backupMethodBackupCrypto = x.BackupCrypto
 	}
+	var oneof_card *PaymentCard
+	var oneof_crypto *PaymentCrypto
+	switch x := m.GetMethod().(type) {
+	case *Payment_Card:
+		oneof_card = x.Card
+	case *Payment_Crypto:
+		oneof_crypto = x.Crypto
+	}
 	return &PaymentPlain{
-		Card:                     oneof_card,
-		Crypto:                   oneof_crypto,
 		BackupMethodBackupCard:   oneof_backupMethodBackupCard,
 		BackupMethodBackupCrypto: oneof_backupMethodBackupCrypto,
+		Card:                     oneof_card,
+		Crypto:                   oneof_crypto,
 	}, nil
 }
 
@@ -102,19 +102,19 @@ func (m *PaymentPlain) IntoPb() *Payment {
 	if m == nil {
 		return nil
 	}
-	var oneof_method isPayment_Method
-	if m.Card != nil {
-		oneof_method = &Payment_Card{Card: m.Card}
-	}
-	if m.Crypto != nil {
-		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
-	}
 	var oneof_backupMethod isPayment_BackupMethod
 	if m.BackupMethodBackupCard != nil {
 		oneof_backupMethod = &Payment_BackupCard{BackupCard: m.BackupMethodBackupCard}
 	}
 	if m.BackupMethodBackupCrypto != nil {
 		oneof_backupMethod = &Payment_BackupCrypto{BackupCrypto: m.BackupMethodBackupCrypto}
+	}
+	var oneof_method isPayment_Method
+	if m.Card != nil {
+		oneof_method = &Payment_Card{Card: m.Card}
+	}
+	if m.Crypto != nil {
+		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
 	}
 	return &Payment{
 		BackupMethod: oneof_backupMethod,
@@ -126,13 +126,6 @@ func (m *PaymentPlain) IntoPbErr() (*Payment, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var oneof_method isPayment_Method
-	if m.Card != nil {
-		oneof_method = &Payment_Card{Card: m.Card}
-	}
-	if m.Crypto != nil {
-		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
-	}
 	var oneof_backupMethod isPayment_BackupMethod
 	if m.BackupMethodBackupCard != nil {
 		oneof_backupMethod = &Payment_BackupCard{BackupCard: m.BackupMethodBackupCard}
@@ -140,9 +133,16 @@ func (m *PaymentPlain) IntoPbErr() (*Payment, error) {
 	if m.BackupMethodBackupCrypto != nil {
 		oneof_backupMethod = &Payment_BackupCrypto{BackupCrypto: m.BackupMethodBackupCrypto}
 	}
+	var oneof_method isPayment_Method
+	if m.Card != nil {
+		oneof_method = &Payment_Card{Card: m.Card}
+	}
+	if m.Crypto != nil {
+		oneof_method = &Payment_Crypto{Crypto: m.Crypto}
+	}
 	return &Payment{
-		Method:       oneof_method,
 		BackupMethod: oneof_backupMethod,
+		Method:       oneof_method,
 	}, nil
 }
 
@@ -154,28 +154,6 @@ func (m *PaymentPlain) MarshalJSON() ([]byte, error) {
 	_ = json.Marshal
 	var e jx.Encoder
 	e.ObjStart()
-	e.FieldStart("methodType")
-	e.Int32(int32(m.MethodType))
-	e.FieldStart("card")
-	if m.Card == nil {
-		e.Null()
-	} else {
-		if b, err := protojson.Marshal(m.Card); err != nil {
-			return nil, err
-		} else {
-			e.Raw(b)
-		}
-	}
-	e.FieldStart("crypto")
-	if m.Crypto == nil {
-		e.Null()
-	} else {
-		if b, err := protojson.Marshal(m.Crypto); err != nil {
-			return nil, err
-		} else {
-			e.Raw(b)
-		}
-	}
 	e.FieldStart("backupMethodBackupMethodType")
 	e.Int32(int32(m.BackupMethodBackupMethodType))
 	e.FieldStart("backupMethodBackupCard")
@@ -198,6 +176,28 @@ func (m *PaymentPlain) MarshalJSON() ([]byte, error) {
 			e.Raw(b)
 		}
 	}
+	e.FieldStart("methodType")
+	e.Int32(int32(m.MethodType))
+	e.FieldStart("card")
+	if m.Card == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.Card); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("crypto")
+	if m.Crypto == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.Crypto); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
 	e.ObjEnd()
 	return e.Bytes(), nil
 }
@@ -211,43 +211,6 @@ func (m *PaymentPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "methodType":
-			v, err := d.Int32()
-			if err != nil {
-				return err
-			}
-			m.MethodType = PaymentPlain_MethodType(v)
-			return nil
-		case "card":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
-			if string(raw) == "null" {
-				m.Card = nil
-				return nil
-			}
-			v := &PaymentCard{}
-			if err := protojson.Unmarshal(raw, v); err != nil {
-				return err
-			}
-			m.Card = v
-			return nil
-		case "crypto":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
-			if string(raw) == "null" {
-				m.Crypto = nil
-				return nil
-			}
-			v := &PaymentCrypto{}
-			if err := protojson.Unmarshal(raw, v); err != nil {
-				return err
-			}
-			m.Crypto = v
-			return nil
 		case "backupMethodBackupMethodType":
 			v, err := d.Int32()
 			if err != nil {
@@ -284,6 +247,43 @@ func (m *PaymentPlain) UnmarshalJSON(data []byte) error {
 				return err
 			}
 			m.BackupMethodBackupCrypto = v
+			return nil
+		case "methodType":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			m.MethodType = PaymentPlain_MethodType(v)
+			return nil
+		case "card":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.Card = nil
+				return nil
+			}
+			v := &PaymentCard{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.Card = v
+			return nil
+		case "crypto":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.Crypto = nil
+				return nil
+			}
+			v := &PaymentCrypto{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.Crypto = v
 			return nil
 		default:
 			return d.Skip()
