@@ -8,8 +8,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/yaroher/protoc-gen-go-plain/converter"
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
-	"github.com/yaroher/protoc-gen-plain/converter"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -89,6 +89,119 @@ func getFieldGoType(field *protogen.Field) string {
 	}
 
 	// Для optional полей скалярные типы становятся указателями
+	if isScalar && field.Desc.HasPresence() && !field.Desc.IsMap() && !field.Desc.IsList() {
+		return "*" + goType
+	}
+
+	return goType
+}
+
+// getFieldGoTypeForGen uses GeneratedFile for correct import qualification.
+func getFieldGoTypeForGen(g *protogen.GeneratedFile, field *protogen.Field) string {
+	goType := ""
+	isScalar := true
+
+	switch field.Desc.Kind() {
+	case protoreflect.BoolKind:
+		goType = "bool"
+	case protoreflect.EnumKind:
+		goType = g.QualifiedGoIdent(field.Enum.GoIdent)
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		goType = "int32"
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		goType = "uint32"
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		goType = "int64"
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		goType = "uint64"
+	case protoreflect.FloatKind:
+		goType = "float32"
+	case protoreflect.DoubleKind:
+		goType = "float64"
+	case protoreflect.StringKind:
+		goType = "string"
+	case protoreflect.BytesKind:
+		goType = "[]byte"
+		isScalar = false
+	case protoreflect.MessageKind, protoreflect.GroupKind:
+		goType = "*" + g.QualifiedGoIdent(field.Message.GoIdent)
+		isScalar = false
+	}
+
+	switch {
+	case field.Desc.IsList():
+		return "[]" + goType
+	case field.Desc.IsMap():
+		keyType := getFieldGoTypeForGen(g, field.Message.Fields[0])
+		valType := getFieldGoTypeForGen(g, field.Message.Fields[1])
+		return fmt.Sprintf("map[%v]%v", keyType, valType)
+	}
+
+	if isScalar && field.Desc.HasPresence() && !field.Desc.IsMap() && !field.Desc.IsList() {
+		return "*" + goType
+	}
+
+	return goType
+}
+
+// getFieldGoTypeForGenWithEnums maps nested plain types to original pb types when possible.
+// generatedEnums contains full names of enums synthesized by enum_dispatched.
+func getFieldGoTypeForGenWithEnums(g *protogen.GeneratedFile, field *protogen.Field, parentPlain, parentOrig string, generatedEnums map[string]struct{}) string {
+	goType := ""
+	isScalar := true
+
+	switch field.Desc.Kind() {
+	case protoreflect.BoolKind:
+		goType = "bool"
+	case protoreflect.EnumKind:
+		enumIdent := field.Enum.GoIdent
+		if _, ok := generatedEnums[string(field.Enum.Desc.FullName())]; !ok {
+			if strings.HasPrefix(enumIdent.GoName, parentPlain+"_") {
+				enumIdent = protogen.GoIdent{
+					GoName:       parentOrig + strings.TrimPrefix(enumIdent.GoName, parentPlain),
+					GoImportPath: enumIdent.GoImportPath,
+				}
+			}
+		}
+		goType = g.QualifiedGoIdent(enumIdent)
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		goType = "int32"
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		goType = "uint32"
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		goType = "int64"
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		goType = "uint64"
+	case protoreflect.FloatKind:
+		goType = "float32"
+	case protoreflect.DoubleKind:
+		goType = "float64"
+	case protoreflect.StringKind:
+		goType = "string"
+	case protoreflect.BytesKind:
+		goType = "[]byte"
+		isScalar = false
+	case protoreflect.MessageKind, protoreflect.GroupKind:
+		msgIdent := field.Message.GoIdent
+		if strings.HasPrefix(msgIdent.GoName, parentPlain+"_") {
+			msgIdent = protogen.GoIdent{
+				GoName:       parentOrig + strings.TrimPrefix(msgIdent.GoName, parentPlain),
+				GoImportPath: msgIdent.GoImportPath,
+			}
+		}
+		goType = "*" + g.QualifiedGoIdent(msgIdent)
+		isScalar = false
+	}
+
+	switch {
+	case field.Desc.IsList():
+		return "[]" + goType
+	case field.Desc.IsMap():
+		keyType := getFieldGoTypeForGenWithEnums(g, field.Message.Fields[0], parentPlain, parentOrig, generatedEnums)
+		valType := getFieldGoTypeForGenWithEnums(g, field.Message.Fields[1], parentPlain, parentOrig, generatedEnums)
+		return fmt.Sprintf("map[%v]%v", keyType, valType)
+	}
+
 	if isScalar && field.Desc.HasPresence() && !field.Desc.IsMap() && !field.Desc.IsList() {
 		return "*" + goType
 	}

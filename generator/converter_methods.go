@@ -5,9 +5,8 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
+	"github.com/yaroher/protoc-gen-go-plain/converter"
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
-	"github.com/yaroher/protoc-gen-plain/converter"
-	"github.com/yaroher/protoc-gen-plain/plain"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -133,8 +132,8 @@ func buildPbFieldMap(pbMsg *protogen.Message) map[string]*PbFieldInfo {
 		// Проверяем является ли поле type alias
 		if pbField.Desc.Kind() == protoreflect.MessageKind && pbField.Message != nil {
 			msgOpts := pbField.Message.Desc.Options().(*descriptorpb.MessageOptions)
-			if proto.HasExtension(msgOpts, plain.E_Message) {
-				plainMsgOpts := proto.GetExtension(msgOpts, plain.E_Message).(*plain.MessageOptions)
+			if proto.HasExtension(msgOpts, goplain.E_Message) {
+				plainMsgOpts := proto.GetExtension(msgOpts, goplain.E_Message).(*goplain.MessageOptions)
 				if plainMsgOpts.GetTypeAlias() && len(pbField.Message.Fields) >= 1 {
 					info.IsTypeAlias = true
 					info.TypeAliasInnerType = getFieldGoTypeString(pbField.Message.Fields[0])
@@ -144,8 +143,8 @@ func buildPbFieldMap(pbMsg *protogen.Message) map[string]*PbFieldInfo {
 
 		// Проверяем опции поля (embedded, serialized, oneof)
 		fieldOpts := pbField.Desc.Options().(*descriptorpb.FieldOptions)
-		if proto.HasExtension(fieldOpts, plain.E_Field) {
-			plainFieldOpts := proto.GetExtension(fieldOpts, plain.E_Field).(*plain.FieldOptions)
+		if proto.HasExtension(fieldOpts, goplain.E_Field) {
+			plainFieldOpts := proto.GetExtension(fieldOpts, goplain.E_Field).(*goplain.FieldOptions)
 
 			// Проверяем serialized
 			if plainFieldOpts.GetSerialize() {
@@ -169,8 +168,8 @@ func buildPbFieldMap(pbMsg *protogen.Message) map[string]*PbFieldInfo {
 						// Проверяем является ли embedded поле type alias
 						if embeddedField.Desc.Kind() == protoreflect.MessageKind && embeddedField.Message != nil {
 							embMsgOpts := embeddedField.Message.Desc.Options().(*descriptorpb.MessageOptions)
-							if proto.HasExtension(embMsgOpts, plain.E_Message) {
-								plainEmbMsgOpts := proto.GetExtension(embMsgOpts, plain.E_Message).(*plain.MessageOptions)
+							if proto.HasExtension(embMsgOpts, goplain.E_Message) {
+								plainEmbMsgOpts := proto.GetExtension(embMsgOpts, goplain.E_Message).(*goplain.MessageOptions)
 								if plainEmbMsgOpts.GetTypeAlias() && len(embeddedField.Message.Fields) >= 1 {
 									embeddedInfo.IsTypeAlias = true
 									embeddedInfo.TypeAliasInnerType = getFieldGoTypeString(embeddedField.Message.Fields[0])

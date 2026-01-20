@@ -3,440 +3,87 @@
 package test
 
 import (
-	uuid "github.com/google/uuid"
-	cast "github.com/yaroher/protoc-gen-go-plain/cast"
-	anypb "google.golang.org/protobuf/types/known/anypb"
-	durationpb "google.golang.org/protobuf/types/known/durationpb"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+)
+
+type TestMessagePlain_PaymentMethodType int32
+
+const (
+	TestMessagePlain_PAYMENT_METHOD_TYPE_UNSPECIFIED TestMessagePlain_PaymentMethodType = 0
+	TestMessagePlain_PAYMENT_METHOD_TYPE_CARD        TestMessagePlain_PaymentMethodType = 1
+	TestMessagePlain_PAYMENT_METHOD_TYPE_CRYPTO      TestMessagePlain_PaymentMethodType = 2
+)
+
+type TestMessagePlain_BackupPaymentMethodType int32
+
+const (
+	TestMessagePlain_BACKUP_PAYMENT_METHOD_TYPE_UNSPECIFIED   TestMessagePlain_BackupPaymentMethodType = 0
+	TestMessagePlain_BACKUP_PAYMENT_METHOD_TYPE_BACKUP_CARD   TestMessagePlain_BackupPaymentMethodType = 1
+	TestMessagePlain_BACKUP_PAYMENT_METHOD_TYPE_BACKUP_CRYPTO TestMessagePlain_BackupPaymentMethodType = 2
 )
 
 type TestMessagePlain struct {
-	OidcId                   string
-	Id                       uuid.UUID
-	EmbedOidcId              string
-	EmbedId                  uuid.UUID
-	FDouble                  float64
-	FFloat                   float32
-	FInt32                   int32
-	FInt64                   int64
-	FUint32                  uint32
-	FUint64                  uint64
-	FSint32                  int32
-	FSint64                  int64
-	FFixed32                 uint32
-	FFixed64                 uint64
-	FSfixed32                int32
-	FSfixed64                int64
-	FBool                    bool
-	FString                  string
-	FUuid                    uuid.UUID
-	FBytes                   []byte
-	FOptInt32                *int32
-	FOptString               *string
-	FOptMessage              *NestedMessage
-	FOptEnum                 *TestEnum
-	FRepInt32                []int32
-	FRepString               []string
-	FRepMessage              []*NestedMessage
-	FRepMessageSerialized    [][]byte
-	FRepEnum                 []TestEnum
-	FMapInt32String          map[int32]string
-	FMapInt64Int32           map[int64]int32
-	FMapUint32Uint64         map[uint32]uint64
-	FMapUint64Bool           map[uint64]bool
-	FMapSint32Bytes          map[int32][]byte
-	FMapSint64Float          map[int64]float32
-	FMapFixed32Double        map[uint32]float64
-	FMapFixed64Message       map[uint64]*NestedMessage
-	FMapSfixed32Enum         map[int32]TestEnum
-	FMapSfixed64String       map[int64]string
-	FMapBoolInt32            map[bool]int32
-	FMapStringString         map[string]string
-	FOneofInt32              *int32
-	FOneofString             *string
-	FOneofBytes              []byte
-	FOneofMessage            *NestedMessage
-	FOneofEnum               *TestEnum
-	FNestedMessage           *NestedMessage
-	Name                     string
-	Inner                    *NestedMessage_InnerMessage
-	DoubleEmbed              string
-	FNestedMessageSerialized []byte
-	FEnum                    TestEnum
-	FAny                     *anypb.Any
-	FTimestamp               *timestamppb.Timestamp
-	FDuration                *durationpb.Duration
-	FStruct                  *structpb.Struct
-	FValue                   *structpb.Value
-	FListValue               *structpb.ListValue
-	FWktDouble               *wrapperspb.DoubleValue
-	FWktFloat                *wrapperspb.FloatValue
-	FWktInt64                *wrapperspb.Int64Value
-	FWktUint64               *wrapperspb.UInt64Value
-	FWktInt32                *wrapperspb.Int32Value
-	FWktUint32               *wrapperspb.UInt32Value
-	FWktBool                 *wrapperspb.BoolValue
-	FWktString               *wrapperspb.StringValue
-	FWktBytes                *wrapperspb.BytesValue
-	FDoubleNested            *NestedMessage_InnerMessage_InnerInnerMessage
-	FCreatedAt               *timestamppb.Timestamp
-	FEditedAt                *timestamppb.Timestamp
-	Meta                     int64
-	TraceId                  string
-}
 
-func (m *TestMessage) IntoPlain(uuidCaster cast.Caster[string, uuid.UUID]) *TestMessagePlain {
-	if m == nil {
-		return nil
-	}
-	return &TestMessagePlain{
-		OidcId:                   m.GetOidcId().GetValue(),
-		Id:                       uuidCaster(m.GetId().GetValue()),
-		EmbedOidcId:              m.GetEmbed().GetEmbedOidcId().GetValue(),
-		EmbedId:                  uuidCaster(m.GetEmbed().GetEmbedId().GetValue()),
-		FDouble:                  m.GetFDouble(),
-		FFloat:                   m.GetFFloat(),
-		FInt32:                   m.GetFInt32(),
-		FInt64:                   m.GetFInt64(),
-		FUint32:                  m.GetFUint32(),
-		FUint64:                  m.GetFUint64(),
-		FSint32:                  m.GetFSint32(),
-		FSint64:                  m.GetFSint64(),
-		FFixed32:                 m.GetFFixed32(),
-		FFixed64:                 m.GetFFixed64(),
-		FSfixed32:                m.GetFSfixed32(),
-		FSfixed64:                m.GetFSfixed64(),
-		FBool:                    m.GetFBool(),
-		FString:                  m.GetFString(),
-		FUuid:                    uuidCaster(m.GetFUuid()),
-		FBytes:                   m.GetFBytes(),
-		FOptInt32:                cast.IntoPtr(m.GetFOptInt32()),
-		FOptString:               cast.IntoPtr(m.GetFOptString()),
-		FOptMessage:              m.GetFOptMessage(),
-		FOptEnum:                 cast.IntoPtr(m.GetFOptEnum()),
-		FRepInt32:                m.GetFRepInt32(),
-		FRepString:               m.GetFRepString(),
-		FRepMessage:              m.GetFRepMessage(),
-		FRepMessageSerialized:    cast.MessageToSliceByteSlice[*NestedMessage](m.GetFRepMessageSerialized()),
-		FRepEnum:                 m.GetFRepEnum(),
-		FMapInt32String:          m.GetFMapInt32String(),
-		FMapInt64Int32:           m.GetFMapInt64Int32(),
-		FMapUint32Uint64:         m.GetFMapUint32Uint64(),
-		FMapUint64Bool:           m.GetFMapUint64Bool(),
-		FMapSint32Bytes:          m.GetFMapSint32Bytes(),
-		FMapSint64Float:          m.GetFMapSint64Float(),
-		FMapFixed32Double:        m.GetFMapFixed32Double(),
-		FMapFixed64Message:       m.GetFMapFixed64Message(),
-		FMapSfixed32Enum:         m.GetFMapSfixed32Enum(),
-		FMapSfixed64String:       m.GetFMapSfixed64String(),
-		FMapBoolInt32:            m.GetFMapBoolInt32(),
-		FMapStringString:         m.GetFMapStringString(),
-		FOneofInt32:              cast.IntoPtr(m.GetFOneofInt32()),
-		FOneofString:             cast.IntoPtr(m.GetFOneofString()),
-		FOneofBytes:              m.GetFOneofBytes(),
-		FOneofMessage:            m.GetFOneofMessage(),
-		FOneofEnum:               cast.IntoPtr(m.GetFOneofEnum()),
-		FNestedMessage:           m.GetFNestedMessage(),
-		Name:                     m.GetFNestedMessageEmbedded().GetName(),
-		Inner:                    m.GetFNestedMessageEmbedded().GetInner(),
-		DoubleEmbed:              "",
-		FNestedMessageSerialized: cast.MessageToSliceByte[*NestedMessage](m.GetFNestedMessageSerialized()),
-		FEnum:                    m.GetFEnum(),
-		FAny:                     m.GetFAny(),
-		FTimestamp:               m.GetFTimestamp(),
-		FDuration:                m.GetFDuration(),
-		FStruct:                  m.GetFStruct(),
-		FValue:                   m.GetFValue(),
-		FListValue:               m.GetFListValue(),
-		FWktDouble:               m.GetFWktDouble(),
-		FWktFloat:                m.GetFWktFloat(),
-		FWktInt64:                m.GetFWktInt64(),
-		FWktUint64:               m.GetFWktUint64(),
-		FWktInt32:                m.GetFWktInt32(),
-		FWktUint32:               m.GetFWktUint32(),
-		FWktBool:                 m.GetFWktBool(),
-		FWktString:               m.GetFWktString(),
-		FWktBytes:                m.GetFWktBytes(),
-		FDoubleNested:            m.GetFDoubleNested(),
-		FCreatedAt:               m.GetFCreatedAt(),
-		FEditedAt:                m.GetFEditedAt(),
-		Meta:                     0,
-		TraceId:                  "",
-	}
-}
-
-func (m *TestMessage) IntoPlainErr(uuidCaster cast.CasterErr[string, uuid.UUID]) (*TestMessagePlain, error) {
-	if m == nil {
-		return nil, nil
-	}
-	IdVal, err := uuidCaster(m.GetId().GetValue())
-	if err != nil {
-		return nil, err
-	}
-	EmbedIdVal, err := uuidCaster(m.GetEmbed().GetEmbedId().GetValue())
-	if err != nil {
-		return nil, err
-	}
-	FUuidVal, err := uuidCaster(m.GetFUuid())
-	if err != nil {
-		return nil, err
-	}
-	return &TestMessagePlain{
-		OidcId:                   m.GetOidcId().GetValue(),
-		Id:                       IdVal,
-		EmbedOidcId:              m.GetEmbed().GetEmbedOidcId().GetValue(),
-		EmbedId:                  EmbedIdVal,
-		FDouble:                  m.GetFDouble(),
-		FFloat:                   m.GetFFloat(),
-		FInt32:                   m.GetFInt32(),
-		FInt64:                   m.GetFInt64(),
-		FUint32:                  m.GetFUint32(),
-		FUint64:                  m.GetFUint64(),
-		FSint32:                  m.GetFSint32(),
-		FSint64:                  m.GetFSint64(),
-		FFixed32:                 m.GetFFixed32(),
-		FFixed64:                 m.GetFFixed64(),
-		FSfixed32:                m.GetFSfixed32(),
-		FSfixed64:                m.GetFSfixed64(),
-		FBool:                    m.GetFBool(),
-		FString:                  m.GetFString(),
-		FUuid:                    FUuidVal,
-		FBytes:                   m.GetFBytes(),
-		FOptInt32:                cast.IntoPtr(m.GetFOptInt32()),
-		FOptString:               cast.IntoPtr(m.GetFOptString()),
-		FOptMessage:              m.GetFOptMessage(),
-		FOptEnum:                 cast.IntoPtr(m.GetFOptEnum()),
-		FRepInt32:                m.GetFRepInt32(),
-		FRepString:               m.GetFRepString(),
-		FRepMessage:              m.GetFRepMessage(),
-		FRepMessageSerialized:    cast.MessageToSliceByteSlice[*NestedMessage](m.GetFRepMessageSerialized()),
-		FRepEnum:                 m.GetFRepEnum(),
-		FMapInt32String:          m.GetFMapInt32String(),
-		FMapInt64Int32:           m.GetFMapInt64Int32(),
-		FMapUint32Uint64:         m.GetFMapUint32Uint64(),
-		FMapUint64Bool:           m.GetFMapUint64Bool(),
-		FMapSint32Bytes:          m.GetFMapSint32Bytes(),
-		FMapSint64Float:          m.GetFMapSint64Float(),
-		FMapFixed32Double:        m.GetFMapFixed32Double(),
-		FMapFixed64Message:       m.GetFMapFixed64Message(),
-		FMapSfixed32Enum:         m.GetFMapSfixed32Enum(),
-		FMapSfixed64String:       m.GetFMapSfixed64String(),
-		FMapBoolInt32:            m.GetFMapBoolInt32(),
-		FMapStringString:         m.GetFMapStringString(),
-		FOneofInt32:              cast.IntoPtr(m.GetFOneofInt32()),
-		FOneofString:             cast.IntoPtr(m.GetFOneofString()),
-		FOneofBytes:              m.GetFOneofBytes(),
-		FOneofMessage:            m.GetFOneofMessage(),
-		FOneofEnum:               cast.IntoPtr(m.GetFOneofEnum()),
-		FNestedMessage:           m.GetFNestedMessage(),
-		Name:                     m.GetFNestedMessageEmbedded().GetName(),
-		Inner:                    m.GetFNestedMessageEmbedded().GetInner(),
-		DoubleEmbed:              "",
-		FNestedMessageSerialized: cast.MessageToSliceByte[*NestedMessage](m.GetFNestedMessageSerialized()),
-		FEnum:                    m.GetFEnum(),
-		FAny:                     m.GetFAny(),
-		FTimestamp:               m.GetFTimestamp(),
-		FDuration:                m.GetFDuration(),
-		FStruct:                  m.GetFStruct(),
-		FValue:                   m.GetFValue(),
-		FListValue:               m.GetFListValue(),
-		FWktDouble:               m.GetFWktDouble(),
-		FWktFloat:                m.GetFWktFloat(),
-		FWktInt64:                m.GetFWktInt64(),
-		FWktUint64:               m.GetFWktUint64(),
-		FWktInt32:                m.GetFWktInt32(),
-		FWktUint32:               m.GetFWktUint32(),
-		FWktBool:                 m.GetFWktBool(),
-		FWktString:               m.GetFWktString(),
-		FWktBytes:                m.GetFWktBytes(),
-		FDoubleNested:            m.GetFDoubleNested(),
-		FCreatedAt:               m.GetFCreatedAt(),
-		FEditedAt:                m.GetFEditedAt(),
-		Meta:                     0,
-		TraceId:                  "",
-	}, nil
-}
-
-func (m *TestMessagePlain) IntoPb(uuidCaster cast.Caster[uuid.UUID, string]) *TestMessage {
-	if m == nil {
-		return nil
-	}
-	Embed := &EmbedWithAlias{EmbedOidcId: &OidcIdAlias{Value: m.EmbedOidcId}, EmbedId: &IdAlias{Value: uuidCaster(m.EmbedId)}}
-	FNestedMessageEmbedded := &NestedMessage{Name: m.Name, Inner: m.Inner}
-	var oneofFOneof isTestMessage_FOneof
-	if m.FOneofInt32 != nil {
-		oneofFOneof = &TestMessage_FOneofInt32{FOneofInt32: *m.FOneofInt32}
-	} else if m.FOneofString != nil {
-		oneofFOneof = &TestMessage_FOneofString{FOneofString: *m.FOneofString}
-	} else if m.FOneofBytes != nil {
-		oneofFOneof = &TestMessage_FOneofBytes{FOneofBytes: m.FOneofBytes}
-	} else if m.FOneofMessage != nil {
-		oneofFOneof = &TestMessage_FOneofMessage{FOneofMessage: m.FOneofMessage}
-	} else if m.FOneofEnum != nil {
-		oneofFOneof = &TestMessage_FOneofEnum{FOneofEnum: *m.FOneofEnum}
-	}
-	return &TestMessage{
-		OidcId:                   &OidcIdAlias{Value: m.OidcId},
-		Id:                       &IdAlias{Value: uuidCaster(m.Id)},
-		FDouble:                  m.FDouble,
-		FFloat:                   m.FFloat,
-		FInt32:                   m.FInt32,
-		FInt64:                   m.FInt64,
-		FUint32:                  m.FUint32,
-		FUint64:                  m.FUint64,
-		FSint32:                  m.FSint32,
-		FSint64:                  m.FSint64,
-		FFixed32:                 m.FFixed32,
-		FFixed64:                 m.FFixed64,
-		FSfixed32:                m.FSfixed32,
-		FSfixed64:                m.FSfixed64,
-		FBool:                    m.FBool,
-		FString:                  m.FString,
-		FUuid:                    uuidCaster(m.FUuid),
-		FBytes:                   m.FBytes,
-		FOptInt32:                m.FOptInt32,
-		FOptString:               m.FOptString,
-		FOptMessage:              m.FOptMessage,
-		FOptEnum:                 m.FOptEnum,
-		FRepInt32:                m.FRepInt32,
-		FRepString:               m.FRepString,
-		FRepMessage:              m.FRepMessage,
-		FRepMessageSerialized:    cast.MessageFromSliceByteSlice[*NestedMessage](m.FRepMessageSerialized),
-		FRepEnum:                 m.FRepEnum,
-		FMapInt32String:          m.FMapInt32String,
-		FMapInt64Int32:           m.FMapInt64Int32,
-		FMapUint32Uint64:         m.FMapUint32Uint64,
-		FMapUint64Bool:           m.FMapUint64Bool,
-		FMapSint32Bytes:          m.FMapSint32Bytes,
-		FMapSint64Float:          m.FMapSint64Float,
-		FMapFixed32Double:        m.FMapFixed32Double,
-		FMapFixed64Message:       m.FMapFixed64Message,
-		FMapSfixed32Enum:         m.FMapSfixed32Enum,
-		FMapSfixed64String:       m.FMapSfixed64String,
-		FMapBoolInt32:            m.FMapBoolInt32,
-		FMapStringString:         m.FMapStringString,
-		FNestedMessage:           m.FNestedMessage,
-		FNestedMessageSerialized: cast.MessageFromSliceByte[*NestedMessage](m.FNestedMessageSerialized),
-		FEnum:                    m.FEnum,
-		FAny:                     m.FAny,
-		FTimestamp:               m.FTimestamp,
-		FDuration:                m.FDuration,
-		FStruct:                  m.FStruct,
-		FValue:                   m.FValue,
-		FListValue:               m.FListValue,
-		FWktDouble:               m.FWktDouble,
-		FWktFloat:                m.FWktFloat,
-		FWktInt64:                m.FWktInt64,
-		FWktUint64:               m.FWktUint64,
-		FWktInt32:                m.FWktInt32,
-		FWktUint32:               m.FWktUint32,
-		FWktBool:                 m.FWktBool,
-		FWktString:               m.FWktString,
-		FWktBytes:                m.FWktBytes,
-		FDoubleNested:            m.FDoubleNested,
-		FCreatedAt:               m.FCreatedAt,
-		FEditedAt:                m.FEditedAt,
-		Embed:                    Embed,
-		FNestedMessageEmbedded:   FNestedMessageEmbedded,
-		FOneof:                   oneofFOneof,
-	}
-}
-
-func (m *TestMessagePlain) IntoPbErr(uuidCaster cast.CasterErr[uuid.UUID, string]) (*TestMessage, error) {
-	if m == nil {
-		return nil, nil
-	}
-	IdVal, err := uuidCaster(m.Id)
-	if err != nil {
-		return nil, err
-	}
-	EmbedIdVal, err := uuidCaster(m.EmbedId)
-	if err != nil {
-		return nil, err
-	}
-	FUuidVal, err := uuidCaster(m.FUuid)
-	if err != nil {
-		return nil, err
-	}
-	FNestedMessageEmbedded := &NestedMessage{Name: m.Name, Inner: m.Inner}
-	Embed := &EmbedWithAlias{EmbedOidcId: &OidcIdAlias{Value: m.EmbedOidcId}, EmbedId: &IdAlias{Value: EmbedIdVal}}
-	var oneofFOneof isTestMessage_FOneof
-	if m.FOneofInt32 != nil {
-		oneofFOneof = &TestMessage_FOneofInt32{FOneofInt32: *m.FOneofInt32}
-	} else if m.FOneofString != nil {
-		oneofFOneof = &TestMessage_FOneofString{FOneofString: *m.FOneofString}
-	} else if m.FOneofBytes != nil {
-		oneofFOneof = &TestMessage_FOneofBytes{FOneofBytes: m.FOneofBytes}
-	} else if m.FOneofMessage != nil {
-		oneofFOneof = &TestMessage_FOneofMessage{FOneofMessage: m.FOneofMessage}
-	} else if m.FOneofEnum != nil {
-		oneofFOneof = &TestMessage_FOneofEnum{FOneofEnum: *m.FOneofEnum}
-	}
-	return &TestMessage{
-		OidcId:                   &OidcIdAlias{Value: m.OidcId},
-		Id:                       &IdAlias{Value: IdVal},
-		FDouble:                  m.FDouble,
-		FFloat:                   m.FFloat,
-		FInt32:                   m.FInt32,
-		FInt64:                   m.FInt64,
-		FUint32:                  m.FUint32,
-		FUint64:                  m.FUint64,
-		FSint32:                  m.FSint32,
-		FSint64:                  m.FSint64,
-		FFixed32:                 m.FFixed32,
-		FFixed64:                 m.FFixed64,
-		FSfixed32:                m.FSfixed32,
-		FSfixed64:                m.FSfixed64,
-		FBool:                    m.FBool,
-		FString:                  m.FString,
-		FUuid:                    FUuidVal,
-		FBytes:                   m.FBytes,
-		FOptInt32:                m.FOptInt32,
-		FOptString:               m.FOptString,
-		FOptMessage:              m.FOptMessage,
-		FOptEnum:                 m.FOptEnum,
-		FRepInt32:                m.FRepInt32,
-		FRepString:               m.FRepString,
-		FRepMessage:              m.FRepMessage,
-		FRepMessageSerialized:    cast.MessageFromSliceByteSlice[*NestedMessage](m.FRepMessageSerialized),
-		FRepEnum:                 m.FRepEnum,
-		FMapInt32String:          m.FMapInt32String,
-		FMapInt64Int32:           m.FMapInt64Int32,
-		FMapUint32Uint64:         m.FMapUint32Uint64,
-		FMapUint64Bool:           m.FMapUint64Bool,
-		FMapSint32Bytes:          m.FMapSint32Bytes,
-		FMapSint64Float:          m.FMapSint64Float,
-		FMapFixed32Double:        m.FMapFixed32Double,
-		FMapFixed64Message:       m.FMapFixed64Message,
-		FMapSfixed32Enum:         m.FMapSfixed32Enum,
-		FMapSfixed64String:       m.FMapSfixed64String,
-		FMapBoolInt32:            m.FMapBoolInt32,
-		FMapStringString:         m.FMapStringString,
-		FNestedMessage:           m.FNestedMessage,
-		FNestedMessageSerialized: cast.MessageFromSliceByte[*NestedMessage](m.FNestedMessageSerialized),
-		FEnum:                    m.FEnum,
-		FAny:                     m.FAny,
-		FTimestamp:               m.FTimestamp,
-		FDuration:                m.FDuration,
-		FStruct:                  m.FStruct,
-		FValue:                   m.FValue,
-		FListValue:               m.FListValue,
-		FWktDouble:               m.FWktDouble,
-		FWktFloat:                m.FWktFloat,
-		FWktInt64:                m.FWktInt64,
-		FWktUint64:               m.FWktUint64,
-		FWktInt32:                m.FWktInt32,
-		FWktUint32:               m.FWktUint32,
-		FWktBool:                 m.FWktBool,
-		FWktString:               m.FWktString,
-		FWktBytes:                m.FWktBytes,
-		FDoubleNested:            m.FDoubleNested,
-		FCreatedAt:               m.FCreatedAt,
-		FEditedAt:                m.FEditedAt,
-		Embed:                    Embed,
-		FNestedMessageEmbedded:   FNestedMessageEmbedded,
-		FOneof:                   oneofFOneof,
-	}, nil
+	// src: .test.TestMessage.name; transform: none
+	Name string
+	// src: .test.TestMessage.id; transform: type_alias
+	Id string
+	// src: .test.TestMessage.email; transform: type_alias
+	Email string
+	// src: .test.TestMessage.street; transform: embed
+	Street string
+	// src: .test.TestMessage.city; transform: embed
+	City string
+	// src: .test.TestMessage.country; transform: embed
+	Country string
+	// src: .test.TestMessage.street; transform: embed
+	WorkAddressStreet string
+	// src: .test.TestMessage.city; transform: embed
+	WorkAddressCity string
+	// src: .test.TestMessage.country; transform: embed
+	WorkAddressCountry string
+	// src: .test.TestMessage.created_at; transform: embed
+	CreatedAt *timestamppb.Timestamp
+	// src: .test.TestMessage.updated_at; transform: embed
+	UpdatedAt *timestamppb.Timestamp
+	// src: .test.TestMessage.settings; transform: serialize
+	Settings []byte
+	// src: .test.TestMessage.raw_id; transform: override_type
+	RawId string
+	// src: .test.TestMessage.created_at_ts; transform: override_type
+	CreatedAtTs *timestamppb.Timestamp
+	// src: .test.TestMessage.contact_type; transform: none
+	ContactType TestMessage_ContactType
+	// src: .test.TestMessage.email_contact; transform: none
+	EmailContact *TestMessage_ContactEmail
+	// src: .test.TestMessage.phone_contact; transform: none
+	PhoneContact *TestMessage_ContactPhone
+	// src: .test.TestMessage.backup_email; transform: none
+	BackupContactBackupEmail *TestMessage_ContactEmail
+	// src: .test.TestMessage.backup_phone; transform: none
+	BackupContactBackupPhone *TestMessage_ContactPhone
+	// src: <virtual>; transform: virtual
+	PaymentMethodType TestMessagePlain_PaymentMethodType
+	// src: .test.TestMessage.card; transform: none
+	Card *TestMessage_PaymentCard
+	// src: .test.TestMessage.crypto; transform: none
+	Crypto *TestMessage_PaymentCrypto
+	// src: <virtual>; transform: virtual
+	BackupPaymentMethodBackupPaymentMethodType TestMessagePlain_BackupPaymentMethodType
+	// src: .test.TestMessage.backup_card; transform: none
+	BackupPaymentMethodBackupCard *TestMessage_PaymentCard
+	// src: .test.TestMessage.backup_crypto; transform: none
+	BackupPaymentMethodBackupCrypto *TestMessage_PaymentCrypto
+	// src: .test.TestMessage.enum_email; transform: none
+	EnumEmail *TestMessage_ContactEmail
+	// src: .test.TestMessage.enum_phone; transform: none
+	EnumPhone *TestMessage_ContactPhone
+	// src: <virtual>; transform: virtual
+	PasswordHash []byte
+	// src: <virtual>; transform: virtual
+	CreatedAtUnix int64
+	// src: <virtual>; transform: virtual
+	VirtAddr *TestMessage_Address
+	// src: <virtual>; transform: virtual
+	VirtEnum TestMessage_ContactType
 }

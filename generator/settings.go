@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yaroher/protoc-gen-plain/logger"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/compiler/protogen"
 )
@@ -23,9 +22,9 @@ func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue strin
 
 func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	paramsMap := make(map[string]string)
-	logger.Debug(p.Request.GetParameter())
+	zap.L().Debug(p.Request.GetParameter())
 	params := strings.Split(p.Request.GetParameter(), ",")
-	logger.Debug("len(params)", zap.Int("len", len(params)))
+	zap.L().Debug("len(params)", zap.Int("len", len(params)))
 	for _, param := range params {
 		paramSplit := strings.Split(param, "=")
 		if len(paramSplit) != 2 {

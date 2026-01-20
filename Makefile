@@ -7,16 +7,9 @@ compile-proto-ref:
 build: compile-proto-ref
 	go build -o $(CURDIR)/bin/protoc-gen-go-plain ./
 
-.PHONY: build-test
-build-test: build
-	mkdir -p $(CURDIR)/easyp_vendor/goplain
-	cp $(CURDIR)/goplain/goplain.proto $(CURDIR)/easyp_vendor/goplain
-	PATH=$(PATH):$(CURDIR)/bin LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt easyp generate
-
 .PHONY: build-test-protoc
 build-test-protoc: build
 	rm -f $(CURDIR)/bin/protolog.txt
-	easyp mod vendor
 	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
 		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
 		--go_out=$(CURDIR) \
@@ -24,8 +17,10 @@ build-test-protoc: build
 		--go-plain_out=$(CURDIR) \
 		--go-plain_opt=paths=source_relative \
 		--proto_path=$(CURDIR) \
-		--proto_path=$(CURDIR)/easyp_vendor \
 		$(CURDIR)/test/test.proto
+	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
+	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
+	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt
 
 branch=main
 .PHONY: revision
