@@ -10,15 +10,14 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "goplain/goplain.proto";
-import "plain/options.proto";
 
 message OidcIdAlias {
-    option (plain.message).type_alias = true;
+    option (goplain.message).type_alias = true;
     string value = 1;
 }
 
 message IdAlias {
-    option (plain.message).type_alias = true;
+    option (goplain.message).type_alias = true;
     string value = 1 [(goplain.field).override_type = {name: "UUID", import_path: "github.com/google/uuid"}];
 }
 
@@ -29,20 +28,19 @@ message EmbedWithAlias {
 
 message TestMessage {
     option (goplain.message).generate = true;
-    option (plain.message).generate = true;
-    option (plain.message).virtual_fields = {
+    option (goplain.message).virtual_fields = {
         name: "Meta"
         kind: TYPE_INT64
         number: 1000
     };
-    option (plain.message).virtual_fields = {
+    option (goplain.message).virtual_fields = {
         name: "TraceId"
         kind: TYPE_STRING
         number: 1001
     };
     OidcIdAlias oidc_id = 100;
     IdAlias id = 101;
-    EmbedWithAlias embed = 102 [(plain.field).embed = true];
+    EmbedWithAlias embed = 102 [(goplain.field).embed = true];
     // Scalar numeric types.
     double f_double = 1;
     float f_float = 2;
@@ -73,7 +71,7 @@ message TestMessage {
     repeated int32 f_rep_int32 = 19;
     repeated string f_rep_string = 20;
     repeated NestedMessage f_rep_message = 21;
-    repeated NestedMessage f_rep_message_serialized = 220 [(plain.field).serialize = true];
+    repeated NestedMessage f_rep_message_serialized = 220 [(goplain.field).serialize = true];
     repeated TestEnum f_rep_enum = 22;
 
     // Map fields (all allowed key types shown across maps).
@@ -92,6 +90,7 @@ message TestMessage {
 
     // Oneof fields.
     oneof f_oneof {
+        option (goplain.oneof).embed = true;
         int32 f_oneof_int32 = 35;
         string f_oneof_string = 36;
         bytes f_oneof_bytes = 37;
@@ -101,8 +100,8 @@ message TestMessage {
 
     // Nested message and enum fields.
     NestedMessage f_nested_message = 40;
-    NestedMessage f_nested_message_embedded = 42 [(plain.field).embed = true];
-    NestedMessage f_nested_message_serialized = 43 [(plain.field).serialize = true];
+    NestedMessage f_nested_message_embedded = 42 [(goplain.field).embed = true];
+    NestedMessage f_nested_message_serialized = 43 [(goplain.field).serialize = true];
     TestEnum f_enum = 41;
 
     // Well-known types (WKT).
@@ -142,7 +141,7 @@ message NestedMessage {
 
     string name = 2;
     InnerMessage inner = 3;
-    DoubleEmbeddedMessage double_embedded = 4 [(plain.field).embed = true];
+    DoubleEmbeddedMessage double_embedded = 4 [(goplain.field).embed = true];
 }
 
 enum TestEnum {

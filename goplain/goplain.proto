@@ -27,6 +27,43 @@ message TypeOverride {
 
 message MessageOptions {
     bool generate = 1;
+    /*
+        Type alias instead of message.
+        This means that this message has one field named "<scalar_type> value"
+        example:
+            message Int32Alias {
+                option (plain.field).type_alias = true;
+                int32 value = 1;
+            }
+            // this:
+            message Int32AliasUSAGE {
+                Int32Alias value = 1;
+            }
+            // becomes:
+            message Int32AliasUSAGE {
+                int32 value = 1;
+            }
+    */
+    bool type_alias = 2;
+    /*
+       Virtual fields for this message.
+       Number is filled automatically.
+       This does not affect the original message numbers alignment cause this field does not apply to the original message.
+       Needs only to included in plain message and use in final code with plain messages.
+       Example:
+           message User {
+               (plain.message).virtual_fields = [
+                   {name: "password_hash", kind: TYPE_STRING}
+               ];
+               string name = 1;
+           }
+           // becomes:
+           message UserPlain {
+               string name = 1;
+               string password_hash = 2;
+           }
+   */
+    repeated google.protobuf.Field virtual_fields = 3;
 }
 
 message FileOptions {
@@ -43,8 +80,154 @@ extend google.protobuf.MessageOptions {
 
 message FieldOptions {
     GoIdent override_type = 1;
+    /*
+        Field serialization options.
+        If set to true, the field will be serialized as a JSON object.
+
+        Example:
+            message User {
+                string name = 1;
+                Address address = 2 [(goplain.field).serialized = true];
+                repeated Address addresses = 3 [(goplain.field).serialized = true];
+            }
+
+        Becomes:
+            message UserPlain {
+                string name = 1;
+
+                // without prefix:
+                bytes address = 2;
+                repeated bytes addresses = 3;
+            }
+    */
+    bool serialize = 2;
+    /*
+        Embed field into parent message
+
+        Example:
+            message Address {
+                string street = 1;
+            }
+            message User {
+                string name = 1;
+                Address address = 2 [(goplain.field).embed = {with_prefix: true}];
+            }
+
+        Becomes:
+            message UserPlain {
+                string name = 1;
+
+                // without prefix:
+                string street = 2;
+
+                // or with prefix:
+                string address_street = 3;
+            }
+        */
+    bool embed = 4;
+    bool embed_with_prefix = 5; // Same as embed but with prefix of parent field name
+
+    /*
+        This only for oneof enum dispatching if with_enum set
+    */
+    optional string oneof_enum_value = 6;
 }
 
 extend google.protobuf.FieldOptions {
     FieldOptions field = 60000;
+}
+
+message OneofOptions {
+    /*
+        Embed oneof into parent message
+
+        Example:
+            message User {
+                string name = 1;
+                oneof address {
+                    (goplain.oneof).embed = true;
+                    Address address = 2;
+                    string street = 3;
+                }
+            }
+
+         Becomes:
+            message UserPlain {
+                string name = 1;
+
+                // without prefix:
+                Address address = 2;
+                string street = 3;
+
+                // or with prefix:
+                Address address_address = 4;
+                string address_street = 5;
+            }
+    */
+    bool embed = 1;
+    bool embed_with_prefix = 2;
+    /*
+        Enum dispatching options.
+        If set to true, the oneof field will be dispatched as an enum.
+
+        Example:
+            message User {
+                oneof address {
+                    option (goplain.oneof).enum_dispatched = true;
+                    Address address = 2;
+                    string street = 3;
+                }
+            }
+
+        Becomes:
+            message UserPlain {
+                enum AddressType {
+                    ADDRESS_TYPE_UNSPECIFIED = 0;
+                    ADDRESS_TYPE_ADDRESS = 1;
+                    ADDRESS_TYPE_STREET = 2;
+                }
+                // without prefix:
+                AddressType address_type = 2;
+                Address address = 3;
+                // or with prefix:
+                AddressType address_address_type = 4;
+            }
+    */
+    bool enum_dispatched = 3;
+    bool enum_dispatched_with_prefix = 4; // Same as enum_dispatched but with prefix of oneof field name
+    /*
+        Enum dispatching with custom name.
+
+        Example:
+            enum CustomUserFieldEnum {
+                SOME_ENUM_UNSPECIFIED = 0;
+                SOME_ENUM_ADDRESS = 1;
+                SOME_ENUM_STREET = 2;
+            }
+            message User {
+                SomeEnum some_enum = 1;
+                oneof address {
+                    option (goplain.oneof).with_enum = "<package>.CustomUserFieldEnum";
+                    Address address = 2 [(goplain.field).oneof_enum_value = "SOME_ENUM_ADDRESS"];
+                    string street = 3 [(goplain.field).oneof_enum_value = "SOME_ENUM_STREET"];
+                }
+            }
+
+        Becomes:
+            message UserPlain {
+                SomeEnum some_enum = 1;
+                // without prefix:
+                Address address = 2;
+                string street = 3;
+                // or with prefix:
+                Address address_address = 4;
+                string address_street = 5;
+            }
+    */
+    string with_enum = 5; // enum protobuf full name
+    string with_enum_prefix = 6; // Same as with_enum but with prefix of oneof field name
+}
+
+extend google.protobuf.OneofOptions {
+    OneofOptions oneof = 50000;
 }
