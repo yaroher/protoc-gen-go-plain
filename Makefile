@@ -15,7 +15,7 @@ build-test-protoc: build
 		--go_out=$(CURDIR) \
 		--go_opt=paths=source_relative \
 		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative \
+		--go-plain_opt=paths=source_relative,json_jx=true \
 		--proto_path=$(CURDIR) \
 		$(CURDIR)/tests/integrations/full/test.proto
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
@@ -33,7 +33,7 @@ build-test: build
 			--go_out=$(CURDIR) \
 			--go_opt=paths=source_relative \
 			--go-plain_out=$(CURDIR) \
-			--go-plain_opt=paths=source_relative \
+			--go-plain_opt=paths=source_relative,json_jx=true \
 			--proto_path=$(CURDIR) \
 			$$f; \
 	done

@@ -129,6 +129,31 @@ func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 			g.P("\t\t", f.GoName, ": ", v, ",")
 			continue
 		}
+		if fp.Origin.EnumAsString || fp.Origin.EnumAsInt {
+			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
+			if expr == "" {
+				continue
+			}
+			if fp.Origin.EnumAsString {
+				if f.Desc.Cardinality() == protoreflect.Repeated {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToSliceString", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				} else {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToString", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				}
+			} else {
+				if f.Desc.Cardinality() == protoreflect.Repeated {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToSliceInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				} else {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				}
+			}
+			g.P("\t\t", f.GoName, ": ", expr, ",")
+			continue
+		}
 		expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
 		if expr == "" {
 			continue
@@ -207,6 +232,31 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 			g.P("\t\t", f.GoName, ": ", v, ",")
 			continue
 		}
+		if fp.Origin.EnumAsString || fp.Origin.EnumAsInt {
+			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, true)
+			if expr == "" {
+				continue
+			}
+			if fp.Origin.EnumAsString {
+				if f.Desc.Cardinality() == protoreflect.Repeated {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToSliceString", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				} else {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToString", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				}
+			} else {
+				if f.Desc.Cardinality() == protoreflect.Repeated {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToSliceInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				} else {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumToInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					expr = enumCast + "(" + expr + ")"
+				}
+			}
+			g.P("\t\t", f.GoName, ": ", expr, ",")
+			continue
+		}
 		if fp.Origin.IsSerialized {
 			if v, ok := serializedVars[f.GoName]; ok {
 				g.P("\t\t", f.GoName, ": ", v, ",")
@@ -263,6 +313,27 @@ func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message
 		if fp.Origin.IsOneof {
 			continue
 		}
+		if fp.Origin.EnumAsString || fp.Origin.EnumAsInt {
+			enumType := g.QualifiedGoIdent(pbField.Enum.GoIdent)
+			if fp.Origin.EnumAsString {
+				if f.Desc.Cardinality() == protoreflect.Repeated {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromSliceString", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					g.P("\t\t", pbField.GoName, ": ", enumCast, "[", enumType, "](m.", f.GoName, "),")
+				} else {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromString", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					g.P("\t\t", pbField.GoName, ": ", enumCast, "[", enumType, "](m.", f.GoName, "),")
+				}
+			} else {
+				if f.Desc.Cardinality() == protoreflect.Repeated {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromSliceInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					g.P("\t\t", pbField.GoName, ": ", enumCast, "[", enumType, "](m.", f.GoName, "),")
+				} else {
+					enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+					g.P("\t\t", pbField.GoName, ": ", enumCast, "[", enumType, "](m.", f.GoName, "),")
+				}
+			}
+			continue
+		}
 		if hasOverride(fp) {
 			g.P("\t\t", pbField.GoName, ": ", casterName(f), "(m.", f.GoName, "),")
 			continue
@@ -294,6 +365,7 @@ func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 	g.P("\tif m == nil { return nil, nil }")
 
 	serializedVars := map[string]string{}
+	enumStringVars := map[string]string{}
 	for _, f := range plainMsg.Fields {
 		fp := fieldPlans[string(f.Desc.Name())]
 		if fp == nil || fp.OrigField == nil || !fp.Origin.IsSerialized {
@@ -314,6 +386,24 @@ func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 	for _, f := range plainMsg.Fields {
 		fp := fieldPlans[string(f.Desc.Name())]
 		if fp == nil || fp.OrigField == nil {
+			continue
+		}
+		if fp.Origin.EnumAsString {
+			pbField := pbFields[fp.OrigField.FieldName]
+			if pbField == nil {
+				continue
+			}
+			enumType := g.QualifiedGoIdent(pbField.Enum.GoIdent)
+			varName := f.GoName + "Val"
+			enumStringVars[f.GoName] = varName
+			if f.Desc.Cardinality() == protoreflect.Repeated {
+				enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromSliceStringErr", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+				g.P("\t", varName, ", err := ", enumCast, "[", enumType, "](m.", f.GoName, ")")
+			} else {
+				enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromStringErr", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+				g.P("\t", varName, ", err := ", enumCast, "[", enumType, "](m.", f.GoName, ")")
+			}
+			g.P("\tif err != nil { return nil, err }")
 			continue
 		}
 		if hasOverride(fp) {
@@ -352,6 +442,23 @@ func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 		if fp.Origin.IsSerialized {
 			if v, ok := serializedVars[f.GoName]; ok {
 				g.P("\t\t", pbField.GoName, ": ", v, ",")
+			}
+			continue
+		}
+		if fp.Origin.EnumAsString || fp.Origin.EnumAsInt {
+			if fp.Origin.EnumAsString {
+				if v, ok := enumStringVars[f.GoName]; ok {
+					g.P("\t\t", pbField.GoName, ": ", v, ",")
+				}
+				continue
+			}
+			enumType := g.QualifiedGoIdent(pbField.Enum.GoIdent)
+			if f.Desc.Cardinality() == protoreflect.Repeated {
+				enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromSliceInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+				g.P("\t\t", pbField.GoName, ": ", enumCast, "[", enumType, "](m.", f.GoName, "),")
+			} else {
+				enumCast := g.QualifiedGoIdent(protogen.GoIdent{GoName: "EnumFromInt32", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/cast"})
+				g.P("\t\t", pbField.GoName, ": ", enumCast, "[", enumType, "](m.", f.GoName, "),")
 			}
 			continue
 		}

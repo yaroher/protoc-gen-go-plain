@@ -3,6 +3,9 @@
 package wkt_map
 
 import (
+	json "encoding/json"
+	jx "github.com/go-faster/jx"
+	protojson "google.golang.org/protobuf/encoding/protojson"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -99,4 +102,294 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 		FMapInt32: m.FMapInt32,
 		FMapMsg:   m.FMapMsg,
 	}, nil
+}
+
+func (m *UserPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("fAny")
+	if m.FAny == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.FAny); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("fDuration")
+	if m.FDuration == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.FDuration); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("fEmpty")
+	if m.FEmpty == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.FEmpty); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("fStruct")
+	if m.FStruct == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.FStruct); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("fTs")
+	if m.FTs == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.FTs); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("fBool")
+	if m.FBool == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.FBool); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("fString")
+	if m.FString == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.FString); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("fMapInt32")
+	if m.FMapInt32 == nil {
+		e.Null()
+	} else {
+		e.ObjStart()
+		for k, v := range m.FMapInt32 {
+			e.FieldStart(k)
+			e.Int32(v)
+		}
+		e.ObjEnd()
+	}
+	e.FieldStart("fMapMsg")
+	if m.FMapMsg == nil {
+		e.Null()
+	} else {
+		e.ObjStart()
+		for k, v := range m.FMapMsg {
+			e.FieldStart(k)
+			if v == nil {
+				e.Null()
+			} else {
+				b, err := protojson.Marshal(v)
+				if err != nil {
+					return nil, err
+				}
+				e.Raw(b)
+			}
+		}
+		e.ObjEnd()
+	}
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "fAny":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FAny = nil
+				return nil
+			}
+			v := &anypb.Any{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.FAny = v
+			return nil
+		case "fDuration":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FDuration = nil
+				return nil
+			}
+			v := &durationpb.Duration{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.FDuration = v
+			return nil
+		case "fEmpty":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FEmpty = nil
+				return nil
+			}
+			v := &emptypb.Empty{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.FEmpty = v
+			return nil
+		case "fStruct":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FStruct = nil
+				return nil
+			}
+			v := &structpb.Struct{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.FStruct = v
+			return nil
+		case "fTs":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FTs = nil
+				return nil
+			}
+			v := &timestamppb.Timestamp{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.FTs = v
+			return nil
+		case "fBool":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FBool = nil
+				return nil
+			}
+			v := &wrapperspb.BoolValue{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.FBool = v
+			return nil
+		case "fString":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FString = nil
+				return nil
+			}
+			v := &wrapperspb.StringValue{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.FString = v
+			return nil
+		case "fMapInt32":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FMapInt32 = nil
+				return nil
+			}
+			var items map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &items); err != nil {
+				return err
+			}
+			out := make(map[string]int32, len(items))
+			for k, b := range items {
+				key, err := func(s string) (string, error) { return s, nil }(k)
+				if err != nil {
+					return err
+				}
+				var v int32
+				if err := json.Unmarshal(b, &v); err != nil {
+					return err
+				}
+				out[key] = v
+			}
+			m.FMapInt32 = out
+			return nil
+		case "fMapMsg":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.FMapMsg = nil
+				return nil
+			}
+			var items map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &items); err != nil {
+				return err
+			}
+			out := make(map[string]*Address, len(items))
+			for k, b := range items {
+				key, err := func(s string) (string, error) { return s, nil }(k)
+				if err != nil {
+					return err
+				}
+				if string(b) == "null" {
+					out[key] = nil
+					continue
+				}
+				v := &Address{}
+				if err := protojson.Unmarshal(b, v); err != nil {
+					return err
+				}
+				out[key] = v
+			}
+			m.FMapMsg = out
+			return nil
+		default:
+			return d.Skip()
+		}
+	})
 }

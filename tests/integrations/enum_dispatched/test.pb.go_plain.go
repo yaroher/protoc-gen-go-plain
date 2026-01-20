@@ -2,6 +2,12 @@
 
 package enum_dispatched
 
+import (
+	json "encoding/json"
+	jx "github.com/go-faster/jx"
+	protojson "google.golang.org/protobuf/encoding/protojson"
+)
+
 type PaymentPlain_MethodType int32
 
 const (
@@ -135,7 +141,152 @@ func (m *PaymentPlain) IntoPbErr() (*Payment, error) {
 		oneof_backupMethod = &Payment_BackupCrypto{BackupCrypto: m.BackupMethodBackupCrypto}
 	}
 	return &Payment{
-		BackupMethod: oneof_backupMethod,
 		Method:       oneof_method,
+		BackupMethod: oneof_backupMethod,
 	}, nil
+}
+
+func (m *PaymentPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("methodType")
+	e.Int32(int32(m.MethodType))
+	e.FieldStart("card")
+	if m.Card == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.Card); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("crypto")
+	if m.Crypto == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.Crypto); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("backupMethodBackupMethodType")
+	e.Int32(int32(m.BackupMethodBackupMethodType))
+	e.FieldStart("backupMethodBackupCard")
+	if m.BackupMethodBackupCard == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.BackupMethodBackupCard); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("backupMethodBackupCrypto")
+	if m.BackupMethodBackupCrypto == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.BackupMethodBackupCrypto); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *PaymentPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "methodType":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			m.MethodType = PaymentPlain_MethodType(v)
+			return nil
+		case "card":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.Card = nil
+				return nil
+			}
+			v := &PaymentCard{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.Card = v
+			return nil
+		case "crypto":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.Crypto = nil
+				return nil
+			}
+			v := &PaymentCrypto{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.Crypto = v
+			return nil
+		case "backupMethodBackupMethodType":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			m.BackupMethodBackupMethodType = PaymentPlain_BackupMethodType(v)
+			return nil
+		case "backupMethodBackupCard":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.BackupMethodBackupCard = nil
+				return nil
+			}
+			v := &PaymentCard{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.BackupMethodBackupCard = v
+			return nil
+		case "backupMethodBackupCrypto":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.BackupMethodBackupCrypto = nil
+				return nil
+			}
+			v := &PaymentCrypto{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.BackupMethodBackupCrypto = v
+			return nil
+		default:
+			return d.Skip()
+		}
+	})
 }

@@ -3,7 +3,10 @@
 package serialize
 
 import (
+	json "encoding/json"
+	jx "github.com/go-faster/jx"
 	cast "github.com/yaroher/protoc-gen-go-plain/cast"
+	protojson "google.golang.org/protobuf/encoding/protojson"
 )
 
 type UserPlain struct {
@@ -54,4 +57,44 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	return &User{
 		Settings: SettingsVal,
 	}, nil
+}
+
+func (m *UserPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("settings")
+	if m.Settings == nil {
+		e.Null()
+	} else {
+		e.Base64(m.Settings)
+	}
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "settings":
+			v, err := d.Base64()
+			if err != nil {
+				return err
+			}
+			m.Settings = v
+			return nil
+		default:
+			return d.Skip()
+		}
+	})
 }

@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"strings"
 
 	"go.uber.org/zap"
@@ -9,8 +8,7 @@ import (
 )
 
 type PluginSettings struct {
-	EnumAsString bool
-	EnumAsInt    bool
+	JSONJX bool
 }
 
 func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue string) string {
@@ -34,11 +32,7 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{
-		EnumAsString: mapGetOrDefault(paramsMap, "enum_as_string", "false") == "true",
-		EnumAsInt:    mapGetOrDefault(paramsMap, "enum_as_int", "false") == "true",
-	}
-	if settings.EnumAsString && settings.EnumAsInt {
-		return nil, fmt.Errorf("enum_as_string and enum_as_int cannot be both true")
+		JSONJX: mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
 	}
 	return settings, nil
 }

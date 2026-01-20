@@ -2,6 +2,12 @@
 
 package embed
 
+import (
+	json "encoding/json"
+	jx "github.com/go-faster/jx"
+	protojson "google.golang.org/protobuf/encoding/protojson"
+)
+
 type UserPlain struct {
 
 	// src: .test.embed.User.name; transform: none
@@ -165,8 +171,8 @@ func (m *UserPlain) IntoPb() *User {
 		ContactType:   m.ContactType,
 		Address:       embed_address,
 		WorkAddress:   embed_work_address,
-		BackupContact: oneof_backupContact,
 		Contact:       oneof_contact,
+		BackupContact: oneof_backupContact,
 	}
 }
 
@@ -200,4 +206,121 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 		Contact:       oneof_contact,
 		BackupContact: oneof_backupContact,
 	}, nil
+}
+
+func (m *UserPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("name")
+	e.Str(m.Name)
+	e.FieldStart("street")
+	e.Str(m.Street)
+	e.FieldStart("city")
+	e.Str(m.City)
+	e.FieldStart("workAddressStreet")
+	e.Str(m.WorkAddressStreet)
+	e.FieldStart("workAddressCity")
+	e.Str(m.WorkAddressCity)
+	e.FieldStart("contactType")
+	e.Int32(int32(m.ContactType))
+	e.FieldStart("email")
+	e.Str(m.Email)
+	e.FieldStart("phone")
+	e.Str(m.Phone)
+	e.FieldStart("backupContactBackupEmail")
+	e.Str(m.BackupContactBackupEmail)
+	e.FieldStart("backupContactBackupPhone")
+	e.Str(m.BackupContactBackupPhone)
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "name":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.Name = v
+			return nil
+		case "street":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.Street = v
+			return nil
+		case "city":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.City = v
+			return nil
+		case "workAddressStreet":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.WorkAddressStreet = v
+			return nil
+		case "workAddressCity":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.WorkAddressCity = v
+			return nil
+		case "contactType":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			m.ContactType = ContactType(v)
+			return nil
+		case "email":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.Email = v
+			return nil
+		case "phone":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.Phone = v
+			return nil
+		case "backupContactBackupEmail":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.BackupContactBackupEmail = v
+			return nil
+		case "backupContactBackupPhone":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.BackupContactBackupPhone = v
+			return nil
+		default:
+			return d.Skip()
+		}
+	})
 }

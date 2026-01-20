@@ -382,7 +382,11 @@ type FieldOptions struct {
 	// Example values:
 	// "test.CustomUserFieldEnum.SOME_ENUM_ADDRESS"
 	// ".test.CustomUserFieldEnum.SOME_ENUM_STREET"
-	WithEnums     []string `protobuf:"bytes,6,rep,name=with_enums,json=withEnums,proto3" json:"with_enums,omitempty"`
+	WithEnums []string `protobuf:"bytes,6,rep,name=with_enums,json=withEnums,proto3" json:"with_enums,omitempty"`
+	// If set, enum fields will be represented as string in plain model.
+	EnumAsString bool `protobuf:"varint,7,opt,name=enum_as_string,json=enumAsString,proto3" json:"enum_as_string,omitempty"`
+	// If set, enum fields will be represented as int32 in plain model.
+	EnumAsInt     bool `protobuf:"varint,8,opt,name=enum_as_int,json=enumAsInt,proto3" json:"enum_as_int,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -450,6 +454,20 @@ func (x *FieldOptions) GetWithEnums() []string {
 		return x.WithEnums
 	}
 	return nil
+}
+
+func (x *FieldOptions) GetEnumAsString() bool {
+	if x != nil {
+		return x.EnumAsString
+	}
+	return false
+}
+
+func (x *FieldOptions) GetEnumAsInt() bool {
+	if x != nil {
+		return x.EnumAsInt
+	}
+	return false
 }
 
 type OneofOptions struct {
@@ -656,14 +674,16 @@ const file_goplain_proto_rawDesc = "" +
 	"type_alias\x18\x02 \x01(\bR\ttypeAlias\x12=\n" +
 	"\x0evirtual_fields\x18\x03 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"R\n" +
 	"\vFileOptions\x12C\n" +
-	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\"\xc4\x01\n" +
+	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\"\x8a\x02\n" +
 	"\fFieldOptions\x125\n" +
 	"\roverride_type\x18\x01 \x01(\v2\x10.goplain.GoIdentR\foverrideType\x12\x1c\n" +
 	"\tserialize\x18\x02 \x01(\bR\tserialize\x12\x14\n" +
 	"\x05embed\x18\x04 \x01(\bR\x05embed\x12*\n" +
 	"\x11embed_with_prefix\x18\x05 \x01(\bR\x0fembedWithPrefix\x12\x1d\n" +
 	"\n" +
-	"with_enums\x18\x06 \x03(\tR\twithEnums\"\xb8\x01\n" +
+	"with_enums\x18\x06 \x03(\tR\twithEnums\x12$\n" +
+	"\x0eenum_as_string\x18\a \x01(\bR\fenumAsString\x12\x1e\n" +
+	"\venum_as_int\x18\b \x01(\bR\tenumAsInt\"\xb8\x01\n" +
 	"\fOneofOptions\x12\x14\n" +
 	"\x05embed\x18\x01 \x01(\bR\x05embed\x12*\n" +
 	"\x11embed_with_prefix\x18\x02 \x01(\bR\x0fembedWithPrefix\x12'\n" +

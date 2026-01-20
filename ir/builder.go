@@ -388,6 +388,7 @@ func buildFieldPlan(plan *IR, msgIR *MessageIR, field *descriptorpb.FieldDescrip
 
 	applyTypeAlias(plan, &fs, msgIndex, &origin)
 	applySerialize(&fs, opts, &origin)
+	applyEnumFormat(&fs, opts, field, &origin)
 	applyOverride(&fs, opts, &origin, &fpOps)
 
 	fp := &FieldPlan{
@@ -542,6 +543,26 @@ func applyOverride(fs *FieldSpec, opts *goplain.FieldOptions, origin *FieldOrigi
 			"import_path": override.GetImportPath(),
 		},
 	})
+}
+
+func applyEnumFormat(fs *FieldSpec, opts *goplain.FieldOptions, field *descriptorpb.FieldDescriptorProto, origin *FieldOrigin) {
+	if opts == nil || field == nil {
+		return
+	}
+	if field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		return
+	}
+	if opts.GetEnumAsString() {
+		fs.Type = descriptorpb.FieldDescriptorProto_TYPE_STRING
+		fs.TypeName = ""
+		origin.EnumAsString = true
+		return
+	}
+	if opts.GetEnumAsInt() {
+		fs.Type = descriptorpb.FieldDescriptorProto_TYPE_INT32
+		fs.TypeName = ""
+		origin.EnumAsInt = true
+	}
 }
 
 func applyTypeAlias(plan *IR, fs *FieldSpec, msgIndex map[string]*descriptorpb.DescriptorProto, origin *FieldOrigin) {

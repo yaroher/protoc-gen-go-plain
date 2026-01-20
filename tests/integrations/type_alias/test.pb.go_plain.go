@@ -2,6 +2,12 @@
 
 package type_alias
 
+import (
+	json "encoding/json"
+	jx "github.com/go-faster/jx"
+	protojson "google.golang.org/protobuf/encoding/protojson"
+)
+
 type UserPlain struct {
 
 	// src: .test.type_alias.User.id; transform: type_alias
@@ -52,4 +58,40 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	return &User{
 		Id: &UserId{Value: m.Id},
 	}, nil
+}
+
+func (m *UserPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("id")
+	e.Str(m.Id)
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "id":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.Id = v
+			return nil
+		default:
+			return d.Skip()
+		}
+	})
 }

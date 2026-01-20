@@ -141,6 +141,9 @@ func (g *Generator) Generate() error {
 			if pbMsg != nil {
 				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues, enumByFull)
 			}
+			if g.Settings != nil && g.Settings.JSONJX {
+				generateJSONMethods(plainFile, m, msgIR)
+			}
 		}
 		if fileCount == 0 {
 			plainFile.Skip()

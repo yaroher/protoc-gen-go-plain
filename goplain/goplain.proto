@@ -136,6 +136,11 @@ message FieldOptions {
             ".test.CustomUserFieldEnum.SOME_ENUM_STREET"
     */
     repeated string with_enums = 6;
+
+    // If set, enum fields will be represented as string in plain model.
+    bool enum_as_string = 7;
+    // If set, enum fields will be represented as int32 in plain model.
+    bool enum_as_int = 8;
 }
 
 extend google.protobuf.FieldOptions {

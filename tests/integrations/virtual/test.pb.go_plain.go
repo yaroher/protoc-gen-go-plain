@@ -2,6 +2,12 @@
 
 package virtual
 
+import (
+	json "encoding/json"
+	jx "github.com/go-faster/jx"
+	protojson "google.golang.org/protobuf/encoding/protojson"
+)
+
 type UserPlain struct {
 
 	// src: .test.virtual.User.name; transform: none
@@ -46,4 +52,74 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	return &User{
 		Name: m.Name,
 	}, nil
+}
+
+func (m *UserPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("name")
+	e.Str(m.Name)
+	e.FieldStart("virtAddr")
+	if m.VirtAddr == nil {
+		e.Null()
+	} else {
+		if b, err := protojson.Marshal(m.VirtAddr); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("virtStatus")
+	e.Int32(int32(m.VirtStatus))
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "name":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.Name = v
+			return nil
+		case "virtAddr":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.VirtAddr = nil
+				return nil
+			}
+			v := &Address{}
+			if err := protojson.Unmarshal(raw, v); err != nil {
+				return err
+			}
+			m.VirtAddr = v
+			return nil
+		case "virtStatus":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			m.VirtStatus = Status(v)
+			return nil
+		default:
+			return d.Skip()
+		}
+	})
 }

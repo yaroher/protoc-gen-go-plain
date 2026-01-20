@@ -3,8 +3,11 @@
 package override_type
 
 import (
+	json "encoding/json"
+	jx "github.com/go-faster/jx"
 	uuid "github.com/google/uuid"
 	cast "github.com/yaroher/protoc-gen-go-plain/cast"
+	protojson "google.golang.org/protobuf/encoding/protojson"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	time "time"
 )
@@ -71,4 +74,55 @@ func (m *UserPlain) IntoPbErr(rawIdCast cast.CasterErr[uuid.UUID, string], creat
 		RawId:     RawIdVal,
 		CreatedAt: CreatedAtVal,
 	}, nil
+}
+
+func (m *UserPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("rawId")
+	if b, err := json.Marshal(m.RawId); err != nil {
+		return nil, err
+	} else {
+		e.Raw(b)
+	}
+	e.FieldStart("createdAt")
+	if b, err := json.Marshal(m.CreatedAt); err != nil {
+		return nil, err
+	} else {
+		e.Raw(b)
+	}
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "rawId":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			return json.Unmarshal(raw, &m.RawId)
+		case "createdAt":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			return json.Unmarshal(raw, &m.CreatedAt)
+		default:
+			return d.Skip()
+		}
+	})
 }

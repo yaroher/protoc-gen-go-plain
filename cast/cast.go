@@ -1,6 +1,7 @@
 package cast
 
 import (
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -28,6 +29,20 @@ func EnumToSliceInt32[T protoreflect.Enum](v []T) []int32 {
 	}
 	return result
 }
+func EnumToString[T protoreflect.Enum](v T) string {
+	desc := v.Descriptor().Values().ByNumber(v.Number())
+	if desc == nil {
+		return ""
+	}
+	return string(desc.Name())
+}
+func EnumToSliceString[T protoreflect.Enum](v []T) []string {
+	result := make([]string, len(v))
+	for i, el := range v {
+		result[i] = EnumToString[T](el)
+	}
+	return result
+}
 func EnumFromInt32[T protoreflect.Enum](v int32) (ret T) {
 	return ret.Type().New(protoreflect.EnumNumber(v)).(T)
 }
@@ -37,6 +52,44 @@ func EnumFromSliceInt32[T protoreflect.Enum](v []int32) []T {
 		result[i] = EnumFromInt32[T](el)
 	}
 	return result
+}
+func EnumFromString[T protoreflect.Enum](v string) (ret T) {
+	if v == "" {
+		return ret
+	}
+	desc := ret.Descriptor().Values().ByName(protoreflect.Name(v))
+	if desc == nil {
+		return ret
+	}
+	return ret.Type().New(desc.Number()).(T)
+}
+func EnumFromSliceString[T protoreflect.Enum](v []string) []T {
+	result := make([]T, len(v))
+	for i, el := range v {
+		result[i] = EnumFromString[T](el)
+	}
+	return result
+}
+func EnumFromStringErr[T protoreflect.Enum](v string) (ret T, err error) {
+	if v == "" {
+		return ret, nil
+	}
+	desc := ret.Descriptor().Values().ByName(protoreflect.Name(v))
+	if desc == nil {
+		return ret, fmt.Errorf("unknown enum value: %s", v)
+	}
+	return ret.Type().New(desc.Number()).(T), nil
+}
+func EnumFromSliceStringErr[T protoreflect.Enum](v []string) ([]T, error) {
+	result := make([]T, len(v))
+	for i, el := range v {
+		val, err := EnumFromStringErr[T](el)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = val
+	}
+	return result, nil
 }
 
 func TimestampToTime(t *timestamppb.Timestamp) time.Time {

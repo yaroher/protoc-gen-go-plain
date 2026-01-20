@@ -3,8 +3,11 @@
 package discriminator
 
 import (
+	json "encoding/json"
 	fmt "fmt"
+	jx "github.com/go-faster/jx"
 	oneoff "github.com/yaroher/protoc-gen-go-plain/oneoff"
+	protojson "google.golang.org/protobuf/encoding/protojson"
 )
 
 type UserPlain struct {
@@ -61,15 +64,6 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var disc_identityDisc oneoff.EnumDiscriminator
-	var oneof_identity any
-	var matched_identity bool
-	switch x := m.GetIdentity().(type) {
-	case *User_UserId:
-		oneof_identity = x.UserId
-		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
-		matched_identity = true
-	}
 	var disc_contactDisc oneoff.EnumDiscriminator
 	var oneof_contact any
 	var matched_contact bool
@@ -83,11 +77,20 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_PHONE)
 		matched_contact = true
 	}
-	if m.GetIdentity() != nil && !matched_identity {
-		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Identity")
+	var disc_identityDisc oneoff.EnumDiscriminator
+	var oneof_identity any
+	var matched_identity bool
+	switch x := m.GetIdentity().(type) {
+	case *User_UserId:
+		oneof_identity = x.UserId
+		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
+		matched_identity = true
 	}
 	if m.GetContact() != nil && !matched_contact {
 		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Contact")
+	}
+	if m.GetIdentity() != nil && !matched_identity {
+		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Identity")
 	}
 	return &UserPlain{
 		ContactKind:  m.GetContactKind(),
@@ -184,4 +187,117 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 		Contact:     oneof_contact,
 		Identity:    oneof_identity,
 	}, nil
+}
+
+func (m *UserPlain) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	_ = protojson.Marshal
+	_ = json.Marshal
+	var e jx.Encoder
+	e.ObjStart()
+	e.FieldStart("contactKind")
+	e.Int32(int32(m.ContactKind))
+	e.FieldStart("idKind")
+	e.Int32(int32(m.IdKind))
+	e.FieldStart("contactDisc")
+	e.Str(string(m.ContactDisc))
+	e.FieldStart("contact")
+	if m.Contact == nil {
+		e.Null()
+	} else {
+		if b, err := json.Marshal(m.Contact); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.FieldStart("identityDisc")
+	e.Str(string(m.IdentityDisc))
+	e.FieldStart("identity")
+	if m.Identity == nil {
+		e.Null()
+	} else {
+		if b, err := json.Marshal(m.Identity); err != nil {
+			return nil, err
+		} else {
+			e.Raw(b)
+		}
+	}
+	e.ObjEnd()
+	return e.Bytes(), nil
+}
+
+func (m *UserPlain) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return nil
+	}
+	_ = protojson.Unmarshal
+	_ = json.Unmarshal
+	d := jx.DecodeBytes(data)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "contactKind":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			m.ContactKind = ContactKind(v)
+			return nil
+		case "idKind":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			m.IdKind = IdKind(v)
+			return nil
+		case "contactDisc":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.ContactDisc = oneoff.EnumDiscriminator(v)
+			return nil
+		case "contact":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.Contact = nil
+				return nil
+			}
+			var v any
+			if err := json.Unmarshal(raw, &v); err != nil {
+				return err
+			}
+			m.Contact = v
+			return nil
+		case "identityDisc":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			m.IdentityDisc = oneoff.EnumDiscriminator(v)
+			return nil
+		case "identity":
+			raw, err := d.Raw()
+			if err != nil {
+				return err
+			}
+			if string(raw) == "null" {
+				m.Identity = nil
+				return nil
+			}
+			var v any
+			if err := json.Unmarshal(raw, &v); err != nil {
+				return err
+			}
+			m.Identity = v
+			return nil
+		default:
+			return d.Skip()
+		}
+	})
 }

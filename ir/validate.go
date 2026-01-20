@@ -137,6 +137,12 @@ func validateFieldOptions(field *descriptorpb.FieldDescriptorProto, fullName str
 	if (opts.GetEmbed() || opts.GetEmbedWithPrefix()) && opts.GetSerialize() {
 		*diags = append(*diags, Diagnostic{Level: DiagError, Message: "serialize and embed are mutually exclusive", Subject: subject})
 	}
+	if opts.GetEnumAsString() && opts.GetEnumAsInt() {
+		*diags = append(*diags, Diagnostic{Level: DiagError, Message: "enum_as_string and enum_as_int are mutually exclusive", Subject: subject})
+	}
+	if (opts.GetEnumAsString() || opts.GetEnumAsInt()) && field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		*diags = append(*diags, Diagnostic{Level: DiagError, Message: "enum_as_* requires enum field", Subject: subject})
+	}
 }
 
 func validateOneofOptions(oneof *descriptorpb.OneofDescriptorProto, fullName string, fields []*descriptorpb.FieldDescriptorProto, allFields []*descriptorpb.FieldDescriptorProto, diags *[]Diagnostic) {

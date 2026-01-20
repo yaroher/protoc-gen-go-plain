@@ -101,6 +101,8 @@ type FieldOrigin struct {
 	OneofGroup   string
 	OneofEnums   []string
 	OriginalType string
+	EnumAsString bool
+	EnumAsInt    bool
 }
 
 type FieldOpKind string
