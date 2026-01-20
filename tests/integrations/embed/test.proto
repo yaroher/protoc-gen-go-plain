@@ -21,14 +21,14 @@ message User {
 
   oneof contact {
     option (goplain.oneof).embed = true;
-    string email = 4 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_EMAIL"];
-    string phone = 5 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_PHONE"];
+    string email = 4;
+    string phone = 5;
   }
 
   oneof backup_contact {
     option (goplain.oneof).embed_with_prefix = true;
-    string backup_email = 6 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_EMAIL"];
-    string backup_phone = 7 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_PHONE"];
+    string backup_email = 6;
+    string backup_phone = 7;
   }
 
   ContactType contact_type = 8;

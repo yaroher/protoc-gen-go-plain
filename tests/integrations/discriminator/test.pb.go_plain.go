@@ -64,15 +64,6 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var disc_identityDisc oneoff.EnumDiscriminator
-	var oneof_identity any
-	var matched_identity bool
-	switch x := m.GetIdentity().(type) {
-	case *User_UserId:
-		oneof_identity = x.UserId
-		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
-		matched_identity = true
-	}
 	var disc_contactDisc oneoff.EnumDiscriminator
 	var oneof_contact any
 	var matched_contact bool
@@ -85,6 +76,15 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 		oneof_contact = x.Phone
 		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_PHONE)
 		matched_contact = true
+	}
+	var disc_identityDisc oneoff.EnumDiscriminator
+	var oneof_identity any
+	var matched_identity bool
+	switch x := m.GetIdentity().(type) {
+	case *User_UserId:
+		oneof_identity = x.UserId
+		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
+		matched_identity = true
 	}
 	if m.GetContact() != nil && !matched_contact {
 		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Contact")
@@ -106,6 +106,14 @@ func (m *UserPlain) IntoPb() *User {
 	if m == nil {
 		return nil
 	}
+	var oneof_identity isUser_Identity
+	if disc, err := oneoff.ParseDiscriminator(m.IdentityDisc); err == nil {
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorIdKind && disc.Number() == 1 {
+			if v, ok := m.Identity.(*UserId); ok {
+				oneof_identity = &User_UserId{UserId: v}
+			}
+		}
+	}
 	var oneof_contact isUser_Contact
 	if disc, err := oneoff.ParseDiscriminator(m.ContactDisc); err == nil {
 		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorContactKind && disc.Number() == 1 {
@@ -119,19 +127,11 @@ func (m *UserPlain) IntoPb() *User {
 			}
 		}
 	}
-	var oneof_identity isUser_Identity
-	if disc, err := oneoff.ParseDiscriminator(m.IdentityDisc); err == nil {
-		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorIdKind && disc.Number() == 1 {
-			if v, ok := m.Identity.(*UserId); ok {
-				oneof_identity = &User_UserId{UserId: v}
-			}
-		}
-	}
 	return &User{
 		ContactKind: m.ContactKind,
 		IdKind:      m.IdKind,
-		Contact:     oneof_contact,
 		Identity:    oneof_identity,
+		Contact:     oneof_contact,
 	}
 }
 

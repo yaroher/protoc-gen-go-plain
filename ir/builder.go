@@ -58,7 +58,7 @@ func BuildIR(p *protogen.Plugin, opts IRConfig) (*IR, error) {
 
 	sortDiagnostics(plan.Diagnostics)
 	if hasErrors(plan.Diagnostics) {
-		return plan, fmt.Errorf("invalid goplain options")
+		return plan, fmt.Errorf("invalid goplain options: %+v", plan.Diagnostics)
 	}
 	return plan, nil
 }
