@@ -2,8 +2,11 @@ package generator
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/iancoleman/strcase"
 	"github.com/yaroher/protoc-gen-go-plain/ir"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -27,7 +30,45 @@ func collectMessages(msgs []*protogen.Message, result map[string]*protogen.Messa
 	}
 }
 
-func generateConverters(g *protogen.GeneratedFile, plainMsg *protogen.Message, pbMsg *protogen.Message, msgIR *ir.MessageIR, generatedEnums map[string]struct{}, enumValues map[string]*protogen.EnumValue) {
+func emitEnumFullConsts(g *protogen.GeneratedFile, oneofEnums map[string]map[string]*oneofEnumInfo) {
+	if len(oneofEnums) == 0 {
+		return
+	}
+	enumSet := make(map[string]struct{})
+	for _, infos := range oneofEnums {
+		for _, info := range infos {
+			if info == nil {
+				continue
+			}
+			for _, vals := range info.FieldToEnums {
+				for _, v := range vals {
+					if v == nil || v.Desc == nil || v.Desc.Parent() == nil {
+						continue
+					}
+					enumSet[string(v.Desc.Parent().FullName())] = struct{}{}
+				}
+			}
+		}
+	}
+	if len(enumSet) == 0 {
+		return
+	}
+	keys := make([]string, 0, len(enumSet))
+	for k := range enumSet {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, full := range keys {
+		name := enumFullConstName(full)
+		if name == "" {
+			continue
+		}
+		g.P("const ", name, " = ", strconv.Quote(strings.TrimPrefix(full, ".")))
+	}
+	g.P("")
+}
+
+func generateConverters(g *protogen.GeneratedFile, plainMsg *protogen.Message, pbMsg *protogen.Message, msgIR *ir.MessageIR, generatedEnums map[string]struct{}, enumValues map[string]*protogen.EnumValue, enumByFull map[string]*protogen.Enum) {
 	if plainMsg == nil || pbMsg == nil || msgIR == nil {
 		return
 	}
@@ -56,19 +97,20 @@ func generateConverters(g *protogen.GeneratedFile, plainMsg *protogen.Message, p
 		}
 	}
 
-	oneofEnums := buildOneofEnumInfo(plainMsg, pbMsg, msgIR, fieldPlans, pbFields, enumValues)
-	generateIntoPlain(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums)
-	generateIntoPlainErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums)
-	generateIntoPb(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums)
-	generateIntoPbErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums)
+	oneofEnums := buildOneofEnumInfo(plainMsg, pbMsg, msgIR, fieldPlans, pbFields, enumValues, enumByFull)
+	emitEnumFullConsts(g, oneofEnums)
+	generateIntoPlain(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
+	generateIntoPlainErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
+	generateIntoPb(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
+	generateIntoPbErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
 }
 
-func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo) {
+func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, false, false)
 	g.P("func (m *", pbMsg.GoIdent.GoName, ") IntoPlain(", strings.Join(params, ", "), ") *", plainMsg.GoIdent.GoName, " {")
 	g.P("\tif m == nil { return nil }")
 
-	oneofVars := buildOneofPlainVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, false)
+	oneofVars := buildOneofPlainVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, false, msgIR)
 	for _, line := range oneofVars.lines {
 		g.P("\t" + line)
 	}
@@ -83,10 +125,8 @@ func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 			g.P("\t\t", f.GoName, ": ", v, ",")
 			continue
 		}
-		if fp.Origin.IsOneof {
-			if v, ok := oneofVars.fieldVar[f.GoName]; ok {
-				g.P("\t\t", f.GoName, ": ", v, ",")
-			}
+		if v, ok := oneofVars.fieldVar[f.GoName]; ok {
+			g.P("\t\t", f.GoName, ": ", v, ",")
 			continue
 		}
 		expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
@@ -103,12 +143,12 @@ func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 	g.P("")
 }
 
-func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo) {
+func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, true, false)
 	g.P("func (m *", pbMsg.GoIdent.GoName, ") IntoPlainErr(", strings.Join(params, ", "), ") (*", plainMsg.GoIdent.GoName, ", error) {")
 	g.P("\tif m == nil { return nil, nil }")
 
-	oneofVars := buildOneofPlainVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, true)
+	oneofVars := buildOneofPlainVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, true, msgIR)
 	for _, line := range oneofVars.lines {
 		g.P("\t" + line)
 	}
@@ -163,10 +203,8 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 			g.P("\t\t", f.GoName, ": ", v, ",")
 			continue
 		}
-		if fp.Origin.IsOneof {
-			if v, ok := oneofVars.fieldVar[f.GoName]; ok {
-				g.P("\t\t", f.GoName, ": ", v, ",")
-			}
+		if v, ok := oneofVars.fieldVar[f.GoName]; ok {
+			g.P("\t\t", f.GoName, ": ", v, ",")
 			continue
 		}
 		if fp.Origin.IsSerialized {
@@ -193,7 +231,7 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 	g.P("")
 }
 
-func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo) {
+func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, false, true)
 	g.P("func (m *", plainMsg.GoIdent.GoName, ") IntoPb(", strings.Join(params, ", "), ") *", pbMsg.GoIdent.GoName, " {")
 	g.P("\tif m == nil { return nil }")
@@ -204,7 +242,7 @@ func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message
 		g.P("\t" + line)
 	}
 
-	oneofVars := buildOneofVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, false)
+	oneofVars := buildOneofVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, false, msgIR)
 	for _, line := range oneofVars.lines {
 		g.P("\t" + line)
 	}
@@ -250,7 +288,7 @@ func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message
 	g.P("")
 }
 
-func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo) {
+func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, true, true)
 	g.P("func (m *", plainMsg.GoIdent.GoName, ") IntoPbErr(", strings.Join(params, ", "), ") (*", pbMsg.GoIdent.GoName, ", error) {")
 	g.P("\tif m == nil { return nil, nil }")
@@ -290,7 +328,7 @@ func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 		g.P("\t" + line)
 	}
 
-	oneofVars := buildOneofVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, true)
+	oneofVars := buildOneofVars(g, plainMsg, fieldPlans, pbFields, oneofEnums, true, msgIR)
 	for _, line := range oneofVars.lines {
 		g.P("\t" + line)
 	}
@@ -387,6 +425,9 @@ func getOverrideGoType(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.Fiel
 		importPath := op.Data["import_path"]
 		if name == "" {
 			break
+		}
+		if importPath == "" {
+			return name
 		}
 		return g.QualifiedGoIdent(protogen.GoIdent{GoName: name, GoImportPath: protogen.GoImportPath(importPath)})
 	}
@@ -561,6 +602,7 @@ func oneofValueCondition(f *protogen.Field) string {
 type oneofItem struct {
 	PlainField     *protogen.Field
 	PlainFieldName string
+	OrigFieldName  string
 	PbField        *protogen.Field
 }
 
@@ -574,6 +616,11 @@ type oneofEnumInfo struct {
 func enumValsForField(info *oneofEnumInfo, it oneofItem) []*protogen.EnumValue {
 	if info == nil {
 		return nil
+	}
+	if it.OrigFieldName != "" {
+		if v := info.FieldToEnums[it.OrigFieldName]; len(v) > 0 {
+			return v
+		}
 	}
 	if it.PlainField != nil {
 		if v := info.FieldToEnums[it.PlainField.GoName]; len(v) > 0 {
@@ -598,7 +645,7 @@ type oneofVars struct {
 	groupVar map[string]string
 }
 
-func groupOneofFields(plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field) map[string][]oneofItem {
+func groupOneofFields(plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, msgIR *ir.MessageIR) map[string][]oneofItem {
 	result := make(map[string][]oneofItem)
 	for _, f := range plainMsg.Fields {
 		fp := fieldPlans[string(f.Desc.Name())]
@@ -613,21 +660,57 @@ func groupOneofFields(plainMsg *protogen.Message, fieldPlans map[string]*ir.Fiel
 		result[group] = append(result[group], oneofItem{
 			PlainField:     f,
 			PlainFieldName: f.GoName,
+			OrigFieldName:  fp.OrigField.FieldName,
 			PbField:        pbField,
 		})
+	}
+	if msgIR != nil {
+		for _, p := range msgIR.OneofPlan {
+			if p == nil || !p.Discriminator {
+				continue
+			}
+			plainField := findPlainFieldByProtoName(plainMsg, p.OrigName)
+			if plainField == nil {
+				continue
+			}
+			groupName := ""
+			for _, oneof := range pbFields {
+				if oneof.Oneof != nil && string(oneof.Oneof.Desc.Name()) == p.OrigName {
+					groupName = oneof.Oneof.GoName
+					break
+				}
+			}
+			if groupName == "" {
+				groupName = strcase.ToCamel(p.OrigName)
+			}
+			for _, name := range p.Fields {
+				pbField := pbFields[name]
+				if pbField == nil || pbField.Oneof == nil {
+					continue
+				}
+				result[groupName] = append(result[groupName], oneofItem{
+					PlainField:     plainField,
+					PlainFieldName: plainField.GoName,
+					OrigFieldName:  name,
+					PbField:        pbField,
+				})
+			}
+		}
 	}
 	return result
 }
 
-func buildOneofEnumInfo(plainMsg *protogen.Message, pbMsg *protogen.Message, msgIR *ir.MessageIR, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, enumValues map[string]*protogen.EnumValue) map[string]map[string]*oneofEnumInfo {
+func buildOneofEnumInfo(plainMsg *protogen.Message, pbMsg *protogen.Message, msgIR *ir.MessageIR, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, enumValues map[string]*protogen.EnumValue, enumByFull map[string]*protogen.Enum) map[string]map[string]*oneofEnumInfo {
 	result := make(map[string]map[string]*oneofEnumInfo)
 	if plainMsg == nil || msgIR == nil {
 		return result
 	}
 	oneofProtoByGo := make(map[string]string)
+	oneofGoByProto := make(map[string]string)
 	if pbMsg != nil {
 		for _, o := range pbMsg.Oneofs {
 			oneofProtoByGo[o.GoName] = string(o.Desc.Name())
+			oneofGoByProto[string(o.Desc.Name())] = o.GoName
 		}
 	}
 	for _, f := range plainMsg.Fields {
@@ -656,9 +739,41 @@ func buildOneofEnumInfo(plainMsg *protogen.Message, pbMsg *protogen.Message, msg
 				}
 				result[group][enumFull] = info
 			}
-			if ev := enumValues[valueFull]; ev != nil {
+			if ev := lookupEnumValue(enumValues, enumByFull, valueFull); ev != nil {
 				info.FieldToEnums[f.GoName] = append(info.FieldToEnums[f.GoName], ev)
 				info.FieldToEnums[string(f.Desc.Name())] = append(info.FieldToEnums[string(f.Desc.Name())], ev)
+			}
+		}
+	}
+
+	for _, p := range msgIR.OneofPlan {
+		if p == nil || len(p.FieldEnums) == 0 || !p.Discriminator {
+			continue
+		}
+		groupName := oneofGoByProto[p.OrigName]
+		if groupName == "" {
+			groupName = strcase.ToCamel(p.OrigName)
+		}
+		if result[groupName] == nil {
+			result[groupName] = make(map[string]*oneofEnumInfo)
+		}
+		for fieldName, vals := range p.FieldEnums {
+			for _, v := range vals {
+				enumFull, valueFull := parseEnumValueFullName(v)
+				if enumFull == "" || valueFull == "" {
+					continue
+				}
+				info := result[groupName][enumFull]
+				if info == nil {
+					info = &oneofEnumInfo{
+						EnumFull:     enumFull,
+						FieldToEnums: make(map[string][]*protogen.EnumValue),
+					}
+					result[groupName][enumFull] = info
+				}
+				if ev := lookupEnumValue(enumValues, enumByFull, valueFull); ev != nil {
+					info.FieldToEnums[fieldName] = append(info.FieldToEnums[fieldName], ev)
+				}
 			}
 		}
 	}
@@ -768,6 +883,60 @@ func parseEnumValueFullName(v string) (enumFull string, valueFull string) {
 	return v[:lastDot], v
 }
 
+func enumFullConstName(enumFull string) string {
+	enumFull = strings.TrimPrefix(enumFull, ".")
+	if enumFull == "" {
+		return ""
+	}
+	return "enumFull_" + strcase.ToCamel(strings.ReplaceAll(enumFull, ".", "_"))
+}
+
+func lookupEnumValue(enumValues map[string]*protogen.EnumValue, enumByFull map[string]*protogen.Enum, valueFull string) *protogen.EnumValue {
+	if valueFull == "" {
+		return nil
+	}
+	if enumValues != nil {
+		if ev := enumValues[valueFull]; ev != nil {
+			return ev
+		}
+		if strings.HasPrefix(valueFull, ".") {
+			if ev := enumValues[strings.TrimPrefix(valueFull, ".")]; ev != nil {
+				return ev
+			}
+		} else {
+			if ev := enumValues["."+valueFull]; ev != nil {
+				return ev
+			}
+		}
+	}
+	if enumByFull == nil {
+		return nil
+	}
+	enumFull, valueName := parseEnumValueFullName(valueFull)
+	if enumFull == "" || valueName == "" {
+		return nil
+	}
+	if idx := strings.LastIndex(valueName, "."); idx >= 0 && idx < len(valueName)-1 {
+		valueName = valueName[idx+1:]
+	}
+	enum := enumByFull[enumFull]
+	if enum == nil {
+		enum = enumByFull[strings.TrimPrefix(enumFull, ".")]
+	}
+	if enum == nil {
+		return nil
+	}
+	for _, v := range enum.Values {
+		if v == nil {
+			continue
+		}
+		if string(v.Desc.Name()) == valueName {
+			return v
+		}
+	}
+	return nil
+}
+
 func findPlainFieldByProtoName(plainMsg *protogen.Message, name string) *protogen.Field {
 	if plainMsg == nil {
 		return nil
@@ -792,15 +961,16 @@ func findPlainFieldByGoName(plainMsg *protogen.Message, name string) *protogen.F
 	return nil
 }
 
-func buildOneofPlainVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, useErr bool) oneofPlainVars {
+func buildOneofPlainVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, useErr bool, msgIR *ir.MessageIR) oneofPlainVars {
 	out := oneofPlainVars{
 		lines:    []string{},
 		fieldVar: make(map[string]string),
 		discVar:  make(map[string]string),
 		matchVar: make(map[string]string),
 	}
-	groups := groupOneofFields(plainMsg, fieldPlans, pbFields)
+	groups := groupOneofFields(plainMsg, fieldPlans, pbFields, msgIR)
 	usedNames := map[string]bool{}
+	declaredFields := map[string]bool{}
 	for groupName, items := range groups {
 		if len(items) == 0 || items[0].PbField == nil || items[0].PbField.Oneof == nil {
 			continue
@@ -832,6 +1002,9 @@ func buildOneofPlainVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, 
 			if it.PlainField == nil {
 				continue
 			}
+			if declaredFields[it.PlainFieldName] {
+				continue
+			}
 			varName := "oneof_" + lowerFirst(it.PlainFieldName)
 			if usedNames[varName] {
 				for i := 2; ; i++ {
@@ -843,8 +1016,13 @@ func buildOneofPlainVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, 
 				}
 			}
 			usedNames[varName] = true
+			declaredFields[it.PlainFieldName] = true
 			out.fieldVar[it.PlainFieldName] = varName
-			out.lines = append(out.lines, "var "+varName+" "+getFieldGoTypeForGen(g, it.PlainField))
+			fieldType := getFieldGoTypeForGen(g, it.PlainField)
+			if fp := fieldPlans[string(it.PlainField.Desc.Name())]; fp != nil && hasOverride(fp) {
+				fieldType = getOverrideGoType(g, it.PlainField, fp)
+			}
+			out.lines = append(out.lines, "var "+varName+" "+fieldType)
 		}
 		oneofGetter := "m.Get" + groupName + "()"
 		matchVar := ""
@@ -890,11 +1068,14 @@ func buildOneofPlainVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, 
 					if info == nil {
 						continue
 					}
-					if vals := enumValsForField(info, it); len(vals) > 0 && info.DiscriminatorPlain != "" && info.UseEnumDiscriminator {
-						discVar := out.discVar[info.DiscriminatorPlain]
-						if discVar == "" {
-							discVar = info.DiscriminatorPlain
-						}
+					if info.DiscriminatorPlain == "" || !info.UseEnumDiscriminator {
+						continue
+					}
+					discVar := out.discVar[info.DiscriminatorPlain]
+					if discVar == "" {
+						discVar = info.DiscriminatorPlain
+					}
+					if vals := enumValsForField(info, it); len(vals) > 0 {
 						enumIdent := g.QualifiedGoIdent(vals[0].GoIdent)
 						newDisc := g.QualifiedGoIdent(protogen.GoIdent{GoName: "NewDiscriminator", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/oneoff"})
 						discAssign = "; " + discVar + " = " + newDisc + "(" + enumIdent + ")"
@@ -912,12 +1093,12 @@ func buildOneofPlainVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, 
 	return out
 }
 
-func buildOneofVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, useErr bool) oneofVars {
+func buildOneofVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, useErr bool, msgIR *ir.MessageIR) oneofVars {
 	out := oneofVars{
 		lines:    []string{},
 		groupVar: make(map[string]string),
 	}
-	groups := groupOneofFields(plainMsg, fieldPlans, pbFields)
+	groups := groupOneofFields(plainMsg, fieldPlans, pbFields, msgIR)
 	usedNames := map[string]bool{}
 	for groupName, items := range groups {
 		if len(items) == 0 || items[0].PbField == nil || items[0].PbField.Oneof == nil {
@@ -975,7 +1156,7 @@ func buildOneofVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, field
 								if inf == nil {
 									continue
 								}
-								vals = append(vals, inf.FieldToEnums[it.PlainFieldName]...)
+								vals = append(vals, enumValsForField(inf, it)...)
 							}
 							if len(vals) == 0 {
 								continue
@@ -984,9 +1165,11 @@ func buildOneofVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, field
 							conds := []string{}
 							for _, v := range vals {
 								enumFull := string(v.Desc.Parent().FullName())
-								conds = append(conds, fmt.Sprintf("(string(disc.Descriptor().FullName()) == %q && disc.Number() == %d)", enumFull, v.Desc.Number()))
+								enumConst := enumFullConstName(enumFull)
+								conds = append(conds, fmt.Sprintf("(string(disc.Descriptor().FullName()) == %s && disc.Number() == %d)", enumConst, v.Desc.Number()))
 							}
-							out.lines = append(out.lines, "if "+strings.Join(conds, " || ")+" { "+varName+" = &"+wrapper+"{"+it.PbField.GoName+": m."+it.PlainFieldName+"}; matched = true }")
+							pbType := getFieldGoTypeForGen(g, it.PbField)
+							out.lines = append(out.lines, "if "+strings.Join(conds, " || ")+" { if v, ok := m."+it.PlainFieldName+".("+pbType+"); ok { "+varName+" = &"+wrapper+"{"+it.PbField.GoName+": v}; matched = true } else { return nil, "+errf+"(\"oneof %s discriminator payload type mismatch\", \""+groupName+"\") } }")
 						}
 						out.lines = append(out.lines, "if !matched { return nil, "+errf+"(\"oneof %s discriminator mismatch\", \""+groupName+"\") }")
 						out.lines = append(out.lines, "}")
@@ -1011,9 +1194,16 @@ func buildOneofVars(g *protogen.GeneratedFile, plainMsg *protogen.Message, field
 						conds := []string{}
 						for _, v := range vals {
 							enumFull := string(v.Desc.Parent().FullName())
-							conds = append(conds, fmt.Sprintf("(string(disc.Descriptor().FullName()) == %q && disc.Number() == %d)", enumFull, v.Desc.Number()))
+							enumConst := enumFullConstName(enumFull)
+							conds = append(conds, fmt.Sprintf("(string(disc.Descriptor().FullName()) == %s && disc.Number() == %d)", enumConst, v.Desc.Number()))
 						}
-						out.lines = append(out.lines, "if "+strings.Join(conds, " || ")+" { "+varName+" = &"+wrapper+"{"+it.PbField.GoName+": m."+it.PlainFieldName+"} }")
+						pbType := getFieldGoTypeForGen(g, it.PbField)
+						if useErr {
+							errf := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Errorf", GoImportPath: "fmt"})
+							out.lines = append(out.lines, "if "+strings.Join(conds, " || ")+" { if v, ok := m."+it.PlainFieldName+".("+pbType+"); ok { "+varName+" = &"+wrapper+"{"+it.PbField.GoName+": v}; matched = true } else { return nil, "+errf+"(\"oneof %s discriminator payload type mismatch\", \""+groupName+"\") } }")
+						} else {
+							out.lines = append(out.lines, "if "+strings.Join(conds, " || ")+" { if v, ok := m."+it.PlainFieldName+".("+pbType+"); ok { "+varName+" = &"+wrapper+"{"+it.PbField.GoName+": v} } }")
+						}
 					}
 					out.lines = append(out.lines, "}")
 					continue

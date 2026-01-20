@@ -15,43 +15,45 @@ type UserPlain struct {
 	IdKind IdKind
 	// src: <virtual>; transform: virtual|override_type
 	ContactDisc oneoff.EnumDiscriminator
-	// src: .test.discriminator.User.email; transform: oneof
-	Email *Email
-	// src: .test.discriminator.User.phone; transform: oneof
-	Phone *Phone
+	// src: <virtual>; transform: virtual|override_type
+	Contact any
 	// src: <virtual>; transform: virtual|override_type
 	IdentityDisc oneoff.EnumDiscriminator
-	// src: .test.discriminator.User.user_id; transform: oneof
-	UserId *UserId
+	// src: <virtual>; transform: virtual|override_type
+	Identity any
 }
+
+const enumFull_TestDiscriminatorContactKind = "test.discriminator.ContactKind"
+const enumFull_TestDiscriminatorIdKind = "test.discriminator.IdKind"
 
 func (m *User) IntoPlain() *UserPlain {
 	if m == nil {
 		return nil
 	}
 	var disc_contactDisc oneoff.EnumDiscriminator
-	var oneof_email *Email
-	var oneof_phone *Phone
+	var oneof_contact any
 	switch x := m.GetContact().(type) {
 	case *User_Email:
-		oneof_email = x.Email
+		oneof_contact = x.Email
+		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_EMAIL)
 	case *User_Phone:
-		oneof_phone = x.Phone
+		oneof_contact = x.Phone
+		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_PHONE)
 	}
 	var disc_identityDisc oneoff.EnumDiscriminator
-	var oneof_userId *UserId
+	var oneof_identity any
 	switch x := m.GetIdentity().(type) {
 	case *User_UserId:
-		oneof_userId = x.UserId
+		oneof_identity = x.UserId
+		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
 	}
 	return &UserPlain{
 		ContactKind:  m.GetContactKind(),
 		IdKind:       m.GetIdKind(),
 		ContactDisc:  disc_contactDisc,
-		Email:        oneof_email,
-		Phone:        oneof_phone,
+		Contact:      oneof_contact,
 		IdentityDisc: disc_identityDisc,
-		UserId:       oneof_userId,
+		Identity:     oneof_identity,
 	}
 }
 
@@ -59,37 +61,41 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var disc_contactDisc oneoff.EnumDiscriminator
-	var oneof_email *Email
-	var oneof_phone *Phone
-	var matched_contact bool
-	switch x := m.GetContact().(type) {
-	case *User_Email:
-		oneof_email = x.Email
-	case *User_Phone:
-		oneof_phone = x.Phone
-	}
 	var disc_identityDisc oneoff.EnumDiscriminator
-	var oneof_userId *UserId
+	var oneof_identity any
 	var matched_identity bool
 	switch x := m.GetIdentity().(type) {
 	case *User_UserId:
-		oneof_userId = x.UserId
+		oneof_identity = x.UserId
+		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
+		matched_identity = true
 	}
-	if m.GetContact() != nil && !matched_contact {
-		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Contact")
+	var disc_contactDisc oneoff.EnumDiscriminator
+	var oneof_contact any
+	var matched_contact bool
+	switch x := m.GetContact().(type) {
+	case *User_Email:
+		oneof_contact = x.Email
+		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_EMAIL)
+		matched_contact = true
+	case *User_Phone:
+		oneof_contact = x.Phone
+		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_PHONE)
+		matched_contact = true
 	}
 	if m.GetIdentity() != nil && !matched_identity {
 		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Identity")
+	}
+	if m.GetContact() != nil && !matched_contact {
+		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Contact")
 	}
 	return &UserPlain{
 		ContactKind:  m.GetContactKind(),
 		IdKind:       m.GetIdKind(),
 		ContactDisc:  disc_contactDisc,
-		Email:        oneof_email,
-		Phone:        oneof_phone,
+		Contact:      oneof_contact,
 		IdentityDisc: disc_identityDisc,
-		UserId:       oneof_userId,
+		Identity:     oneof_identity,
 	}, nil
 }
 
@@ -98,15 +104,25 @@ func (m *UserPlain) IntoPb() *User {
 		return nil
 	}
 	var oneof_contact isUser_Contact
-	if m.Email != nil {
-		oneof_contact = &User_Email{Email: m.Email}
-	}
-	if m.Phone != nil {
-		oneof_contact = &User_Phone{Phone: m.Phone}
+	if disc, err := oneoff.ParseDiscriminator(m.ContactDisc); err == nil {
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorContactKind && disc.Number() == 1 {
+			if v, ok := m.Contact.(*Email); ok {
+				oneof_contact = &User_Email{Email: v}
+			}
+		}
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorContactKind && disc.Number() == 2 {
+			if v, ok := m.Contact.(*Phone); ok {
+				oneof_contact = &User_Phone{Phone: v}
+			}
+		}
 	}
 	var oneof_identity isUser_Identity
-	if m.UserId != nil {
-		oneof_identity = &User_UserId{UserId: m.UserId}
+	if disc, err := oneoff.ParseDiscriminator(m.IdentityDisc); err == nil {
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorIdKind && disc.Number() == 1 {
+			if v, ok := m.Identity.(*UserId); ok {
+				oneof_identity = &User_UserId{UserId: v}
+			}
+		}
 	}
 	return &User{
 		ContactKind: m.ContactKind,
@@ -121,15 +137,46 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 		return nil, nil
 	}
 	var oneof_contact isUser_Contact
-	if m.Email != nil {
-		oneof_contact = &User_Email{Email: m.Email}
-	}
-	if m.Phone != nil {
-		oneof_contact = &User_Phone{Phone: m.Phone}
+	if disc, err := oneoff.ParseDiscriminator(m.ContactDisc); err != nil {
+		return nil, err
+	} else {
+		matched := false
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorContactKind && disc.Number() == 1 {
+			if v, ok := m.Contact.(*Email); ok {
+				oneof_contact = &User_Email{Email: v}
+				matched = true
+			} else {
+				return nil, fmt.Errorf("oneof %s discriminator payload type mismatch", "Contact")
+			}
+		}
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorContactKind && disc.Number() == 2 {
+			if v, ok := m.Contact.(*Phone); ok {
+				oneof_contact = &User_Phone{Phone: v}
+				matched = true
+			} else {
+				return nil, fmt.Errorf("oneof %s discriminator payload type mismatch", "Contact")
+			}
+		}
+		if !matched {
+			return nil, fmt.Errorf("oneof %s discriminator mismatch", "Contact")
+		}
 	}
 	var oneof_identity isUser_Identity
-	if m.UserId != nil {
-		oneof_identity = &User_UserId{UserId: m.UserId}
+	if disc, err := oneoff.ParseDiscriminator(m.IdentityDisc); err != nil {
+		return nil, err
+	} else {
+		matched := false
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorIdKind && disc.Number() == 1 {
+			if v, ok := m.Identity.(*UserId); ok {
+				oneof_identity = &User_UserId{UserId: v}
+				matched = true
+			} else {
+				return nil, fmt.Errorf("oneof %s discriminator payload type mismatch", "Identity")
+			}
+		}
+		if !matched {
+			return nil, fmt.Errorf("oneof %s discriminator mismatch", "Identity")
+		}
 	}
 	return &User{
 		ContactKind: m.ContactKind,

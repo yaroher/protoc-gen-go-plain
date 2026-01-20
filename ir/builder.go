@@ -186,11 +186,12 @@ func buildFieldPlans(plan *IR, msgIR *MessageIR, pkg string, msg *descriptorpb.D
 			embed = opts.GetEmbed() || opts.GetEmbedWithPrefix()
 			enumDispatch = opts.GetEnumDispatched() || opts.GetEnumDispatchedWithPrefix()
 		}
+		fieldEnums := make(map[string][]string)
 		for _, f := range group {
 			fopts := getFieldOptions(f)
 			if fopts != nil && len(fopts.GetWithEnums()) > 0 {
 				oneofHasEnums[int32(idx)] = true
-				break
+				fieldEnums[f.GetName()] = append(fieldEnums[f.GetName()], fopts.GetWithEnums()...)
 			}
 		}
 		if embed || enumDispatch || oneofHasEnums[int32(idx)] {
@@ -205,9 +206,13 @@ func buildFieldPlans(plan *IR, msgIR *MessageIR, pkg string, msg *descriptorpb.D
 			OrigName:        oneof.GetName(),
 			NewName:         oneof.GetName(),
 			Fields:          nil,
+			FieldEnums:      nil,
 			Embed:           embed,
 			EmbedWithPrefix: embedWithPrefix,
 			Discriminator:   useDiscriminator,
+		}
+		if len(fieldEnums) > 0 {
+			oneofPlan.FieldEnums = fieldEnums
 		}
 		if enumDispatch {
 			oneofPlan.EnumDispatch = buildEnumDispatchPlan(plan, msgIR, oneof.GetName(), opts, group)
@@ -286,10 +291,33 @@ func buildFieldPlans(plan *IR, msgIR *MessageIR, pkg string, msg *descriptorpb.D
 					},
 				}},
 			})
+			maxNumber++
+			payloadName := oneof.GetName()
+			out = append(out, &FieldPlan{
+				OrigField: nil,
+				NewField: FieldSpec{
+					Name:     payloadName,
+					Number:   maxNumber,
+					Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL,
+					Type:     descriptorpb.FieldDescriptorProto_TYPE_BYTES,
+					TypeName: "",
+				},
+				Origin: FieldOrigin{IsVirtual: true},
+				Ops: []FieldOp{{
+					Kind:   OpOverrideType,
+					Reason: "oneof discriminator payload",
+					Data: map[string]string{
+						"name":        "any",
+						"import_path": "",
+					},
+				}},
+			})
 		}
 
-		for _, f := range group {
-			out = append(out, buildFieldPlan(plan, msgIR, f, msgIndex, &maxNumber, prefix, true, oneofIndexToName)...)
+		if !(!embed && !enumDispatch && oneofHasEnums[idx]) {
+			for _, f := range group {
+				out = append(out, buildFieldPlan(plan, msgIR, f, msgIndex, &maxNumber, prefix, true, oneofIndexToName)...)
+			}
 		}
 	}
 

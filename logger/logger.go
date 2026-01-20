@@ -35,6 +35,7 @@ func getLogLevel() zapcore.Level {
 func getFd() *os.File {
 	logPath := os.Getenv("LOG_FILE")
 	if logPath != "" {
+		appendOnly := os.Getenv("LOG_APPEND") == "1"
 		if _, err := os.Stat(logPath); os.IsNotExist(err) {
 			f, err := os.Create(logPath)
 			if err != nil {
@@ -46,12 +47,14 @@ func getFd() *os.File {
 		if err != nil {
 			panic(err)
 		}
-		// flush file
-		if err := f.Truncate(0); err != nil {
-			panic(err)
-		}
-		if _, err := f.Seek(0, 0); err != nil {
-			panic(err)
+		if !appendOnly {
+			// flush file
+			if err := f.Truncate(0); err != nil {
+				panic(err)
+			}
+			if _, err := f.Seek(0, 0); err != nil {
+				panic(err)
+			}
 		}
 		return f
 	}

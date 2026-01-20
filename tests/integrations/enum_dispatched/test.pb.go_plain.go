@@ -34,6 +34,8 @@ type PaymentPlain struct {
 	BackupMethodBackupCrypto *PaymentCrypto
 }
 
+const enumFull_TestEnumDispatchedMethodType = "test.enum_dispatched.MethodType"
+
 func (m *Payment) IntoPlain() *PaymentPlain {
 	if m == nil {
 		return nil
@@ -66,14 +68,6 @@ func (m *Payment) IntoPlainErr() (*PaymentPlain, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var oneof_backupMethodBackupCard *PaymentCard
-	var oneof_backupMethodBackupCrypto *PaymentCrypto
-	switch x := m.GetBackupMethod().(type) {
-	case *Payment_BackupCard:
-		oneof_backupMethodBackupCard = x.BackupCard
-	case *Payment_BackupCrypto:
-		oneof_backupMethodBackupCrypto = x.BackupCrypto
-	}
 	var oneof_card *PaymentCard
 	var oneof_crypto *PaymentCrypto
 	switch x := m.GetMethod().(type) {
@@ -81,6 +75,14 @@ func (m *Payment) IntoPlainErr() (*PaymentPlain, error) {
 		oneof_card = x.Card
 	case *Payment_Crypto:
 		oneof_crypto = x.Crypto
+	}
+	var oneof_backupMethodBackupCard *PaymentCard
+	var oneof_backupMethodBackupCrypto *PaymentCrypto
+	switch x := m.GetBackupMethod().(type) {
+	case *Payment_BackupCard:
+		oneof_backupMethodBackupCard = x.BackupCard
+	case *Payment_BackupCrypto:
+		oneof_backupMethodBackupCrypto = x.BackupCrypto
 	}
 	return &PaymentPlain{
 		Card:                     oneof_card,
@@ -133,7 +135,7 @@ func (m *PaymentPlain) IntoPbErr() (*Payment, error) {
 		oneof_backupMethod = &Payment_BackupCrypto{BackupCrypto: m.BackupMethodBackupCrypto}
 	}
 	return &Payment{
-		Method:       oneof_method,
 		BackupMethod: oneof_backupMethod,
+		Method:       oneof_method,
 	}, nil
 }

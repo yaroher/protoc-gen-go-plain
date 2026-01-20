@@ -125,7 +125,9 @@ type OneofPlan struct {
 	OrigName string
 	NewName  string
 	Fields   []string
-	Ops      []OneofOp
+	// FieldEnums maps original oneof field name to enum value full names (".pkg.Enum.VALUE").
+	FieldEnums map[string][]string
+	Ops        []OneofOp
 
 	EnumDispatch    *EnumDispatchPlan
 	Embed           bool

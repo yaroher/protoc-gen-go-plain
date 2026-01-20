@@ -28,7 +28,7 @@ INTEGRATION_PROTO_FILES=$(shell find "$(INTEGRATION_PROTO_DIR)" -type f -name '*
 build-test: build
 	rm -f $(CURDIR)/bin/protolog.txt
 	@for f in $(INTEGRATION_PROTO_FILES); do \
-		LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
+		LOG_APPEND=1 LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
 			--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
 			--go_out=$(CURDIR) \
 			--go_opt=paths=source_relative \

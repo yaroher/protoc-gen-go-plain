@@ -95,6 +95,7 @@ func (g *Generator) Generate() error {
 	generatedEnums := buildGeneratedEnumSet(plan)
 	origMsgs := buildMessageMap(origPlugin)
 	enumValues := buildEnumValueMap(origPlugin)
+	enumByFull := buildEnumMap(origPlugin)
 
 	genCount := 0
 	for _, fd := range newPlugin.Files {
@@ -138,7 +139,7 @@ func (g *Generator) Generate() error {
 			pbFull := strings.TrimSuffix(string(m.Desc.FullName()), g.suffix)
 			pbMsg := origMsgs[pbFull]
 			if pbMsg != nil {
-				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues)
+				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues, enumByFull)
 			}
 		}
 		if fileCount == 0 {
@@ -180,6 +181,22 @@ func buildEnumValueMap(p *protogen.Plugin) map[string]*protogen.EnumValue {
 	return result
 }
 
+func buildEnumMap(p *protogen.Plugin) map[string]*protogen.Enum {
+	result := make(map[string]*protogen.Enum)
+	if p == nil {
+		return result
+	}
+	for _, f := range p.Files {
+		for _, e := range f.Enums {
+			registerEnums(result, e)
+		}
+		for _, m := range f.Messages {
+			registerMessageEnumsOnly(result, m)
+		}
+	}
+	return result
+}
+
 func registerMessageEnums(result map[string]*protogen.EnumValue, m *protogen.Message) {
 	if m == nil {
 		return
@@ -192,6 +209,18 @@ func registerMessageEnums(result map[string]*protogen.EnumValue, m *protogen.Mes
 	}
 }
 
+func registerMessageEnumsOnly(result map[string]*protogen.Enum, m *protogen.Message) {
+	if m == nil {
+		return
+	}
+	for _, e := range m.Enums {
+		registerEnums(result, e)
+	}
+	for _, nested := range m.Messages {
+		registerMessageEnumsOnly(result, nested)
+	}
+}
+
 func registerEnumValues(result map[string]*protogen.EnumValue, e *protogen.Enum) {
 	if e == nil {
 		return
@@ -200,6 +229,14 @@ func registerEnumValues(result map[string]*protogen.EnumValue, e *protogen.Enum)
 		full := "." + string(v.Desc.FullName())
 		result[full] = v
 	}
+}
+
+func registerEnums(result map[string]*protogen.Enum, e *protogen.Enum) {
+	if e == nil {
+		return
+	}
+	full := "." + string(e.Desc.FullName())
+	result[full] = e
 }
 
 func generateModel(g *protogen.GeneratedFile, m *protogen.Message, generatedEnums map[string]struct{}, msgIR *ir.MessageIR) {
