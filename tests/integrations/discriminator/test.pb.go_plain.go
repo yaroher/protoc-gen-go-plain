@@ -64,6 +64,15 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 	if m == nil {
 		return nil, nil
 	}
+	var disc_identityDisc oneoff.EnumDiscriminator
+	var oneof_identity any
+	var matched_identity bool
+	switch x := m.GetIdentity().(type) {
+	case *User_UserId:
+		oneof_identity = x.UserId
+		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
+		matched_identity = true
+	}
 	var disc_contactDisc oneoff.EnumDiscriminator
 	var oneof_contact any
 	var matched_contact bool
@@ -76,15 +85,6 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 		oneof_contact = x.Phone
 		disc_contactDisc = oneoff.NewDiscriminator(ContactKind_CONTACT_KIND_PHONE)
 		matched_contact = true
-	}
-	var disc_identityDisc oneoff.EnumDiscriminator
-	var oneof_identity any
-	var matched_identity bool
-	switch x := m.GetIdentity().(type) {
-	case *User_UserId:
-		oneof_identity = x.UserId
-		disc_identityDisc = oneoff.NewDiscriminator(IdKind_ID_KIND_USER)
-		matched_identity = true
 	}
 	if m.GetContact() != nil && !matched_contact {
 		return nil, fmt.Errorf("oneof %s discriminator mismatch", "Contact")
@@ -130,8 +130,8 @@ func (m *UserPlain) IntoPb() *User {
 	return &User{
 		ContactKind: m.ContactKind,
 		IdKind:      m.IdKind,
-		Identity:    oneof_identity,
 		Contact:     oneof_contact,
+		Identity:    oneof_identity,
 	}
 }
 

@@ -180,10 +180,10 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var embed_address *Address
-	embed_address = &Address{Street: m.Street, City: m.City}
 	var embed_work_address *Address
 	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity}
+	var embed_address *Address
+	embed_address = &Address{Street: m.Street, City: m.City}
 	var oneof_backupContact isUser_BackupContact
 	switch m.ContactType {
 	case ContactType_CONTACT_TYPE_EMAIL:
