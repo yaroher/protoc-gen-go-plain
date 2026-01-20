@@ -40,7 +40,7 @@ build-test: build
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt
-	go test ./tests/...
+	go clean -testcache && go test -bench=. ./...
 
 branch=main
 .PHONY: revision

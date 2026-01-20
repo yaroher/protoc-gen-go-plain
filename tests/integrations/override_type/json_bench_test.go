@@ -17,6 +17,10 @@ type uuidCodecErr struct{}
 type timeCodec struct{}
 
 type timeCodecErr struct{}
+type uuidToStringBench struct{}
+type uuidToStringErrBench struct{}
+type timeToTsBench struct{}
+type timeToTsErrBench struct{}
 
 func (uuidCodec) Cast(v string) uuid.UUID {
 	id, _ := uuid.Parse(v)
@@ -108,6 +112,22 @@ func (timeCodecErr) DecodeJx(d *jx.Decoder) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return ts.AsTime(), nil
+}
+
+func (uuidToStringBench) Cast(v uuid.UUID) string {
+	return v.String()
+}
+
+func (uuidToStringErrBench) CastErr(v uuid.UUID) (string, error) {
+	return v.String(), nil
+}
+
+func (timeToTsBench) Cast(v time.Time) *timestamppb.Timestamp {
+	return timestamppb.New(v)
+}
+
+func (timeToTsErrBench) CastErr(v time.Time) (*timestamppb.Timestamp, error) {
+	return timestamppb.New(v), nil
 }
 
 func sampleUser() *User {

@@ -3,7 +3,6 @@ syntax = "proto3";
 package test.virtual;
 
 import "goplain/goplain.proto";
-import "google/protobuf/type.proto";
 
 option go_package = "github.com/yaroher/protoc-gen-go-plain/tests/integrations/virtual;virtual";
 
