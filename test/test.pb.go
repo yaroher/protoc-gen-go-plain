@@ -77,6 +77,55 @@ func (ContactType) EnumDescriptor() ([]byte, []int) {
 	return file_test_test_proto_rawDescGZIP(), []int{0}
 }
 
+type PaymentMethodType int32
+
+const (
+	PaymentMethodType_PAYMENT_METHOD_TYPE_UNSPECIFIED PaymentMethodType = 0
+	PaymentMethodType_PAYMENT_METHOD_TYPE_CARD        PaymentMethodType = 1
+	PaymentMethodType_PAYMENT_METHOD_TYPE_CRYPTO      PaymentMethodType = 2
+)
+
+// Enum value maps for PaymentMethodType.
+var (
+	PaymentMethodType_name = map[int32]string{
+		0: "PAYMENT_METHOD_TYPE_UNSPECIFIED",
+		1: "PAYMENT_METHOD_TYPE_CARD",
+		2: "PAYMENT_METHOD_TYPE_CRYPTO",
+	}
+	PaymentMethodType_value = map[string]int32{
+		"PAYMENT_METHOD_TYPE_UNSPECIFIED": 0,
+		"PAYMENT_METHOD_TYPE_CARD":        1,
+		"PAYMENT_METHOD_TYPE_CRYPTO":      2,
+	}
+)
+
+func (x PaymentMethodType) Enum() *PaymentMethodType {
+	p := new(PaymentMethodType)
+	*p = x
+	return p
+}
+
+func (x PaymentMethodType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PaymentMethodType) Descriptor() protoreflect.EnumDescriptor {
+	return file_test_test_proto_enumTypes[1].Descriptor()
+}
+
+func (PaymentMethodType) Type() protoreflect.EnumType {
+	return &file_test_test_proto_enumTypes[1]
+}
+
+func (x PaymentMethodType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PaymentMethodType.Descriptor instead.
+func (PaymentMethodType) EnumDescriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{1}
+}
+
 type UserId struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
@@ -1214,7 +1263,7 @@ const file_test_test_proto_rawDesc = "" +
 	"\vcard_number\x18\x01 \x01(\tR\n" +
 	"cardNumber\"'\n" +
 	"\rPaymentCrypto\x12\x16\n" +
-	"\x06wallet\x18\x01 \x01(\tR\x06wallet\"\xb4\x1a\n" +
+	"\x06wallet\x18\x01 \x01(\tR\x06wallet\"\xd4\x1d\n" +
 	"\vTestMessage\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\x02id\x18\x02 \x01(\v2\f.test.UserIdR\x02id\x12!\n" +
@@ -1231,21 +1280,21 @@ const file_test_test_proto_rawDesc = "" +
 	"\x04UUID\x12\x16github.com/google/uuidR\x05rawId\x12R\n" +
 	"\rcreated_at_ts\x18\v \x01(\v2\x1a.google.protobuf.TimestampB\x12\x82\xa6\x1d\x0e\n" +
 	"\f\n" +
-	"\x04Time\x12\x04timeR\vcreatedAtTs\x129\n" +
-	"\remail_contact\x18\f \x01(\v2\x12.test.ContactEmailH\x00R\femailContact\x129\n" +
-	"\rphone_contact\x18\r \x01(\v2\x12.test.ContactPhoneH\x00R\fphoneContact\x127\n" +
-	"\fbackup_email\x18\x0e \x01(\v2\x12.test.ContactEmailH\x01R\vbackupEmail\x127\n" +
-	"\fbackup_phone\x18\x0f \x01(\v2\x12.test.ContactPhoneH\x01R\vbackupPhone\x12'\n" +
-	"\x04card\x18\x10 \x01(\v2\x11.test.PaymentCardH\x02R\x04card\x12-\n" +
-	"\x06crypto\x18\x11 \x01(\v2\x13.test.PaymentCryptoH\x02R\x06crypto\x124\n" +
-	"\vbackup_card\x18\x12 \x01(\v2\x11.test.PaymentCardH\x03R\n" +
-	"backupCard\x12:\n" +
-	"\rbackup_crypto\x18\x13 \x01(\v2\x13.test.PaymentCryptoH\x03R\fbackupCrypto\x124\n" +
-	"\fcontact_type\x18\x14 \x01(\x0e2\x11.test.ContactTypeR\vcontactType\x12M\n" +
+	"\x04Time\x12\x04timeR\vcreatedAtTs\x12e\n" +
+	"\remail_contact\x18\f \x01(\v2\x12.test.ContactEmailB*\x82\xa6\x1d&2$.test.ContactType.CONTACT_TYPE_EMAILH\x00R\femailContact\x12e\n" +
+	"\rphone_contact\x18\r \x01(\v2\x12.test.ContactPhoneB*\x82\xa6\x1d&2$.test.ContactType.CONTACT_TYPE_PHONEH\x00R\fphoneContact\x12c\n" +
+	"\fbackup_email\x18\x0e \x01(\v2\x12.test.ContactEmailB*\x82\xa6\x1d&2$.test.ContactType.CONTACT_TYPE_EMAILH\x01R\vbackupEmail\x12c\n" +
+	"\fbackup_phone\x18\x0f \x01(\v2\x12.test.ContactPhoneB*\x82\xa6\x1d&2$.test.ContactType.CONTACT_TYPE_PHONEH\x01R\vbackupPhone\x12_\n" +
+	"\x04card\x18\x10 \x01(\v2\x11.test.PaymentCardB6\x82\xa6\x1d220.test.PaymentMethodType.PAYMENT_METHOD_TYPE_CARDH\x02R\x04card\x12g\n" +
+	"\x06crypto\x18\x11 \x01(\v2\x13.test.PaymentCryptoB8\x82\xa6\x1d422.test.PaymentMethodType.PAYMENT_METHOD_TYPE_CRYPTOH\x02R\x06crypto\x12l\n" +
+	"\vbackup_card\x18\x12 \x01(\v2\x11.test.PaymentCardB6\x82\xa6\x1d220.test.PaymentMethodType.PAYMENT_METHOD_TYPE_CARDH\x03R\n" +
+	"backupCard\x12t\n" +
+	"\rbackup_crypto\x18\x13 \x01(\v2\x13.test.PaymentCryptoB8\x82\xa6\x1d422.test.PaymentMethodType.PAYMENT_METHOD_TYPE_CRYPTOH\x03R\fbackupCrypto\x124\n" +
+	"\fcontact_type\x18\x14 \x01(\x0e2\x11.test.ContactTypeR\vcontactType\x12_\n" +
 	"\n" +
-	"enum_email\x18\x15 \x01(\v2\x12.test.ContactEmailB\x18\x82\xa6\x1d\x142\x12CONTACT_TYPE_EMAILH\x04R\tenumEmail\x12M\n" +
+	"enum_email\x18\x15 \x01(\v2\x12.test.ContactEmailB*\x82\xa6\x1d&2$.test.ContactType.CONTACT_TYPE_EMAILH\x04R\tenumEmail\x12_\n" +
 	"\n" +
-	"enum_phone\x18\x16 \x01(\v2\x12.test.ContactPhoneB\x18\x82\xa6\x1d\x142\x12CONTACT_TYPE_PHONEH\x04R\tenumPhone\x12\x19\n" +
+	"enum_phone\x18\x16 \x01(\v2\x12.test.ContactPhoneB*\x82\xa6\x1d&2$.test.ContactType.CONTACT_TYPE_PHONEH\x04R\tenumPhone\x12\x19\n" +
 	"\bf_double\x18\x17 \x01(\x01R\afDouble\x12\x17\n" +
 	"\af_float\x18\x18 \x01(\x02R\x06fFloat\x12\x17\n" +
 	"\af_int32\x18\x19 \x01(\x05R\x06fInt32\x12\x17\n" +
@@ -1300,12 +1349,16 @@ const file_test_test_proto_rawDesc = "" +
 	"\acontact\x12\x06\x82\xb5\x18\x02\b\x01B\x18\n" +
 	"\x0ebackup_contact\x12\x06\x82\xb5\x18\x02\x10\x01B\x18\n" +
 	"\x0epayment_method\x12\x06\x82\xb5\x18\x02\x18\x01B\x1f\n" +
-	"\x15backup_payment_method\x12\x06\x82\xb5\x18\x02 \x01B/\n" +
-	"\x15contact_enum_dispatch\x12\x16\x82\xb5\x18\x12*\x10test.ContactType*[\n" +
+	"\x15backup_payment_method\x12\x06\x82\xb5\x18\x02 \x01B\x17\n" +
+	"\x15contact_enum_dispatch*[\n" +
 	"\vContactType\x12\x1c\n" +
 	"\x18CONTACT_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CONTACT_TYPE_EMAIL\x10\x01\x12\x16\n" +
-	"\x12CONTACT_TYPE_PHONE\x10\x02BW\x82\xa6\x1d&\n" +
+	"\x12CONTACT_TYPE_PHONE\x10\x02*v\n" +
+	"\x11PaymentMethodType\x12#\n" +
+	"\x1fPAYMENT_METHOD_TYPE_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18PAYMENT_METHOD_TYPE_CARD\x10\x01\x12\x1e\n" +
+	"\x1aPAYMENT_METHOD_TYPE_CRYPTO\x10\x02BW\x82\xa6\x1d&\n" +
 	"$\n" +
 	"\x02\x10\t\x12\x1e\n" +
 	"\x04UUID\x12\x16github.com/google/uuidZ+github.com/yaroher/protoc-gen-go-plain/testb\x06proto3"
@@ -1322,83 +1375,84 @@ func file_test_test_proto_rawDescGZIP() []byte {
 	return file_test_test_proto_rawDescData
 }
 
-var file_test_test_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_test_test_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_test_test_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_test_test_proto_goTypes = []any{
 	(ContactType)(0),               // 0: test.ContactType
-	(*UserId)(nil),                 // 1: test.UserId
-	(*Email)(nil),                  // 2: test.Email
-	(*Address)(nil),                // 3: test.Address
-	(*AuditInfo)(nil),              // 4: test.AuditInfo
-	(*Settings)(nil),               // 5: test.Settings
-	(*ContactEmail)(nil),           // 6: test.ContactEmail
-	(*ContactPhone)(nil),           // 7: test.ContactPhone
-	(*PaymentCard)(nil),            // 8: test.PaymentCard
-	(*PaymentCrypto)(nil),          // 9: test.PaymentCrypto
-	(*TestMessage)(nil),            // 10: test.TestMessage
-	nil,                            // 11: test.TestMessage.FMapStringInt32Entry
-	nil,                            // 12: test.TestMessage.FMapStringAddressEntry
-	(*timestamppb.Timestamp)(nil),  // 13: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),    // 14: google.protobuf.Duration
-	(*anypb.Any)(nil),              // 15: google.protobuf.Any
-	(*structpb.Struct)(nil),        // 16: google.protobuf.Struct
-	(*structpb.Value)(nil),         // 17: google.protobuf.Value
-	(*structpb.ListValue)(nil),     // 18: google.protobuf.ListValue
-	(*emptypb.Empty)(nil),          // 19: google.protobuf.Empty
-	(*wrapperspb.StringValue)(nil), // 20: google.protobuf.StringValue
-	(*wrapperspb.BoolValue)(nil),   // 21: google.protobuf.BoolValue
-	(*wrapperspb.Int32Value)(nil),  // 22: google.protobuf.Int32Value
-	(*wrapperspb.Int64Value)(nil),  // 23: google.protobuf.Int64Value
-	(*wrapperspb.UInt32Value)(nil), // 24: google.protobuf.UInt32Value
-	(*wrapperspb.UInt64Value)(nil), // 25: google.protobuf.UInt64Value
-	(*wrapperspb.FloatValue)(nil),  // 26: google.protobuf.FloatValue
-	(*wrapperspb.DoubleValue)(nil), // 27: google.protobuf.DoubleValue
-	(*wrapperspb.BytesValue)(nil),  // 28: google.protobuf.BytesValue
+	(PaymentMethodType)(0),         // 1: test.PaymentMethodType
+	(*UserId)(nil),                 // 2: test.UserId
+	(*Email)(nil),                  // 3: test.Email
+	(*Address)(nil),                // 4: test.Address
+	(*AuditInfo)(nil),              // 5: test.AuditInfo
+	(*Settings)(nil),               // 6: test.Settings
+	(*ContactEmail)(nil),           // 7: test.ContactEmail
+	(*ContactPhone)(nil),           // 8: test.ContactPhone
+	(*PaymentCard)(nil),            // 9: test.PaymentCard
+	(*PaymentCrypto)(nil),          // 10: test.PaymentCrypto
+	(*TestMessage)(nil),            // 11: test.TestMessage
+	nil,                            // 12: test.TestMessage.FMapStringInt32Entry
+	nil,                            // 13: test.TestMessage.FMapStringAddressEntry
+	(*timestamppb.Timestamp)(nil),  // 14: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),    // 15: google.protobuf.Duration
+	(*anypb.Any)(nil),              // 16: google.protobuf.Any
+	(*structpb.Struct)(nil),        // 17: google.protobuf.Struct
+	(*structpb.Value)(nil),         // 18: google.protobuf.Value
+	(*structpb.ListValue)(nil),     // 19: google.protobuf.ListValue
+	(*emptypb.Empty)(nil),          // 20: google.protobuf.Empty
+	(*wrapperspb.StringValue)(nil), // 21: google.protobuf.StringValue
+	(*wrapperspb.BoolValue)(nil),   // 22: google.protobuf.BoolValue
+	(*wrapperspb.Int32Value)(nil),  // 23: google.protobuf.Int32Value
+	(*wrapperspb.Int64Value)(nil),  // 24: google.protobuf.Int64Value
+	(*wrapperspb.UInt32Value)(nil), // 25: google.protobuf.UInt32Value
+	(*wrapperspb.UInt64Value)(nil), // 26: google.protobuf.UInt64Value
+	(*wrapperspb.FloatValue)(nil),  // 27: google.protobuf.FloatValue
+	(*wrapperspb.DoubleValue)(nil), // 28: google.protobuf.DoubleValue
+	(*wrapperspb.BytesValue)(nil),  // 29: google.protobuf.BytesValue
 }
 var file_test_test_proto_depIdxs = []int32{
-	13, // 0: test.AuditInfo.created_at:type_name -> google.protobuf.Timestamp
-	13, // 1: test.AuditInfo.updated_at:type_name -> google.protobuf.Timestamp
-	1,  // 2: test.TestMessage.id:type_name -> test.UserId
-	2,  // 3: test.TestMessage.email:type_name -> test.Email
-	3,  // 4: test.TestMessage.address:type_name -> test.Address
-	3,  // 5: test.TestMessage.work_address:type_name -> test.Address
-	4,  // 6: test.TestMessage.audit:type_name -> test.AuditInfo
-	5,  // 7: test.TestMessage.settings:type_name -> test.Settings
-	13, // 8: test.TestMessage.created_at_ts:type_name -> google.protobuf.Timestamp
-	6,  // 9: test.TestMessage.email_contact:type_name -> test.ContactEmail
-	7,  // 10: test.TestMessage.phone_contact:type_name -> test.ContactPhone
-	6,  // 11: test.TestMessage.backup_email:type_name -> test.ContactEmail
-	7,  // 12: test.TestMessage.backup_phone:type_name -> test.ContactPhone
-	8,  // 13: test.TestMessage.card:type_name -> test.PaymentCard
-	9,  // 14: test.TestMessage.crypto:type_name -> test.PaymentCrypto
-	8,  // 15: test.TestMessage.backup_card:type_name -> test.PaymentCard
-	9,  // 16: test.TestMessage.backup_crypto:type_name -> test.PaymentCrypto
+	14, // 0: test.AuditInfo.created_at:type_name -> google.protobuf.Timestamp
+	14, // 1: test.AuditInfo.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 2: test.TestMessage.id:type_name -> test.UserId
+	3,  // 3: test.TestMessage.email:type_name -> test.Email
+	4,  // 4: test.TestMessage.address:type_name -> test.Address
+	4,  // 5: test.TestMessage.work_address:type_name -> test.Address
+	5,  // 6: test.TestMessage.audit:type_name -> test.AuditInfo
+	6,  // 7: test.TestMessage.settings:type_name -> test.Settings
+	14, // 8: test.TestMessage.created_at_ts:type_name -> google.protobuf.Timestamp
+	7,  // 9: test.TestMessage.email_contact:type_name -> test.ContactEmail
+	8,  // 10: test.TestMessage.phone_contact:type_name -> test.ContactPhone
+	7,  // 11: test.TestMessage.backup_email:type_name -> test.ContactEmail
+	8,  // 12: test.TestMessage.backup_phone:type_name -> test.ContactPhone
+	9,  // 13: test.TestMessage.card:type_name -> test.PaymentCard
+	10, // 14: test.TestMessage.crypto:type_name -> test.PaymentCrypto
+	9,  // 15: test.TestMessage.backup_card:type_name -> test.PaymentCard
+	10, // 16: test.TestMessage.backup_crypto:type_name -> test.PaymentCrypto
 	0,  // 17: test.TestMessage.contact_type:type_name -> test.ContactType
-	6,  // 18: test.TestMessage.enum_email:type_name -> test.ContactEmail
-	7,  // 19: test.TestMessage.enum_phone:type_name -> test.ContactPhone
+	7,  // 18: test.TestMessage.enum_email:type_name -> test.ContactEmail
+	8,  // 19: test.TestMessage.enum_phone:type_name -> test.ContactPhone
 	0,  // 20: test.TestMessage.f_contact_type:type_name -> test.ContactType
 	0,  // 21: test.TestMessage.f_contact_type_list:type_name -> test.ContactType
-	3,  // 22: test.TestMessage.f_address:type_name -> test.Address
-	3,  // 23: test.TestMessage.f_address_list:type_name -> test.Address
-	11, // 24: test.TestMessage.f_map_string_int32:type_name -> test.TestMessage.FMapStringInt32Entry
-	12, // 25: test.TestMessage.f_map_string_address:type_name -> test.TestMessage.FMapStringAddressEntry
-	13, // 26: test.TestMessage.f_ts:type_name -> google.protobuf.Timestamp
-	14, // 27: test.TestMessage.f_duration:type_name -> google.protobuf.Duration
-	15, // 28: test.TestMessage.f_any:type_name -> google.protobuf.Any
-	16, // 29: test.TestMessage.f_struct:type_name -> google.protobuf.Struct
-	17, // 30: test.TestMessage.f_value:type_name -> google.protobuf.Value
-	18, // 31: test.TestMessage.f_list_value:type_name -> google.protobuf.ListValue
-	19, // 32: test.TestMessage.f_empty:type_name -> google.protobuf.Empty
-	20, // 33: test.TestMessage.f_string_value:type_name -> google.protobuf.StringValue
-	21, // 34: test.TestMessage.f_bool_value:type_name -> google.protobuf.BoolValue
-	22, // 35: test.TestMessage.f_int32_value:type_name -> google.protobuf.Int32Value
-	23, // 36: test.TestMessage.f_int64_value:type_name -> google.protobuf.Int64Value
-	24, // 37: test.TestMessage.f_uint32_value:type_name -> google.protobuf.UInt32Value
-	25, // 38: test.TestMessage.f_uint64_value:type_name -> google.protobuf.UInt64Value
-	26, // 39: test.TestMessage.f_float_value:type_name -> google.protobuf.FloatValue
-	27, // 40: test.TestMessage.f_double_value:type_name -> google.protobuf.DoubleValue
-	28, // 41: test.TestMessage.f_bytes_value:type_name -> google.protobuf.BytesValue
-	3,  // 42: test.TestMessage.FMapStringAddressEntry.value:type_name -> test.Address
+	4,  // 22: test.TestMessage.f_address:type_name -> test.Address
+	4,  // 23: test.TestMessage.f_address_list:type_name -> test.Address
+	12, // 24: test.TestMessage.f_map_string_int32:type_name -> test.TestMessage.FMapStringInt32Entry
+	13, // 25: test.TestMessage.f_map_string_address:type_name -> test.TestMessage.FMapStringAddressEntry
+	14, // 26: test.TestMessage.f_ts:type_name -> google.protobuf.Timestamp
+	15, // 27: test.TestMessage.f_duration:type_name -> google.protobuf.Duration
+	16, // 28: test.TestMessage.f_any:type_name -> google.protobuf.Any
+	17, // 29: test.TestMessage.f_struct:type_name -> google.protobuf.Struct
+	18, // 30: test.TestMessage.f_value:type_name -> google.protobuf.Value
+	19, // 31: test.TestMessage.f_list_value:type_name -> google.protobuf.ListValue
+	20, // 32: test.TestMessage.f_empty:type_name -> google.protobuf.Empty
+	21, // 33: test.TestMessage.f_string_value:type_name -> google.protobuf.StringValue
+	22, // 34: test.TestMessage.f_bool_value:type_name -> google.protobuf.BoolValue
+	23, // 35: test.TestMessage.f_int32_value:type_name -> google.protobuf.Int32Value
+	24, // 36: test.TestMessage.f_int64_value:type_name -> google.protobuf.Int64Value
+	25, // 37: test.TestMessage.f_uint32_value:type_name -> google.protobuf.UInt32Value
+	26, // 38: test.TestMessage.f_uint64_value:type_name -> google.protobuf.UInt64Value
+	27, // 39: test.TestMessage.f_float_value:type_name -> google.protobuf.FloatValue
+	28, // 40: test.TestMessage.f_double_value:type_name -> google.protobuf.DoubleValue
+	29, // 41: test.TestMessage.f_bytes_value:type_name -> google.protobuf.BytesValue
+	4,  // 42: test.TestMessage.FMapStringAddressEntry.value:type_name -> test.Address
 	43, // [43:43] is the sub-list for method output_type
 	43, // [43:43] is the sub-list for method input_type
 	43, // [43:43] is the sub-list for extension type_name
@@ -1428,7 +1482,7 @@ func file_test_test_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_test_proto_rawDesc), len(file_test_test_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,

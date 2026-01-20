@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package test.type_alias;
+
+import "goplain/goplain.proto";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/tests/integrations/type_alias;type_alias";
+
+message UserId {
+  option (goplain.message).type_alias = true;
+  string value = 1;
+}
+
+message User {
+  option (goplain.message).generate = true;
+  UserId id = 1;
+}

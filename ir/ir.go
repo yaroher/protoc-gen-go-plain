@@ -99,6 +99,7 @@ type FieldOrigin struct {
 	IsSerialized bool
 	IsOneof      bool
 	OneofGroup   string
+	OneofEnums   []string
 	OriginalType string
 }
 
@@ -129,6 +130,7 @@ type OneofPlan struct {
 	EnumDispatch    *EnumDispatchPlan
 	Embed           bool
 	EmbedWithPrefix bool
+	Discriminator   bool
 }
 
 type OneofOpKind string

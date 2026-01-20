@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package test.enum_dispatched;
+
+import "goplain/goplain.proto";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/tests/integrations/enum_dispatched;enum_dispatched";
+
+message PaymentCard { string number = 1; }
+message PaymentCrypto { string address = 1; }
+
+message Payment {
+  option (goplain.message).generate = true;
+
+  oneof method {
+    option (goplain.oneof).enum_dispatched = true;
+    PaymentCard card = 1 [(goplain.field).with_enums = ".test.enum_dispatched.MethodType.METHOD_TYPE_CARD"];
+    PaymentCrypto crypto = 2 [(goplain.field).with_enums = ".test.enum_dispatched.MethodType.METHOD_TYPE_CRYPTO"];
+  }
+
+  oneof backup_method {
+    option (goplain.oneof).enum_dispatched_with_prefix = true;
+    PaymentCard backup_card = 3 [(goplain.field).with_enums = ".test.enum_dispatched.MethodType.METHOD_TYPE_CARD"];
+    PaymentCrypto backup_crypto = 4 [(goplain.field).with_enums = ".test.enum_dispatched.MethodType.METHOD_TYPE_CRYPTO"];
+  }
+}
+
+enum MethodType {
+  METHOD_TYPE_UNSPECIFIED = 0;
+  METHOD_TYPE_CARD = 1;
+  METHOD_TYPE_CRYPTO = 2;
+}

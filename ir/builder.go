@@ -162,7 +162,7 @@ func buildFieldPlans(plan *IR, msgIR *MessageIR, pkg string, msg *descriptorpb.D
 	for idx, oneof := range oneofDecls {
 		oneofIndexToName[int32(idx)] = oneof.GetName()
 		group := oneofFields[int32(idx)]
-		validateOneofOptions(oneof, msgIR.FullName, group, &plan.Diagnostics)
+		validateOneofOptions(oneof, msgIR.FullName, group, fields, &plan.Diagnostics)
 	}
 
 	out := make([]*FieldPlan, 0, len(fields))
@@ -174,28 +174,42 @@ func buildFieldPlans(plan *IR, msgIR *MessageIR, pkg string, msg *descriptorpb.D
 	}
 
 	flattenOneof := make(map[int32]bool)
+	oneofHasEnums := make(map[int32]bool)
 	oneofPlanByIndex := make(map[int32]*OneofPlan)
 
 	for idx, oneof := range oneofDecls {
 		group := oneofFields[int32(idx)]
 		opts := getOneofOptions(oneof)
-		if opts == nil {
-			continue
+		embed := false
+		enumDispatch := false
+		if opts != nil {
+			embed = opts.GetEmbed() || opts.GetEmbedWithPrefix()
+			enumDispatch = opts.GetEnumDispatched() || opts.GetEnumDispatchedWithPrefix()
 		}
-		embed := opts.GetEmbed() || opts.GetEmbedWithPrefix()
-		enumDispatch := opts.GetEnumDispatched() || opts.GetEnumDispatchedWithPrefix()
-		withEnum := strings.TrimSpace(opts.GetWithEnum()) != "" || strings.TrimSpace(opts.GetWithEnumPrefix()) != ""
-		if embed || enumDispatch || withEnum {
+		for _, f := range group {
+			fopts := getFieldOptions(f)
+			if fopts != nil && len(fopts.GetWithEnums()) > 0 {
+				oneofHasEnums[int32(idx)] = true
+				break
+			}
+		}
+		if embed || enumDispatch || oneofHasEnums[int32(idx)] {
 			flattenOneof[int32(idx)] = true
 		}
+		embedWithPrefix := false
+		if opts != nil {
+			embedWithPrefix = opts.GetEmbedWithPrefix()
+		}
+		useDiscriminator := !embed && !enumDispatch && oneofHasEnums[int32(idx)]
 		oneofPlan := &OneofPlan{
 			OrigName:        oneof.GetName(),
 			NewName:         oneof.GetName(),
 			Fields:          nil,
 			Embed:           embed,
-			EmbedWithPrefix: opts.GetEmbedWithPrefix(),
+			EmbedWithPrefix: embedWithPrefix,
+			Discriminator:   useDiscriminator,
 		}
-		if enumDispatch || withEnum {
+		if enumDispatch {
 			oneofPlan.EnumDispatch = buildEnumDispatchPlan(plan, msgIR, oneof.GetName(), opts, group)
 		}
 		for _, f := range group {
@@ -219,7 +233,7 @@ func buildFieldPlans(plan *IR, msgIR *MessageIR, pkg string, msg *descriptorpb.D
 		oneof := oneofDecls[idx]
 		opts := getOneofOptions(oneof)
 		prefix := ""
-		if opts != nil && (opts.GetEmbedWithPrefix() || opts.GetEnumDispatchedWithPrefix() || strings.TrimSpace(opts.GetWithEnumPrefix()) != "") {
+		if opts != nil && (opts.GetEmbedWithPrefix() || opts.GetEnumDispatchedWithPrefix()) {
 			prefix = oneof.GetName() + "_"
 		}
 
@@ -244,6 +258,35 @@ func buildFieldPlans(plan *IR, msgIR *MessageIR, pkg string, msg *descriptorpb.D
 				})
 			}
 		}
+		embed := false
+		enumDispatch := false
+		if opts != nil {
+			embed = opts.GetEmbed() || opts.GetEmbedWithPrefix()
+			enumDispatch = opts.GetEnumDispatched() || opts.GetEnumDispatchedWithPrefix()
+		}
+		if !embed && !enumDispatch && oneofHasEnums[idx] {
+			maxNumber++
+			discName := oneof.GetName() + "_disc"
+			out = append(out, &FieldPlan{
+				OrigField: nil,
+				NewField: FieldSpec{
+					Name:     discName,
+					Number:   maxNumber,
+					Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL,
+					Type:     descriptorpb.FieldDescriptorProto_TYPE_STRING,
+					TypeName: "",
+				},
+				Origin: FieldOrigin{IsVirtual: true},
+				Ops: []FieldOp{{
+					Kind:   OpOverrideType,
+					Reason: "oneof discriminator",
+					Data: map[string]string{
+						"name":        "EnumDiscriminator",
+						"import_path": "github.com/yaroher/protoc-gen-go-plain/oneoff",
+					},
+				}},
+			})
+		}
 
 		for _, f := range group {
 			out = append(out, buildFieldPlan(plan, msgIR, f, msgIndex, &maxNumber, prefix, true, oneofIndexToName)...)
@@ -267,18 +310,7 @@ func buildEnumDispatchPlan(plan *IR, msgIR *MessageIR, oneofName string, opts *g
 		msgIR.GeneratedEnums = append(msgIR.GeneratedEnums, &EnumSpec{Name: enumName, Values: values})
 		return &EnumDispatchPlan{EnumFullName: enumFull, WithPrefix: opts.GetEnumDispatchedWithPrefix(), Generated: true}
 	}
-
-	withEnum := strings.TrimSpace(opts.GetWithEnumPrefix())
-	if withEnum == "" {
-		withEnum = strings.TrimSpace(opts.GetWithEnum())
-	}
-	if withEnum == "" {
-		return nil
-	}
-	if !strings.HasPrefix(withEnum, ".") {
-		withEnum = "." + withEnum
-	}
-	return &EnumDispatchPlan{EnumFullName: withEnum, WithPrefix: strings.TrimSpace(opts.GetWithEnumPrefix()) != "", Generated: false}
+	return nil
 }
 
 func buildFieldPlan(plan *IR, msgIR *MessageIR, field *descriptorpb.FieldDescriptorProto, msgIndex map[string]*descriptorpb.DescriptorProto, maxNumber *int32, prefix string, clearOneof bool, oneofIndexToName map[int32]string) []*FieldPlan {
@@ -320,6 +352,9 @@ func buildFieldPlan(plan *IR, msgIR *MessageIR, field *descriptorpb.FieldDescrip
 			if name, ok := oneofIndexToName[field.GetOneofIndex()]; ok {
 				origin.OneofGroup = name
 			}
+		}
+		if opts != nil && len(opts.GetWithEnums()) > 0 {
+			origin.OneofEnums = append(origin.OneofEnums, opts.GetWithEnums()...)
 		}
 	}
 

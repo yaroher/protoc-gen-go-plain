@@ -5,6 +5,7 @@ package test
 import (
 	uuid "github.com/google/uuid"
 	cast "github.com/yaroher/protoc-gen-go-plain/cast"
+	oneoff "github.com/yaroher/protoc-gen-go-plain/oneoff"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -164,6 +165,8 @@ type TestMessagePlain struct {
 	BackupPaymentMethodBackupCard *PaymentCard
 	// src: .test.TestMessage.backup_crypto; transform: oneof
 	BackupPaymentMethodBackupCrypto *PaymentCrypto
+	// src: <virtual>; transform: virtual|override_type
+	ContactEnumDispatchDisc oneoff.EnumDiscriminator
 	// src: .test.TestMessage.enum_email; transform: oneof
 	EnumEmail *ContactEmail
 	// src: .test.TestMessage.enum_phone; transform: oneof
@@ -182,6 +185,7 @@ func (m *TestMessage) IntoPlain(rawIdCast cast.Caster[string, uuid.UUID], create
 	if m == nil {
 		return nil
 	}
+	var disc_contactType ContactType
 	var oneof_emailContact *ContactEmail
 	var oneof_phoneContact *ContactPhone
 	switch x := m.GetContact().(type) {
@@ -289,7 +293,7 @@ func (m *TestMessage) IntoPlain(rawIdCast cast.Caster[string, uuid.UUID], create
 		Settings:                        cast.MessageToSliceByte(m.GetSettings()),
 		RawId:                           rawIdCast(m.GetRawId()),
 		CreatedAtTs:                     createdAtTsCast(m.GetCreatedAtTs()),
-		ContactType:                     m.GetContactType(),
+		ContactType:                     disc_contactType,
 		FDouble:                         m.GetFDouble(),
 		FFloat:                          m.GetFFloat(),
 		FInt32:                          m.GetFInt32(),
@@ -346,22 +350,7 @@ func (m *TestMessage) IntoPlainErr(rawIdCast cast.CasterErr[string, uuid.UUID], 
 	if m == nil {
 		return nil, nil
 	}
-	var oneof_backupPaymentMethodBackupCard *PaymentCard
-	var oneof_backupPaymentMethodBackupCrypto *PaymentCrypto
-	switch x := m.GetBackupPaymentMethod().(type) {
-	case *TestMessage_BackupCard:
-		oneof_backupPaymentMethodBackupCard = x.BackupCard
-	case *TestMessage_BackupCrypto:
-		oneof_backupPaymentMethodBackupCrypto = x.BackupCrypto
-	}
-	var oneof_enumEmail *ContactEmail
-	var oneof_enumPhone *ContactPhone
-	switch x := m.GetContactEnumDispatch().(type) {
-	case *TestMessage_EnumEmail:
-		oneof_enumEmail = x.EnumEmail
-	case *TestMessage_EnumPhone:
-		oneof_enumPhone = x.EnumPhone
-	}
+	var disc_contactType ContactType
 	var oneof_emailContact *ContactEmail
 	var oneof_phoneContact *ContactPhone
 	switch x := m.GetContact().(type) {
@@ -385,6 +374,22 @@ func (m *TestMessage) IntoPlainErr(rawIdCast cast.CasterErr[string, uuid.UUID], 
 		oneof_card = x.Card
 	case *TestMessage_Crypto:
 		oneof_crypto = x.Crypto
+	}
+	var oneof_backupPaymentMethodBackupCard *PaymentCard
+	var oneof_backupPaymentMethodBackupCrypto *PaymentCrypto
+	switch x := m.GetBackupPaymentMethod().(type) {
+	case *TestMessage_BackupCard:
+		oneof_backupPaymentMethodBackupCard = x.BackupCard
+	case *TestMessage_BackupCrypto:
+		oneof_backupPaymentMethodBackupCrypto = x.BackupCrypto
+	}
+	var oneof_enumEmail *ContactEmail
+	var oneof_enumPhone *ContactPhone
+	switch x := m.GetContactEnumDispatch().(type) {
+	case *TestMessage_EnumEmail:
+		oneof_enumEmail = x.EnumEmail
+	case *TestMessage_EnumPhone:
+		oneof_enumPhone = x.EnumPhone
 	}
 	SettingsVal, err := cast.MessageToSliceByteErr(m.GetSettings())
 	if err != nil {
@@ -465,7 +470,7 @@ func (m *TestMessage) IntoPlainErr(rawIdCast cast.CasterErr[string, uuid.UUID], 
 		Settings:                        SettingsVal,
 		RawId:                           RawIdVal,
 		CreatedAtTs:                     CreatedAtTsVal,
-		ContactType:                     m.GetContactType(),
+		ContactType:                     disc_contactType,
 		FDouble:                         m.GetFDouble(),
 		FFloat:                          m.GetFFloat(),
 		FInt32:                          m.GetFInt32(),
@@ -522,33 +527,12 @@ func (m *TestMessagePlain) IntoPb(rawIdCast cast.Caster[uuid.UUID, string], crea
 	if m == nil {
 		return nil
 	}
+	var embed_address *Address
+	embed_address = &Address{Street: m.Street, City: m.City, Country: m.Country}
 	var embed_work_address *Address
 	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity, Country: m.WorkAddressCountry}
 	var embed_audit *AuditInfo
 	embed_audit = &AuditInfo{CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt}
-	var embed_address *Address
-	embed_address = &Address{Street: m.Street, City: m.City, Country: m.Country}
-	var oneof_contact isTestMessage_Contact
-	if m.EmailContact != nil {
-		oneof_contact = &TestMessage_EmailContact{EmailContact: m.EmailContact}
-	}
-	if m.PhoneContact != nil {
-		oneof_contact = &TestMessage_PhoneContact{PhoneContact: m.PhoneContact}
-	}
-	var oneof_backupContact isTestMessage_BackupContact
-	if m.BackupContactBackupEmail != nil {
-		oneof_backupContact = &TestMessage_BackupEmail{BackupEmail: m.BackupContactBackupEmail}
-	}
-	if m.BackupContactBackupPhone != nil {
-		oneof_backupContact = &TestMessage_BackupPhone{BackupPhone: m.BackupContactBackupPhone}
-	}
-	var oneof_paymentMethod isTestMessage_PaymentMethod
-	if m.Card != nil {
-		oneof_paymentMethod = &TestMessage_Card{Card: m.Card}
-	}
-	if m.Crypto != nil {
-		oneof_paymentMethod = &TestMessage_Crypto{Crypto: m.Crypto}
-	}
 	var oneof_backupPaymentMethod isTestMessage_BackupPaymentMethod
 	if m.BackupPaymentMethodBackupCard != nil {
 		oneof_backupPaymentMethod = &TestMessage_BackupCard{BackupCard: m.BackupPaymentMethodBackupCard}
@@ -557,11 +541,20 @@ func (m *TestMessagePlain) IntoPb(rawIdCast cast.Caster[uuid.UUID, string], crea
 		oneof_backupPaymentMethod = &TestMessage_BackupCrypto{BackupCrypto: m.BackupPaymentMethodBackupCrypto}
 	}
 	var oneof_contactEnumDispatch isTestMessage_ContactEnumDispatch
-	if m.EnumEmail != nil {
-		oneof_contactEnumDispatch = &TestMessage_EnumEmail{EnumEmail: m.EnumEmail}
+	switch m.ContactType {
 	}
-	if m.EnumPhone != nil {
-		oneof_contactEnumDispatch = &TestMessage_EnumPhone{EnumPhone: m.EnumPhone}
+	var oneof_contact isTestMessage_Contact
+	switch m.ContactType {
+	}
+	var oneof_backupContact isTestMessage_BackupContact
+	switch m.ContactType {
+	}
+	var oneof_paymentMethod isTestMessage_PaymentMethod
+	if m.Card != nil {
+		oneof_paymentMethod = &TestMessage_Card{Card: m.Card}
+	}
+	if m.Crypto != nil {
+		oneof_paymentMethod = &TestMessage_Crypto{Crypto: m.Crypto}
 	}
 	return &TestMessage{
 		Name:                m.Name,
@@ -615,11 +608,11 @@ func (m *TestMessagePlain) IntoPb(rawIdCast cast.Caster[uuid.UUID, string], crea
 		Audit:               embed_audit,
 		Address:             embed_address,
 		WorkAddress:         embed_work_address,
+		BackupPaymentMethod: oneof_backupPaymentMethod,
+		ContactEnumDispatch: oneof_contactEnumDispatch,
 		Contact:             oneof_contact,
 		BackupContact:       oneof_backupContact,
 		PaymentMethod:       oneof_paymentMethod,
-		BackupPaymentMethod: oneof_backupPaymentMethod,
-		ContactEnumDispatch: oneof_contactEnumDispatch,
 	}
 }
 
@@ -645,6 +638,12 @@ func (m *TestMessagePlain) IntoPbErr(rawIdCast cast.CasterErr[uuid.UUID, string]
 	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity, Country: m.WorkAddressCountry}
 	var embed_audit *AuditInfo
 	embed_audit = &AuditInfo{CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt}
+	var oneof_contact isTestMessage_Contact
+	switch m.ContactType {
+	}
+	var oneof_backupContact isTestMessage_BackupContact
+	switch m.ContactType {
+	}
 	var oneof_paymentMethod isTestMessage_PaymentMethod
 	if m.Card != nil {
 		oneof_paymentMethod = &TestMessage_Card{Card: m.Card}
@@ -660,25 +659,7 @@ func (m *TestMessagePlain) IntoPbErr(rawIdCast cast.CasterErr[uuid.UUID, string]
 		oneof_backupPaymentMethod = &TestMessage_BackupCrypto{BackupCrypto: m.BackupPaymentMethodBackupCrypto}
 	}
 	var oneof_contactEnumDispatch isTestMessage_ContactEnumDispatch
-	if m.EnumEmail != nil {
-		oneof_contactEnumDispatch = &TestMessage_EnumEmail{EnumEmail: m.EnumEmail}
-	}
-	if m.EnumPhone != nil {
-		oneof_contactEnumDispatch = &TestMessage_EnumPhone{EnumPhone: m.EnumPhone}
-	}
-	var oneof_contact isTestMessage_Contact
-	if m.EmailContact != nil {
-		oneof_contact = &TestMessage_EmailContact{EmailContact: m.EmailContact}
-	}
-	if m.PhoneContact != nil {
-		oneof_contact = &TestMessage_PhoneContact{PhoneContact: m.PhoneContact}
-	}
-	var oneof_backupContact isTestMessage_BackupContact
-	if m.BackupContactBackupEmail != nil {
-		oneof_backupContact = &TestMessage_BackupEmail{BackupEmail: m.BackupContactBackupEmail}
-	}
-	if m.BackupContactBackupPhone != nil {
-		oneof_backupContact = &TestMessage_BackupPhone{BackupPhone: m.BackupContactBackupPhone}
+	switch m.ContactType {
 	}
 	return &TestMessage{
 		Name:                m.Name,
@@ -729,13 +710,13 @@ func (m *TestMessagePlain) IntoPbErr(rawIdCast cast.CasterErr[uuid.UUID, string]
 		FFloatValue:         m.FFloatValue,
 		FDoubleValue:        m.FDoubleValue,
 		FBytesValue:         m.FBytesValue,
-		Address:             embed_address,
 		WorkAddress:         embed_work_address,
 		Audit:               embed_audit,
-		ContactEnumDispatch: oneof_contactEnumDispatch,
+		Address:             embed_address,
 		Contact:             oneof_contact,
 		BackupContact:       oneof_backupContact,
 		PaymentMethod:       oneof_paymentMethod,
 		BackupPaymentMethod: oneof_backupPaymentMethod,
+		ContactEnumDispatch: oneof_contactEnumDispatch,
 	}, nil
 }

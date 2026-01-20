@@ -150,7 +150,7 @@ func buildOneofDecls(msg *descriptorpb.DescriptorProto, msgIR *MessageIR) ([]*de
 	newIdx := int32(0)
 	for _, oneof := range msg.GetOneofDecl() {
 		p := planByName[oneof.GetName()]
-		flatten := p != nil && (p.Embed || p.EnumDispatch != nil)
+		flatten := p != nil && (p.Embed || p.EnumDispatch != nil || p.Discriminator)
 		if flatten {
 			continue
 		}
@@ -160,7 +160,7 @@ func buildOneofDecls(msg *descriptorpb.DescriptorProto, msgIR *MessageIR) ([]*de
 	for i := range msg.GetOneofDecl() {
 		oneof := msg.GetOneofDecl()[i]
 		p := planByName[oneof.GetName()]
-		flatten := p != nil && (p.Embed || p.EnumDispatch != nil)
+		flatten := p != nil && (p.Embed || p.EnumDispatch != nil || p.Discriminator)
 		if flatten {
 			continue
 		}

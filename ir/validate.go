@@ -17,11 +17,9 @@ import (
 // - FieldOptions.override_type requires name.
 // - FieldOptions.serialize is allowed on any field; serialize conflicts with embed.
 // - FieldOptions.embed/embed_with_prefix require MESSAGE type; embed_with_prefix implies embed.
-// - FieldOptions.oneof_enum_value is only valid when parent oneof uses with_enum/with_enum_prefix.
+// - FieldOptions.with_enums is required for fields inside oneof.
 // - OneofOptions.embed/embed_with_prefix flatten oneof fields; embed_with_prefix implies embed.
 // - OneofOptions.enum_dispatched/enum_dispatched_with_prefix generate enum dispatch field; enum_dispatched_with_prefix implies enum_dispatched.
-// - OneofOptions.with_enum/with_enum_prefix requires non-empty enum full name and oneof_enum_value on all fields; with_enum_prefix implies with_enum.
-// - enum_dispatched and with_enum are mutually exclusive.
 
 func validateFileOptions(file *descriptorpb.FileDescriptorProto, diags *[]Diagnostic) {
 	if file.GetOptions() == nil {
@@ -141,59 +139,77 @@ func validateFieldOptions(field *descriptorpb.FieldDescriptorProto, fullName str
 	}
 }
 
-func validateOneofOptions(oneof *descriptorpb.OneofDescriptorProto, fullName string, fields []*descriptorpb.FieldDescriptorProto, diags *[]Diagnostic) {
-	if oneof.GetOptions() == nil {
-		return
-	}
-	ext := proto.GetExtension(oneof.GetOptions(), goplain.E_Oneof)
-	if ext == nil {
-		return
-	}
-	opts, ok := ext.(*goplain.OneofOptions)
-	if !ok || opts == nil {
-		return
+func validateOneofOptions(oneof *descriptorpb.OneofDescriptorProto, fullName string, fields []*descriptorpb.FieldDescriptorProto, allFields []*descriptorpb.FieldDescriptorProto, diags *[]Diagnostic) {
+	var opts *goplain.OneofOptions
+	if oneof.GetOptions() != nil {
+		ext := proto.GetExtension(oneof.GetOptions(), goplain.E_Oneof)
+		if ext != nil {
+			if v, ok := ext.(*goplain.OneofOptions); ok {
+				opts = v
+			}
+		}
 	}
 
-	subject := fmt.Sprintf("%s.oneof:%s", fullName, oneof.GetName())
-	withEnum := strings.TrimSpace(opts.GetWithEnum()) != "" || strings.TrimSpace(opts.GetWithEnumPrefix()) != ""
-	enumDispatch := opts.GetEnumDispatched() || opts.GetEnumDispatchedWithPrefix()
-	if withEnum && enumDispatch {
-		*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enum and enum_dispatched are mutually exclusive", Subject: subject})
+	enumDispatch := false
+	embed := false
+	if opts != nil {
+		enumDispatch = opts.GetEnumDispatched() || opts.GetEnumDispatchedWithPrefix()
+		embed = opts.GetEmbed() || opts.GetEmbedWithPrefix()
 	}
-	if (opts.GetWithEnum() != "" && strings.TrimSpace(opts.GetWithEnum()) == "") || (opts.GetWithEnumPrefix() != "" && strings.TrimSpace(opts.GetWithEnumPrefix()) == "") {
-		*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enum must be non-empty", Subject: subject})
-	}
-	if withEnum {
-		for _, f := range fields {
-			if f == nil {
-				continue
+	enumFull := ""
+	hasAnyEnums := false
+	for _, f := range fields {
+		if f == nil {
+			continue
+		}
+		if f.GetOptions() == nil {
+			*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums required for oneof field", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
+			continue
+		}
+		fopts := proto.GetExtension(f.GetOptions(), goplain.E_Field)
+		fieldOpts, _ := fopts.(*goplain.FieldOptions)
+		if fieldOpts == nil || len(fieldOpts.GetWithEnums()) == 0 {
+			*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums required for oneof field", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
+			continue
+		}
+		for _, v := range fieldOpts.GetWithEnums() {
+			ef, _ := parseEnumValueFullName(v)
+			if ef == "" {
+				*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums must be full enum value name", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
 			}
-			if f.GetOptions() == nil {
-				*diags = append(*diags, Diagnostic{Level: DiagError, Message: "oneof_enum_value required for with_enum", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
-				continue
+			if enumFull == "" && ef != "" {
+				enumFull = ef
 			}
-			fopts := proto.GetExtension(f.GetOptions(), goplain.E_Field)
-			fieldOpts, _ := fopts.(*goplain.FieldOptions)
-			if fieldOpts == nil || strings.TrimSpace(fieldOpts.GetOneofEnumValue()) == "" {
-				*diags = append(*diags, Diagnostic{Level: DiagError, Message: "oneof_enum_value required for with_enum", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
-			}
+			hasAnyEnums = true
 		}
 	}
-	if !withEnum {
-		for _, f := range fields {
-			if f == nil {
-				continue
-			}
-			if f.GetOptions() == nil {
-				continue
-			}
-			fopts := proto.GetExtension(f.GetOptions(), goplain.E_Field)
-			fieldOpts, _ := fopts.(*goplain.FieldOptions)
-			if fieldOpts != nil && strings.TrimSpace(fieldOpts.GetOneofEnumValue()) != "" {
-				*diags = append(*diags, Diagnostic{Level: DiagWarn, Message: "oneof_enum_value ignored without with_enum", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
-			}
+	if !hasAnyEnums {
+		return
+	}
+	for _, f := range fields {
+		fopts := getFieldOptions(f)
+		if fopts == nil || len(fopts.GetWithEnums()) == 0 {
+			*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums required for oneof field when using enum discriminator", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
 		}
 	}
+	if enumDispatch || embed {
+		return
+	}
+}
+
+func parseEnumValueFullName(v string) (enumFull string, valueFull string) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return "", ""
+	}
+	if !strings.HasPrefix(v, ".") {
+		v = "." + v
+	}
+	lastDot := strings.LastIndex(v, ".")
+	if lastDot <= 0 || lastDot == len(v)-1 {
+		return "", ""
+	}
+	return v[:lastDot], v
 }
 
 func hasErrors(diags []Diagnostic) bool {

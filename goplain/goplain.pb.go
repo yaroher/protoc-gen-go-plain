@@ -376,10 +376,15 @@ type FieldOptions struct {
 	// }
 	Embed           bool `protobuf:"varint,4,opt,name=embed,proto3" json:"embed,omitempty"`
 	EmbedWithPrefix bool `protobuf:"varint,5,opt,name=embed_with_prefix,json=embedWithPrefix,proto3" json:"embed_with_prefix,omitempty"` // Same as embed but with prefix of parent field name
-	// This only for oneof enum dispatching if with_enum set
-	OneofEnumValue *string `protobuf:"bytes,6,opt,name=oneof_enum_value,json=oneofEnumValue,proto3,oneof" json:"oneof_enum_value,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Enum discriminator values for oneof dispatching.
+	// Required for all fields inside a oneof.
+	//
+	// Example values:
+	// "test.CustomUserFieldEnum.SOME_ENUM_ADDRESS"
+	// ".test.CustomUserFieldEnum.SOME_ENUM_STREET"
+	WithEnums     []string `protobuf:"bytes,6,rep,name=with_enums,json=withEnums,proto3" json:"with_enums,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FieldOptions) Reset() {
@@ -440,11 +445,11 @@ func (x *FieldOptions) GetEmbedWithPrefix() bool {
 	return false
 }
 
-func (x *FieldOptions) GetOneofEnumValue() string {
-	if x != nil && x.OneofEnumValue != nil {
-		return *x.OneofEnumValue
+func (x *FieldOptions) GetWithEnums() []string {
+	if x != nil {
+		return x.WithEnums
 	}
-	return ""
+	return nil
 }
 
 type OneofOptions struct {
@@ -502,37 +507,8 @@ type OneofOptions struct {
 	// }
 	EnumDispatched           bool `protobuf:"varint,3,opt,name=enum_dispatched,json=enumDispatched,proto3" json:"enum_dispatched,omitempty"`
 	EnumDispatchedWithPrefix bool `protobuf:"varint,4,opt,name=enum_dispatched_with_prefix,json=enumDispatchedWithPrefix,proto3" json:"enum_dispatched_with_prefix,omitempty"` // Same as enum_dispatched but with prefix of oneof field name
-	// Enum dispatching with custom name.
-	//
-	// Example:
-	// enum CustomUserFieldEnum {
-	// SOME_ENUM_UNSPECIFIED = 0;
-	// SOME_ENUM_ADDRESS = 1;
-	// SOME_ENUM_STREET = 2;
-	// }
-	// message User {
-	// SomeEnum some_enum = 1;
-	// oneof address {
-	// option (goplain.oneof).with_enum = "<package>.CustomUserFieldEnum";
-	// Address address = 2 [(goplain.field).oneof_enum_value = "SOME_ENUM_ADDRESS"];
-	// string street = 3 [(goplain.field).oneof_enum_value = "SOME_ENUM_STREET"];
-	// }
-	// }
-	//
-	// Becomes:
-	// message UserPlain {
-	// SomeEnum some_enum = 1;
-	// // without prefix:
-	// Address address = 2;
-	// string street = 3;
-	// // or with prefix:
-	// Address address_address = 4;
-	// string address_street = 5;
-	// }
-	WithEnum       string `protobuf:"bytes,5,opt,name=with_enum,json=withEnum,proto3" json:"with_enum,omitempty"`                     // enum protobuf full name
-	WithEnumPrefix string `protobuf:"bytes,6,opt,name=with_enum_prefix,json=withEnumPrefix,proto3" json:"with_enum_prefix,omitempty"` // Same as with_enum but with prefix of oneof field name
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *OneofOptions) Reset() {
@@ -591,20 +567,6 @@ func (x *OneofOptions) GetEnumDispatchedWithPrefix() bool {
 		return x.EnumDispatchedWithPrefix
 	}
 	return false
-}
-
-func (x *OneofOptions) GetWithEnum() string {
-	if x != nil {
-		return x.WithEnum
-	}
-	return ""
-}
-
-func (x *OneofOptions) GetWithEnumPrefix() string {
-	if x != nil {
-		return x.WithEnumPrefix
-	}
-	return ""
 }
 
 var file_goplain_proto_extTypes = []protoimpl.ExtensionInfo{
@@ -694,21 +656,19 @@ const file_goplain_proto_rawDesc = "" +
 	"type_alias\x18\x02 \x01(\bR\ttypeAlias\x12=\n" +
 	"\x0evirtual_fields\x18\x03 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"R\n" +
 	"\vFileOptions\x12C\n" +
-	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\"\xe9\x01\n" +
+	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\"\xc4\x01\n" +
 	"\fFieldOptions\x125\n" +
 	"\roverride_type\x18\x01 \x01(\v2\x10.goplain.GoIdentR\foverrideType\x12\x1c\n" +
 	"\tserialize\x18\x02 \x01(\bR\tserialize\x12\x14\n" +
 	"\x05embed\x18\x04 \x01(\bR\x05embed\x12*\n" +
-	"\x11embed_with_prefix\x18\x05 \x01(\bR\x0fembedWithPrefix\x12-\n" +
-	"\x10oneof_enum_value\x18\x06 \x01(\tH\x00R\x0eoneofEnumValue\x88\x01\x01B\x13\n" +
-	"\x11_oneof_enum_value\"\xff\x01\n" +
+	"\x11embed_with_prefix\x18\x05 \x01(\bR\x0fembedWithPrefix\x12\x1d\n" +
+	"\n" +
+	"with_enums\x18\x06 \x03(\tR\twithEnums\"\xb8\x01\n" +
 	"\fOneofOptions\x12\x14\n" +
 	"\x05embed\x18\x01 \x01(\bR\x05embed\x12*\n" +
 	"\x11embed_with_prefix\x18\x02 \x01(\bR\x0fembedWithPrefix\x12'\n" +
 	"\x0fenum_dispatched\x18\x03 \x01(\bR\x0eenumDispatched\x12=\n" +
-	"\x1benum_dispatched_with_prefix\x18\x04 \x01(\bR\x18enumDispatchedWithPrefix\x12\x1b\n" +
-	"\twith_enum\x18\x05 \x01(\tR\bwithEnum\x12(\n" +
-	"\x10with_enum_prefix\x18\x06 \x01(\tR\x0ewithEnumPrefix:H\n" +
+	"\x1benum_dispatched_with_prefix\x18\x04 \x01(\bR\x18enumDispatchedWithPrefix:H\n" +
 	"\x04file\x12\x1c.google.protobuf.FileOptions\x18\xe0\xd4\x03 \x01(\v2\x14.goplain.FileOptionsR\x04file:T\n" +
 	"\amessage\x12\x1f.google.protobuf.MessageOptions\x18\xe0\xd4\x03 \x01(\v2\x17.goplain.MessageOptionsR\amessage:L\n" +
 	"\x05field\x12\x1d.google.protobuf.FieldOptions\x18\xe0\xd4\x03 \x01(\v2\x15.goplain.FieldOptionsR\x05field:L\n" +
@@ -772,7 +732,6 @@ func file_goplain_proto_init() {
 		return
 	}
 	file_goplain_proto_msgTypes[1].OneofWrappers = []any{}
-	file_goplain_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

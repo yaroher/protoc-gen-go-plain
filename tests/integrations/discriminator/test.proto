@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package test.discriminator;
+
+import "goplain/goplain.proto";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/tests/integrations/discriminator;discriminator";
+
+message Email { string value = 1; }
+message Phone { string value = 1; }
+message UserId { string value = 1; }
+
+enum ContactKind {
+  CONTACT_KIND_UNSPECIFIED = 0;
+  CONTACT_KIND_EMAIL = 1;
+  CONTACT_KIND_PHONE = 2;
+}
+
+enum IdKind {
+  ID_KIND_UNSPECIFIED = 0;
+  ID_KIND_USER = 1;
+}
+
+message User {
+  option (goplain.message).generate = true;
+
+  ContactKind contact_kind = 1;
+  IdKind id_kind = 2;
+
+  oneof contact {
+    Email email = 3 [(goplain.field).with_enums = ".test.discriminator.ContactKind.CONTACT_KIND_EMAIL"];
+    Phone phone = 4 [(goplain.field).with_enums = ".test.discriminator.ContactKind.CONTACT_KIND_PHONE"];
+  }
+
+  oneof identity {
+    UserId user_id = 5 [(goplain.field).with_enums = ".test.discriminator.IdKind.ID_KIND_USER"];
+  }
+}

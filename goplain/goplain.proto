@@ -128,9 +128,14 @@ message FieldOptions {
     bool embed_with_prefix = 5; // Same as embed but with prefix of parent field name
 
     /*
-        This only for oneof enum dispatching if with_enum set
+        Enum discriminator values for oneof dispatching.
+        Required for all fields inside a oneof.
+
+        Example values:
+            "test.CustomUserFieldEnum.SOME_ENUM_ADDRESS"
+            ".test.CustomUserFieldEnum.SOME_ENUM_STREET"
     */
-    optional string oneof_enum_value = 6;
+    repeated string with_enums = 6;
 }
 
 extend google.protobuf.FieldOptions {
@@ -195,37 +200,8 @@ message OneofOptions {
     */
     bool enum_dispatched = 3;
     bool enum_dispatched_with_prefix = 4; // Same as enum_dispatched but with prefix of oneof field name
-    /*
-        Enum dispatching with custom name.
-
-        Example:
-            enum CustomUserFieldEnum {
-                SOME_ENUM_UNSPECIFIED = 0;
-                SOME_ENUM_ADDRESS = 1;
-                SOME_ENUM_STREET = 2;
-            }
-            message User {
-                SomeEnum some_enum = 1;
-                oneof address {
-                    option (goplain.oneof).with_enum = "<package>.CustomUserFieldEnum";
-                    Address address = 2 [(goplain.field).oneof_enum_value = "SOME_ENUM_ADDRESS"];
-                    string street = 3 [(goplain.field).oneof_enum_value = "SOME_ENUM_STREET"];
-                }
-            }
-
-        Becomes:
-            message UserPlain {
-                SomeEnum some_enum = 1;
-                // without prefix:
-                Address address = 2;
-                string street = 3;
-                // or with prefix:
-                Address address_address = 4;
-                string address_street = 5;
-            }
-    */
-    string with_enum = 5; // enum protobuf full name
-    string with_enum_prefix = 6; // Same as with_enum but with prefix of oneof field name
+    // Enum dispatching with custom discriminators is configured per-field
+    // via (goplain.field).with_enums.
 }
 
 extend google.protobuf.OneofOptions {

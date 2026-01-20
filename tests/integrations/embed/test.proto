@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package test.embed;
+
+import "goplain/goplain.proto";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/tests/integrations/embed;embed";
+
+message Address {
+  string street = 1;
+  string city = 2;
+}
+
+message User {
+  option (goplain.message).generate = true;
+
+  string name = 1;
+
+  Address address = 2 [(goplain.field).embed = true];
+  Address work_address = 3 [(goplain.field).embed_with_prefix = true];
+
+  oneof contact {
+    option (goplain.oneof).embed = true;
+    string email = 4 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_EMAIL"];
+    string phone = 5 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_PHONE"];
+  }
+
+  oneof backup_contact {
+    option (goplain.oneof).embed_with_prefix = true;
+    string backup_email = 6 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_EMAIL"];
+    string backup_phone = 7 [(goplain.field).with_enums = ".test.embed.ContactType.CONTACT_TYPE_PHONE"];
+  }
+
+  ContactType contact_type = 8;
+}
+
+enum ContactType {
+  CONTACT_TYPE_UNSPECIFIED = 0;
+  CONTACT_TYPE_EMAIL = 1;
+  CONTACT_TYPE_PHONE = 2;
+}

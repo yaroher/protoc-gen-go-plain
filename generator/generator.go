@@ -94,6 +94,7 @@ func (g *Generator) Generate() error {
 
 	generatedEnums := buildGeneratedEnumSet(plan)
 	origMsgs := buildMessageMap(origPlugin)
+	enumValues := buildEnumValueMap(origPlugin)
 
 	genCount := 0
 	for _, fd := range newPlugin.Files {
@@ -137,7 +138,7 @@ func (g *Generator) Generate() error {
 			pbFull := strings.TrimSuffix(string(m.Desc.FullName()), g.suffix)
 			pbMsg := origMsgs[pbFull]
 			if pbMsg != nil {
-				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums)
+				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues)
 			}
 		}
 		if fileCount == 0 {
@@ -161,6 +162,44 @@ func buildGeneratedEnumSet(plan *ir.IR) map[string]struct{} {
 		}
 	}
 	return result
+}
+
+func buildEnumValueMap(p *protogen.Plugin) map[string]*protogen.EnumValue {
+	result := make(map[string]*protogen.EnumValue)
+	if p == nil {
+		return result
+	}
+	for _, f := range p.Files {
+		for _, e := range f.Enums {
+			registerEnumValues(result, e)
+		}
+		for _, m := range f.Messages {
+			registerMessageEnums(result, m)
+		}
+	}
+	return result
+}
+
+func registerMessageEnums(result map[string]*protogen.EnumValue, m *protogen.Message) {
+	if m == nil {
+		return
+	}
+	for _, e := range m.Enums {
+		registerEnumValues(result, e)
+	}
+	for _, nested := range m.Messages {
+		registerMessageEnums(result, nested)
+	}
+}
+
+func registerEnumValues(result map[string]*protogen.EnumValue, e *protogen.Enum) {
+	if e == nil {
+		return
+	}
+	for _, v := range e.Values {
+		full := "." + string(v.Desc.FullName())
+		result[full] = v
+	}
 }
 
 func generateModel(g *protogen.GeneratedFile, m *protogen.Message, generatedEnums map[string]struct{}, msgIR *ir.MessageIR) {
