@@ -10,7 +10,12 @@ import (
 	_ "github.com/yaroher/protoc-gen-go-plain/goplain"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	anypb "google.golang.org/protobuf/types/known/anypb"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -23,66 +28,496 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type TestMessage_ContactType int32
+type ContactType int32
 
 const (
-	TestMessage_CONTACT_TYPE_UNSPECIFIED TestMessage_ContactType = 0
-	TestMessage_CONTACT_TYPE_EMAIL       TestMessage_ContactType = 1
-	TestMessage_CONTACT_TYPE_PHONE       TestMessage_ContactType = 2
+	ContactType_CONTACT_TYPE_UNSPECIFIED ContactType = 0
+	ContactType_CONTACT_TYPE_EMAIL       ContactType = 1
+	ContactType_CONTACT_TYPE_PHONE       ContactType = 2
 )
 
-// Enum value maps for TestMessage_ContactType.
+// Enum value maps for ContactType.
 var (
-	TestMessage_ContactType_name = map[int32]string{
+	ContactType_name = map[int32]string{
 		0: "CONTACT_TYPE_UNSPECIFIED",
 		1: "CONTACT_TYPE_EMAIL",
 		2: "CONTACT_TYPE_PHONE",
 	}
-	TestMessage_ContactType_value = map[string]int32{
+	ContactType_value = map[string]int32{
 		"CONTACT_TYPE_UNSPECIFIED": 0,
 		"CONTACT_TYPE_EMAIL":       1,
 		"CONTACT_TYPE_PHONE":       2,
 	}
 )
 
-func (x TestMessage_ContactType) Enum() *TestMessage_ContactType {
-	p := new(TestMessage_ContactType)
+func (x ContactType) Enum() *ContactType {
+	p := new(ContactType)
 	*p = x
 	return p
 }
 
-func (x TestMessage_ContactType) String() string {
+func (x ContactType) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (TestMessage_ContactType) Descriptor() protoreflect.EnumDescriptor {
+func (ContactType) Descriptor() protoreflect.EnumDescriptor {
 	return file_test_test_proto_enumTypes[0].Descriptor()
 }
 
-func (TestMessage_ContactType) Type() protoreflect.EnumType {
+func (ContactType) Type() protoreflect.EnumType {
 	return &file_test_test_proto_enumTypes[0]
 }
 
-func (x TestMessage_ContactType) Number() protoreflect.EnumNumber {
+func (x ContactType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use TestMessage_ContactType.Descriptor instead.
-func (TestMessage_ContactType) EnumDescriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 0}
+// Deprecated: Use ContactType.Descriptor instead.
+func (ContactType) EnumDescriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{0}
+}
+
+type UserId struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserId) Reset() {
+	*x = UserId{}
+	mi := &file_test_test_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserId) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserId) ProtoMessage() {}
+
+func (x *UserId) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserId.ProtoReflect.Descriptor instead.
+func (*UserId) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *UserId) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type Email struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Email) Reset() {
+	*x = Email{}
+	mi := &file_test_test_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Email) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Email) ProtoMessage() {}
+
+func (x *Email) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Email.ProtoReflect.Descriptor instead.
+func (*Email) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Email) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type Address struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Street        string                 `protobuf:"bytes,1,opt,name=street,proto3" json:"street,omitempty"`
+	City          string                 `protobuf:"bytes,2,opt,name=city,proto3" json:"city,omitempty"`
+	Country       string                 `protobuf:"bytes,3,opt,name=country,proto3" json:"country,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Address) Reset() {
+	*x = Address{}
+	mi := &file_test_test_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Address) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Address) ProtoMessage() {}
+
+func (x *Address) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Address.ProtoReflect.Descriptor instead.
+func (*Address) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Address) GetStreet() string {
+	if x != nil {
+		return x.Street
+	}
+	return ""
+}
+
+func (x *Address) GetCity() string {
+	if x != nil {
+		return x.City
+	}
+	return ""
+}
+
+func (x *Address) GetCountry() string {
+	if x != nil {
+		return x.Country
+	}
+	return ""
+}
+
+type AuditInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuditInfo) Reset() {
+	*x = AuditInfo{}
+	mi := &file_test_test_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuditInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuditInfo) ProtoMessage() {}
+
+func (x *AuditInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuditInfo.ProtoReflect.Descriptor instead.
+func (*AuditInfo) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AuditInfo) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *AuditInfo) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type Settings struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Theme         string                 `protobuf:"bytes,1,opt,name=theme,proto3" json:"theme,omitempty"`
+	Notifications bool                   `protobuf:"varint,2,opt,name=notifications,proto3" json:"notifications,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Settings) Reset() {
+	*x = Settings{}
+	mi := &file_test_test_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Settings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Settings) ProtoMessage() {}
+
+func (x *Settings) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Settings.ProtoReflect.Descriptor instead.
+func (*Settings) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Settings) GetTheme() string {
+	if x != nil {
+		return x.Theme
+	}
+	return ""
+}
+
+func (x *Settings) GetNotifications() bool {
+	if x != nil {
+		return x.Notifications
+	}
+	return false
+}
+
+type ContactEmail struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ContactEmail) Reset() {
+	*x = ContactEmail{}
+	mi := &file_test_test_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContactEmail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContactEmail) ProtoMessage() {}
+
+func (x *ContactEmail) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContactEmail.ProtoReflect.Descriptor instead.
+func (*ContactEmail) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ContactEmail) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+type ContactPhone struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Phone         string                 `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ContactPhone) Reset() {
+	*x = ContactPhone{}
+	mi := &file_test_test_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContactPhone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContactPhone) ProtoMessage() {}
+
+func (x *ContactPhone) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContactPhone.ProtoReflect.Descriptor instead.
+func (*ContactPhone) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ContactPhone) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+type PaymentCard struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CardNumber    string                 `protobuf:"bytes,1,opt,name=card_number,json=cardNumber,proto3" json:"card_number,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PaymentCard) Reset() {
+	*x = PaymentCard{}
+	mi := &file_test_test_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PaymentCard) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaymentCard) ProtoMessage() {}
+
+func (x *PaymentCard) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaymentCard.ProtoReflect.Descriptor instead.
+func (*PaymentCard) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PaymentCard) GetCardNumber() string {
+	if x != nil {
+		return x.CardNumber
+	}
+	return ""
+}
+
+type PaymentCrypto struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Wallet        string                 `protobuf:"bytes,1,opt,name=wallet,proto3" json:"wallet,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PaymentCrypto) Reset() {
+	*x = PaymentCrypto{}
+	mi := &file_test_test_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PaymentCrypto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaymentCrypto) ProtoMessage() {}
+
+func (x *PaymentCrypto) ProtoReflect() protoreflect.Message {
+	mi := &file_test_test_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaymentCrypto.ProtoReflect.Descriptor instead.
+func (*PaymentCrypto) Descriptor() ([]byte, []int) {
+	return file_test_test_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *PaymentCrypto) GetWallet() string {
+	if x != nil {
+		return x.Wallet
+	}
+	return ""
 }
 
 type TestMessage struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Id          *TestMessage_UserId    `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Email       *TestMessage_Email     `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Address     *TestMessage_Address   `protobuf:"bytes,4,opt,name=address,proto3" json:"address,omitempty"`
-	WorkAddress *TestMessage_Address   `protobuf:"bytes,5,opt,name=work_address,json=workAddress,proto3" json:"work_address,omitempty"`
-	Audit       *TestMessage_AuditInfo `protobuf:"bytes,6,opt,name=audit,proto3" json:"audit,omitempty"`
-	Settings    *TestMessage_Settings  `protobuf:"bytes,7,opt,name=settings,proto3" json:"settings,omitempty"`
-	RawId       string                 `protobuf:"bytes,8,opt,name=raw_id,json=rawId,proto3" json:"raw_id,omitempty"`
-	CreatedAtTs *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at_ts,json=createdAtTs,proto3" json:"created_at_ts,omitempty"`
+	Id          *UserId                `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Email       *Email                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Age         int32                  `protobuf:"varint,4,opt,name=age,proto3" json:"age,omitempty"`
+	Active      bool                   `protobuf:"varint,5,opt,name=active,proto3" json:"active,omitempty"`
+	Address     *Address               `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`
+	WorkAddress *Address               `protobuf:"bytes,7,opt,name=work_address,json=workAddress,proto3" json:"work_address,omitempty"`
+	Audit       *AuditInfo             `protobuf:"bytes,8,opt,name=audit,proto3" json:"audit,omitempty"`
+	Settings    *Settings              `protobuf:"bytes,9,opt,name=settings,proto3" json:"settings,omitempty"`
+	RawId       string                 `protobuf:"bytes,10,opt,name=raw_id,json=rawId,proto3" json:"raw_id,omitempty"`
+	CreatedAtTs *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at_ts,json=createdAtTs,proto3" json:"created_at_ts,omitempty"`
 	// Types that are valid to be assigned to Contact:
 	//
 	//	*TestMessage_EmailContact
@@ -103,19 +538,64 @@ type TestMessage struct {
 	//	*TestMessage_BackupCard
 	//	*TestMessage_BackupCrypto
 	BackupPaymentMethod isTestMessage_BackupPaymentMethod `protobuf_oneof:"backup_payment_method"`
-	ContactType         TestMessage_ContactType           `protobuf:"varint,18,opt,name=contact_type,json=contactType,proto3,enum=test.TestMessage_ContactType" json:"contact_type,omitempty"`
+	ContactType         ContactType                       `protobuf:"varint,20,opt,name=contact_type,json=contactType,proto3,enum=test.ContactType" json:"contact_type,omitempty"`
 	// Types that are valid to be assigned to ContactEnumDispatch:
 	//
 	//	*TestMessage_EnumEmail
 	//	*TestMessage_EnumPhone
 	ContactEnumDispatch isTestMessage_ContactEnumDispatch `protobuf_oneof:"contact_enum_dispatch"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Scalars
+	FDouble   float64 `protobuf:"fixed64,23,opt,name=f_double,json=fDouble,proto3" json:"f_double,omitempty"`
+	FFloat    float32 `protobuf:"fixed32,24,opt,name=f_float,json=fFloat,proto3" json:"f_float,omitempty"`
+	FInt32    int32   `protobuf:"varint,25,opt,name=f_int32,json=fInt32,proto3" json:"f_int32,omitempty"`
+	FInt64    int64   `protobuf:"varint,26,opt,name=f_int64,json=fInt64,proto3" json:"f_int64,omitempty"`
+	FUint32   uint32  `protobuf:"varint,27,opt,name=f_uint32,json=fUint32,proto3" json:"f_uint32,omitempty"`
+	FUint64   uint64  `protobuf:"varint,28,opt,name=f_uint64,json=fUint64,proto3" json:"f_uint64,omitempty"`
+	FSint32   int32   `protobuf:"zigzag32,29,opt,name=f_sint32,json=fSint32,proto3" json:"f_sint32,omitempty"`
+	FSint64   int64   `protobuf:"zigzag64,30,opt,name=f_sint64,json=fSint64,proto3" json:"f_sint64,omitempty"`
+	FFixed32  uint32  `protobuf:"fixed32,31,opt,name=f_fixed32,json=fFixed32,proto3" json:"f_fixed32,omitempty"`
+	FFixed64  uint64  `protobuf:"fixed64,32,opt,name=f_fixed64,json=fFixed64,proto3" json:"f_fixed64,omitempty"`
+	FSfixed32 int32   `protobuf:"fixed32,33,opt,name=f_sfixed32,json=fSfixed32,proto3" json:"f_sfixed32,omitempty"`
+	FSfixed64 int64   `protobuf:"fixed64,34,opt,name=f_sfixed64,json=fSfixed64,proto3" json:"f_sfixed64,omitempty"`
+	FBool     bool    `protobuf:"varint,35,opt,name=f_bool,json=fBool,proto3" json:"f_bool,omitempty"`
+	FString   string  `protobuf:"bytes,36,opt,name=f_string,json=fString,proto3" json:"f_string,omitempty"`
+	FBytes    []byte  `protobuf:"bytes,37,opt,name=f_bytes,json=fBytes,proto3" json:"f_bytes,omitempty"`
+	// Repeated scalars
+	FInt32List  []int32  `protobuf:"varint,38,rep,packed,name=f_int32_list,json=fInt32List,proto3" json:"f_int32_list,omitempty"`
+	FStringList []string `protobuf:"bytes,39,rep,name=f_string_list,json=fStringList,proto3" json:"f_string_list,omitempty"`
+	// Enum
+	FContactType     ContactType   `protobuf:"varint,40,opt,name=f_contact_type,json=fContactType,proto3,enum=test.ContactType" json:"f_contact_type,omitempty"`
+	FContactTypeList []ContactType `protobuf:"varint,41,rep,packed,name=f_contact_type_list,json=fContactTypeList,proto3,enum=test.ContactType" json:"f_contact_type_list,omitempty"`
+	// Messages
+	FAddress     *Address   `protobuf:"bytes,42,opt,name=f_address,json=fAddress,proto3" json:"f_address,omitempty"`
+	FAddressList []*Address `protobuf:"bytes,43,rep,name=f_address_list,json=fAddressList,proto3" json:"f_address_list,omitempty"`
+	// Maps
+	FMapStringInt32   map[string]int32    `protobuf:"bytes,44,rep,name=f_map_string_int32,json=fMapStringInt32,proto3" json:"f_map_string_int32,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	FMapStringAddress map[string]*Address `protobuf:"bytes,45,rep,name=f_map_string_address,json=fMapStringAddress,proto3" json:"f_map_string_address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Well-known types
+	FTs           *timestamppb.Timestamp  `protobuf:"bytes,46,opt,name=f_ts,json=fTs,proto3" json:"f_ts,omitempty"`
+	FDuration     *durationpb.Duration    `protobuf:"bytes,47,opt,name=f_duration,json=fDuration,proto3" json:"f_duration,omitempty"`
+	FAny          *anypb.Any              `protobuf:"bytes,48,opt,name=f_any,json=fAny,proto3" json:"f_any,omitempty"`
+	FStruct       *structpb.Struct        `protobuf:"bytes,49,opt,name=f_struct,json=fStruct,proto3" json:"f_struct,omitempty"`
+	FValue        *structpb.Value         `protobuf:"bytes,50,opt,name=f_value,json=fValue,proto3" json:"f_value,omitempty"`
+	FListValue    *structpb.ListValue     `protobuf:"bytes,51,opt,name=f_list_value,json=fListValue,proto3" json:"f_list_value,omitempty"`
+	FEmpty        *emptypb.Empty          `protobuf:"bytes,52,opt,name=f_empty,json=fEmpty,proto3" json:"f_empty,omitempty"`
+	FStringValue  *wrapperspb.StringValue `protobuf:"bytes,53,opt,name=f_string_value,json=fStringValue,proto3" json:"f_string_value,omitempty"`
+	FBoolValue    *wrapperspb.BoolValue   `protobuf:"bytes,54,opt,name=f_bool_value,json=fBoolValue,proto3" json:"f_bool_value,omitempty"`
+	FInt32Value   *wrapperspb.Int32Value  `protobuf:"bytes,55,opt,name=f_int32_value,json=fInt32Value,proto3" json:"f_int32_value,omitempty"`
+	FInt64Value   *wrapperspb.Int64Value  `protobuf:"bytes,56,opt,name=f_int64_value,json=fInt64Value,proto3" json:"f_int64_value,omitempty"`
+	FUint32Value  *wrapperspb.UInt32Value `protobuf:"bytes,57,opt,name=f_uint32_value,json=fUint32Value,proto3" json:"f_uint32_value,omitempty"`
+	FUint64Value  *wrapperspb.UInt64Value `protobuf:"bytes,58,opt,name=f_uint64_value,json=fUint64Value,proto3" json:"f_uint64_value,omitempty"`
+	FFloatValue   *wrapperspb.FloatValue  `protobuf:"bytes,59,opt,name=f_float_value,json=fFloatValue,proto3" json:"f_float_value,omitempty"`
+	FDoubleValue  *wrapperspb.DoubleValue `protobuf:"bytes,60,opt,name=f_double_value,json=fDoubleValue,proto3" json:"f_double_value,omitempty"`
+	FBytesValue   *wrapperspb.BytesValue  `protobuf:"bytes,61,opt,name=f_bytes_value,json=fBytesValue,proto3" json:"f_bytes_value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestMessage) Reset() {
 	*x = TestMessage{}
-	mi := &file_test_test_proto_msgTypes[0]
+	mi := &file_test_test_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -127,7 +607,7 @@ func (x *TestMessage) String() string {
 func (*TestMessage) ProtoMessage() {}
 
 func (x *TestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[0]
+	mi := &file_test_test_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -140,7 +620,7 @@ func (x *TestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestMessage.ProtoReflect.Descriptor instead.
 func (*TestMessage) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0}
+	return file_test_test_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *TestMessage) GetName() string {
@@ -150,42 +630,56 @@ func (x *TestMessage) GetName() string {
 	return ""
 }
 
-func (x *TestMessage) GetId() *TestMessage_UserId {
+func (x *TestMessage) GetId() *UserId {
 	if x != nil {
 		return x.Id
 	}
 	return nil
 }
 
-func (x *TestMessage) GetEmail() *TestMessage_Email {
+func (x *TestMessage) GetEmail() *Email {
 	if x != nil {
 		return x.Email
 	}
 	return nil
 }
 
-func (x *TestMessage) GetAddress() *TestMessage_Address {
+func (x *TestMessage) GetAge() int32 {
+	if x != nil {
+		return x.Age
+	}
+	return 0
+}
+
+func (x *TestMessage) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *TestMessage) GetAddress() *Address {
 	if x != nil {
 		return x.Address
 	}
 	return nil
 }
 
-func (x *TestMessage) GetWorkAddress() *TestMessage_Address {
+func (x *TestMessage) GetWorkAddress() *Address {
 	if x != nil {
 		return x.WorkAddress
 	}
 	return nil
 }
 
-func (x *TestMessage) GetAudit() *TestMessage_AuditInfo {
+func (x *TestMessage) GetAudit() *AuditInfo {
 	if x != nil {
 		return x.Audit
 	}
 	return nil
 }
 
-func (x *TestMessage) GetSettings() *TestMessage_Settings {
+func (x *TestMessage) GetSettings() *Settings {
 	if x != nil {
 		return x.Settings
 	}
@@ -213,7 +707,7 @@ func (x *TestMessage) GetContact() isTestMessage_Contact {
 	return nil
 }
 
-func (x *TestMessage) GetEmailContact() *TestMessage_ContactEmail {
+func (x *TestMessage) GetEmailContact() *ContactEmail {
 	if x != nil {
 		if x, ok := x.Contact.(*TestMessage_EmailContact); ok {
 			return x.EmailContact
@@ -222,7 +716,7 @@ func (x *TestMessage) GetEmailContact() *TestMessage_ContactEmail {
 	return nil
 }
 
-func (x *TestMessage) GetPhoneContact() *TestMessage_ContactPhone {
+func (x *TestMessage) GetPhoneContact() *ContactPhone {
 	if x != nil {
 		if x, ok := x.Contact.(*TestMessage_PhoneContact); ok {
 			return x.PhoneContact
@@ -238,7 +732,7 @@ func (x *TestMessage) GetBackupContact() isTestMessage_BackupContact {
 	return nil
 }
 
-func (x *TestMessage) GetBackupEmail() *TestMessage_ContactEmail {
+func (x *TestMessage) GetBackupEmail() *ContactEmail {
 	if x != nil {
 		if x, ok := x.BackupContact.(*TestMessage_BackupEmail); ok {
 			return x.BackupEmail
@@ -247,7 +741,7 @@ func (x *TestMessage) GetBackupEmail() *TestMessage_ContactEmail {
 	return nil
 }
 
-func (x *TestMessage) GetBackupPhone() *TestMessage_ContactPhone {
+func (x *TestMessage) GetBackupPhone() *ContactPhone {
 	if x != nil {
 		if x, ok := x.BackupContact.(*TestMessage_BackupPhone); ok {
 			return x.BackupPhone
@@ -263,7 +757,7 @@ func (x *TestMessage) GetPaymentMethod() isTestMessage_PaymentMethod {
 	return nil
 }
 
-func (x *TestMessage) GetCard() *TestMessage_PaymentCard {
+func (x *TestMessage) GetCard() *PaymentCard {
 	if x != nil {
 		if x, ok := x.PaymentMethod.(*TestMessage_Card); ok {
 			return x.Card
@@ -272,7 +766,7 @@ func (x *TestMessage) GetCard() *TestMessage_PaymentCard {
 	return nil
 }
 
-func (x *TestMessage) GetCrypto() *TestMessage_PaymentCrypto {
+func (x *TestMessage) GetCrypto() *PaymentCrypto {
 	if x != nil {
 		if x, ok := x.PaymentMethod.(*TestMessage_Crypto); ok {
 			return x.Crypto
@@ -288,7 +782,7 @@ func (x *TestMessage) GetBackupPaymentMethod() isTestMessage_BackupPaymentMethod
 	return nil
 }
 
-func (x *TestMessage) GetBackupCard() *TestMessage_PaymentCard {
+func (x *TestMessage) GetBackupCard() *PaymentCard {
 	if x != nil {
 		if x, ok := x.BackupPaymentMethod.(*TestMessage_BackupCard); ok {
 			return x.BackupCard
@@ -297,7 +791,7 @@ func (x *TestMessage) GetBackupCard() *TestMessage_PaymentCard {
 	return nil
 }
 
-func (x *TestMessage) GetBackupCrypto() *TestMessage_PaymentCrypto {
+func (x *TestMessage) GetBackupCrypto() *PaymentCrypto {
 	if x != nil {
 		if x, ok := x.BackupPaymentMethod.(*TestMessage_BackupCrypto); ok {
 			return x.BackupCrypto
@@ -306,11 +800,11 @@ func (x *TestMessage) GetBackupCrypto() *TestMessage_PaymentCrypto {
 	return nil
 }
 
-func (x *TestMessage) GetContactType() TestMessage_ContactType {
+func (x *TestMessage) GetContactType() ContactType {
 	if x != nil {
 		return x.ContactType
 	}
-	return TestMessage_CONTACT_TYPE_UNSPECIFIED
+	return ContactType_CONTACT_TYPE_UNSPECIFIED
 }
 
 func (x *TestMessage) GetContactEnumDispatch() isTestMessage_ContactEnumDispatch {
@@ -320,7 +814,7 @@ func (x *TestMessage) GetContactEnumDispatch() isTestMessage_ContactEnumDispatch
 	return nil
 }
 
-func (x *TestMessage) GetEnumEmail() *TestMessage_ContactEmail {
+func (x *TestMessage) GetEnumEmail() *ContactEmail {
 	if x != nil {
 		if x, ok := x.ContactEnumDispatch.(*TestMessage_EnumEmail); ok {
 			return x.EnumEmail
@@ -329,11 +823,284 @@ func (x *TestMessage) GetEnumEmail() *TestMessage_ContactEmail {
 	return nil
 }
 
-func (x *TestMessage) GetEnumPhone() *TestMessage_ContactPhone {
+func (x *TestMessage) GetEnumPhone() *ContactPhone {
 	if x != nil {
 		if x, ok := x.ContactEnumDispatch.(*TestMessage_EnumPhone); ok {
 			return x.EnumPhone
 		}
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFDouble() float64 {
+	if x != nil {
+		return x.FDouble
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFFloat() float32 {
+	if x != nil {
+		return x.FFloat
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFInt32() int32 {
+	if x != nil {
+		return x.FInt32
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFInt64() int64 {
+	if x != nil {
+		return x.FInt64
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFUint32() uint32 {
+	if x != nil {
+		return x.FUint32
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFUint64() uint64 {
+	if x != nil {
+		return x.FUint64
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFSint32() int32 {
+	if x != nil {
+		return x.FSint32
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFSint64() int64 {
+	if x != nil {
+		return x.FSint64
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFFixed32() uint32 {
+	if x != nil {
+		return x.FFixed32
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFFixed64() uint64 {
+	if x != nil {
+		return x.FFixed64
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFSfixed32() int32 {
+	if x != nil {
+		return x.FSfixed32
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFSfixed64() int64 {
+	if x != nil {
+		return x.FSfixed64
+	}
+	return 0
+}
+
+func (x *TestMessage) GetFBool() bool {
+	if x != nil {
+		return x.FBool
+	}
+	return false
+}
+
+func (x *TestMessage) GetFString() string {
+	if x != nil {
+		return x.FString
+	}
+	return ""
+}
+
+func (x *TestMessage) GetFBytes() []byte {
+	if x != nil {
+		return x.FBytes
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFInt32List() []int32 {
+	if x != nil {
+		return x.FInt32List
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFStringList() []string {
+	if x != nil {
+		return x.FStringList
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFContactType() ContactType {
+	if x != nil {
+		return x.FContactType
+	}
+	return ContactType_CONTACT_TYPE_UNSPECIFIED
+}
+
+func (x *TestMessage) GetFContactTypeList() []ContactType {
+	if x != nil {
+		return x.FContactTypeList
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFAddress() *Address {
+	if x != nil {
+		return x.FAddress
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFAddressList() []*Address {
+	if x != nil {
+		return x.FAddressList
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFMapStringInt32() map[string]int32 {
+	if x != nil {
+		return x.FMapStringInt32
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFMapStringAddress() map[string]*Address {
+	if x != nil {
+		return x.FMapStringAddress
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFTs() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FTs
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFDuration() *durationpb.Duration {
+	if x != nil {
+		return x.FDuration
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFAny() *anypb.Any {
+	if x != nil {
+		return x.FAny
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFStruct() *structpb.Struct {
+	if x != nil {
+		return x.FStruct
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFValue() *structpb.Value {
+	if x != nil {
+		return x.FValue
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFListValue() *structpb.ListValue {
+	if x != nil {
+		return x.FListValue
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFEmpty() *emptypb.Empty {
+	if x != nil {
+		return x.FEmpty
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFStringValue() *wrapperspb.StringValue {
+	if x != nil {
+		return x.FStringValue
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFBoolValue() *wrapperspb.BoolValue {
+	if x != nil {
+		return x.FBoolValue
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFInt32Value() *wrapperspb.Int32Value {
+	if x != nil {
+		return x.FInt32Value
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFInt64Value() *wrapperspb.Int64Value {
+	if x != nil {
+		return x.FInt64Value
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFUint32Value() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.FUint32Value
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFUint64Value() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.FUint64Value
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFFloatValue() *wrapperspb.FloatValue {
+	if x != nil {
+		return x.FFloatValue
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFDoubleValue() *wrapperspb.DoubleValue {
+	if x != nil {
+		return x.FDoubleValue
+	}
+	return nil
+}
+
+func (x *TestMessage) GetFBytesValue() *wrapperspb.BytesValue {
+	if x != nil {
+		return x.FBytesValue
 	}
 	return nil
 }
@@ -343,11 +1110,11 @@ type isTestMessage_Contact interface {
 }
 
 type TestMessage_EmailContact struct {
-	EmailContact *TestMessage_ContactEmail `protobuf:"bytes,10,opt,name=email_contact,json=emailContact,proto3,oneof"`
+	EmailContact *ContactEmail `protobuf:"bytes,12,opt,name=email_contact,json=emailContact,proto3,oneof"`
 }
 
 type TestMessage_PhoneContact struct {
-	PhoneContact *TestMessage_ContactPhone `protobuf:"bytes,11,opt,name=phone_contact,json=phoneContact,proto3,oneof"`
+	PhoneContact *ContactPhone `protobuf:"bytes,13,opt,name=phone_contact,json=phoneContact,proto3,oneof"`
 }
 
 func (*TestMessage_EmailContact) isTestMessage_Contact() {}
@@ -359,11 +1126,11 @@ type isTestMessage_BackupContact interface {
 }
 
 type TestMessage_BackupEmail struct {
-	BackupEmail *TestMessage_ContactEmail `protobuf:"bytes,12,opt,name=backup_email,json=backupEmail,proto3,oneof"`
+	BackupEmail *ContactEmail `protobuf:"bytes,14,opt,name=backup_email,json=backupEmail,proto3,oneof"`
 }
 
 type TestMessage_BackupPhone struct {
-	BackupPhone *TestMessage_ContactPhone `protobuf:"bytes,13,opt,name=backup_phone,json=backupPhone,proto3,oneof"`
+	BackupPhone *ContactPhone `protobuf:"bytes,15,opt,name=backup_phone,json=backupPhone,proto3,oneof"`
 }
 
 func (*TestMessage_BackupEmail) isTestMessage_BackupContact() {}
@@ -375,11 +1142,11 @@ type isTestMessage_PaymentMethod interface {
 }
 
 type TestMessage_Card struct {
-	Card *TestMessage_PaymentCard `protobuf:"bytes,14,opt,name=card,proto3,oneof"`
+	Card *PaymentCard `protobuf:"bytes,16,opt,name=card,proto3,oneof"`
 }
 
 type TestMessage_Crypto struct {
-	Crypto *TestMessage_PaymentCrypto `protobuf:"bytes,15,opt,name=crypto,proto3,oneof"`
+	Crypto *PaymentCrypto `protobuf:"bytes,17,opt,name=crypto,proto3,oneof"`
 }
 
 func (*TestMessage_Card) isTestMessage_PaymentMethod() {}
@@ -391,11 +1158,11 @@ type isTestMessage_BackupPaymentMethod interface {
 }
 
 type TestMessage_BackupCard struct {
-	BackupCard *TestMessage_PaymentCard `protobuf:"bytes,16,opt,name=backup_card,json=backupCard,proto3,oneof"`
+	BackupCard *PaymentCard `protobuf:"bytes,18,opt,name=backup_card,json=backupCard,proto3,oneof"`
 }
 
 type TestMessage_BackupCrypto struct {
-	BackupCrypto *TestMessage_PaymentCrypto `protobuf:"bytes,17,opt,name=backup_crypto,json=backupCrypto,proto3,oneof"`
+	BackupCrypto *PaymentCrypto `protobuf:"bytes,19,opt,name=backup_crypto,json=backupCrypto,proto3,oneof"`
 }
 
 func (*TestMessage_BackupCard) isTestMessage_BackupPaymentMethod() {}
@@ -407,513 +1174,138 @@ type isTestMessage_ContactEnumDispatch interface {
 }
 
 type TestMessage_EnumEmail struct {
-	EnumEmail *TestMessage_ContactEmail `protobuf:"bytes,19,opt,name=enum_email,json=enumEmail,proto3,oneof"`
+	EnumEmail *ContactEmail `protobuf:"bytes,21,opt,name=enum_email,json=enumEmail,proto3,oneof"`
 }
 
 type TestMessage_EnumPhone struct {
-	EnumPhone *TestMessage_ContactPhone `protobuf:"bytes,20,opt,name=enum_phone,json=enumPhone,proto3,oneof"`
+	EnumPhone *ContactPhone `protobuf:"bytes,22,opt,name=enum_phone,json=enumPhone,proto3,oneof"`
 }
 
 func (*TestMessage_EnumEmail) isTestMessage_ContactEnumDispatch() {}
 
 func (*TestMessage_EnumPhone) isTestMessage_ContactEnumDispatch() {}
 
-type TestMessage_UserId struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_UserId) Reset() {
-	*x = TestMessage_UserId{}
-	mi := &file_test_test_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_UserId) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_UserId) ProtoMessage() {}
-
-func (x *TestMessage_UserId) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_UserId.ProtoReflect.Descriptor instead.
-func (*TestMessage_UserId) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 0}
-}
-
-func (x *TestMessage_UserId) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
-type TestMessage_Email struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_Email) Reset() {
-	*x = TestMessage_Email{}
-	mi := &file_test_test_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_Email) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_Email) ProtoMessage() {}
-
-func (x *TestMessage_Email) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_Email.ProtoReflect.Descriptor instead.
-func (*TestMessage_Email) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 1}
-}
-
-func (x *TestMessage_Email) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
-type TestMessage_Address struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Street        string                 `protobuf:"bytes,1,opt,name=street,proto3" json:"street,omitempty"`
-	City          string                 `protobuf:"bytes,2,opt,name=city,proto3" json:"city,omitempty"`
-	Country       string                 `protobuf:"bytes,3,opt,name=country,proto3" json:"country,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_Address) Reset() {
-	*x = TestMessage_Address{}
-	mi := &file_test_test_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_Address) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_Address) ProtoMessage() {}
-
-func (x *TestMessage_Address) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_Address.ProtoReflect.Descriptor instead.
-func (*TestMessage_Address) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 2}
-}
-
-func (x *TestMessage_Address) GetStreet() string {
-	if x != nil {
-		return x.Street
-	}
-	return ""
-}
-
-func (x *TestMessage_Address) GetCity() string {
-	if x != nil {
-		return x.City
-	}
-	return ""
-}
-
-func (x *TestMessage_Address) GetCountry() string {
-	if x != nil {
-		return x.Country
-	}
-	return ""
-}
-
-type TestMessage_AuditInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_AuditInfo) Reset() {
-	*x = TestMessage_AuditInfo{}
-	mi := &file_test_test_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_AuditInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_AuditInfo) ProtoMessage() {}
-
-func (x *TestMessage_AuditInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_AuditInfo.ProtoReflect.Descriptor instead.
-func (*TestMessage_AuditInfo) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 3}
-}
-
-func (x *TestMessage_AuditInfo) GetCreatedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.CreatedAt
-	}
-	return nil
-}
-
-func (x *TestMessage_AuditInfo) GetUpdatedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.UpdatedAt
-	}
-	return nil
-}
-
-type TestMessage_Settings struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Theme         string                 `protobuf:"bytes,1,opt,name=theme,proto3" json:"theme,omitempty"`
-	Notifications bool                   `protobuf:"varint,2,opt,name=notifications,proto3" json:"notifications,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_Settings) Reset() {
-	*x = TestMessage_Settings{}
-	mi := &file_test_test_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_Settings) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_Settings) ProtoMessage() {}
-
-func (x *TestMessage_Settings) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_Settings.ProtoReflect.Descriptor instead.
-func (*TestMessage_Settings) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 4}
-}
-
-func (x *TestMessage_Settings) GetTheme() string {
-	if x != nil {
-		return x.Theme
-	}
-	return ""
-}
-
-func (x *TestMessage_Settings) GetNotifications() bool {
-	if x != nil {
-		return x.Notifications
-	}
-	return false
-}
-
-type TestMessage_ContactEmail struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_ContactEmail) Reset() {
-	*x = TestMessage_ContactEmail{}
-	mi := &file_test_test_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_ContactEmail) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_ContactEmail) ProtoMessage() {}
-
-func (x *TestMessage_ContactEmail) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_ContactEmail.ProtoReflect.Descriptor instead.
-func (*TestMessage_ContactEmail) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 5}
-}
-
-func (x *TestMessage_ContactEmail) GetEmail() string {
-	if x != nil {
-		return x.Email
-	}
-	return ""
-}
-
-type TestMessage_ContactPhone struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Phone         string                 `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_ContactPhone) Reset() {
-	*x = TestMessage_ContactPhone{}
-	mi := &file_test_test_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_ContactPhone) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_ContactPhone) ProtoMessage() {}
-
-func (x *TestMessage_ContactPhone) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_ContactPhone.ProtoReflect.Descriptor instead.
-func (*TestMessage_ContactPhone) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 6}
-}
-
-func (x *TestMessage_ContactPhone) GetPhone() string {
-	if x != nil {
-		return x.Phone
-	}
-	return ""
-}
-
-type TestMessage_PaymentCard struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CardNumber    string                 `protobuf:"bytes,1,opt,name=card_number,json=cardNumber,proto3" json:"card_number,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_PaymentCard) Reset() {
-	*x = TestMessage_PaymentCard{}
-	mi := &file_test_test_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_PaymentCard) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_PaymentCard) ProtoMessage() {}
-
-func (x *TestMessage_PaymentCard) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_PaymentCard.ProtoReflect.Descriptor instead.
-func (*TestMessage_PaymentCard) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 7}
-}
-
-func (x *TestMessage_PaymentCard) GetCardNumber() string {
-	if x != nil {
-		return x.CardNumber
-	}
-	return ""
-}
-
-type TestMessage_PaymentCrypto struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Wallet        string                 `protobuf:"bytes,1,opt,name=wallet,proto3" json:"wallet,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TestMessage_PaymentCrypto) Reset() {
-	*x = TestMessage_PaymentCrypto{}
-	mi := &file_test_test_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TestMessage_PaymentCrypto) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TestMessage_PaymentCrypto) ProtoMessage() {}
-
-func (x *TestMessage_PaymentCrypto) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TestMessage_PaymentCrypto.ProtoReflect.Descriptor instead.
-func (*TestMessage_PaymentCrypto) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0, 8}
-}
-
-func (x *TestMessage_PaymentCrypto) GetWallet() string {
-	if x != nil {
-		return x.Wallet
-	}
-	return ""
-}
-
 var File_test_test_proto protoreflect.FileDescriptor
 
 const file_test_test_proto_rawDesc = "" +
 	"\n" +
-	"\x0ftest/test.proto\x12\x04test\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x15goplain/goplain.proto\"\xb0\x11\n" +
-	"\vTestMessage\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12(\n" +
-	"\x02id\x18\x02 \x01(\v2\x18.test.TestMessage.UserIdR\x02id\x12-\n" +
-	"\x05email\x18\x03 \x01(\v2\x17.test.TestMessage.EmailR\x05email\x12;\n" +
-	"\aaddress\x18\x04 \x01(\v2\x19.test.TestMessage.AddressB\x06\x82\xa6\x1d\x02 \x01R\aaddress\x12D\n" +
-	"\fwork_address\x18\x05 \x01(\v2\x19.test.TestMessage.AddressB\x06\x82\xa6\x1d\x02(\x01R\vworkAddress\x129\n" +
-	"\x05audit\x18\x06 \x01(\v2\x1b.test.TestMessage.AuditInfoB\x06\x82\xa6\x1d\x02 \x01R\x05audit\x12>\n" +
-	"\bsettings\x18\a \x01(\v2\x1a.test.TestMessage.SettingsB\x06\x82\xa6\x1d\x02\x10\x01R\bsettings\x12;\n" +
-	"\x06raw_id\x18\b \x01(\tB$\x82\xa6\x1d \n" +
-	"\x1e\n" +
-	"\x04UUID\x12\x16github.com/google/uuidR\x05rawId\x12R\n" +
-	"\rcreated_at_ts\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x12\x82\xa6\x1d\x0e\n" +
-	"\f\n" +
-	"\x04Time\x12\x04timeR\vcreatedAtTs\x12E\n" +
-	"\remail_contact\x18\n" +
-	" \x01(\v2\x1e.test.TestMessage.ContactEmailH\x00R\femailContact\x12E\n" +
-	"\rphone_contact\x18\v \x01(\v2\x1e.test.TestMessage.ContactPhoneH\x00R\fphoneContact\x12C\n" +
-	"\fbackup_email\x18\f \x01(\v2\x1e.test.TestMessage.ContactEmailH\x01R\vbackupEmail\x12C\n" +
-	"\fbackup_phone\x18\r \x01(\v2\x1e.test.TestMessage.ContactPhoneH\x01R\vbackupPhone\x123\n" +
-	"\x04card\x18\x0e \x01(\v2\x1d.test.TestMessage.PaymentCardH\x02R\x04card\x129\n" +
-	"\x06crypto\x18\x0f \x01(\v2\x1f.test.TestMessage.PaymentCryptoH\x02R\x06crypto\x12@\n" +
-	"\vbackup_card\x18\x10 \x01(\v2\x1d.test.TestMessage.PaymentCardH\x03R\n" +
-	"backupCard\x12F\n" +
-	"\rbackup_crypto\x18\x11 \x01(\v2\x1f.test.TestMessage.PaymentCryptoH\x03R\fbackupCrypto\x12@\n" +
-	"\fcontact_type\x18\x12 \x01(\x0e2\x1d.test.TestMessage.ContactTypeR\vcontactType\x12Y\n" +
-	"\n" +
-	"enum_email\x18\x13 \x01(\v2\x1e.test.TestMessage.ContactEmailB\x18\x82\xa6\x1d\x142\x12CONTACT_TYPE_EMAILH\x04R\tenumEmail\x12Y\n" +
-	"\n" +
-	"enum_phone\x18\x14 \x01(\v2\x1e.test.TestMessage.ContactPhoneB\x18\x82\xa6\x1d\x142\x12CONTACT_TYPE_PHONEH\x04R\tenumPhone\x1a&\n" +
+	"\x0ftest/test.proto\x12\x04test\x1a\x19google/protobuf/any.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x15goplain/goplain.proto\"&\n" +
 	"\x06UserId\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\x1a%\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"%\n" +
 	"\x05Email\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\x1aO\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"O\n" +
 	"\aAddress\x12\x16\n" +
 	"\x06street\x18\x01 \x01(\tR\x06street\x12\x12\n" +
 	"\x04city\x18\x02 \x01(\tR\x04city\x12\x18\n" +
-	"\acountry\x18\x03 \x01(\tR\acountry\x1a\x81\x01\n" +
+	"\acountry\x18\x03 \x01(\tR\acountry\"\x81\x01\n" +
 	"\tAuditInfo\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1aF\n" +
+	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"F\n" +
 	"\bSettings\x12\x14\n" +
 	"\x05theme\x18\x01 \x01(\tR\x05theme\x12$\n" +
-	"\rnotifications\x18\x02 \x01(\bR\rnotifications\x1a$\n" +
+	"\rnotifications\x18\x02 \x01(\bR\rnotifications\"$\n" +
 	"\fContactEmail\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x1a$\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"$\n" +
 	"\fContactPhone\x12\x14\n" +
-	"\x05phone\x18\x01 \x01(\tR\x05phone\x1a.\n" +
+	"\x05phone\x18\x01 \x01(\tR\x05phone\".\n" +
 	"\vPaymentCard\x12\x1f\n" +
 	"\vcard_number\x18\x01 \x01(\tR\n" +
-	"cardNumber\x1a'\n" +
+	"cardNumber\"'\n" +
 	"\rPaymentCrypto\x12\x16\n" +
-	"\x06wallet\x18\x01 \x01(\tR\x06wallet\"[\n" +
-	"\vContactType\x12\x1c\n" +
-	"\x18CONTACT_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
-	"\x12CONTACT_TYPE_EMAIL\x10\x01\x12\x16\n" +
-	"\x12CONTACT_TYPE_PHONE\x10\x02:\x87\x01\x82\xa6\x1d\x82\x01\b\x01\x1a\x11\b\f\"\rpassword_hash\x1a\x13\b\x03\"\x0fcreated_at_unix\x1a(\b\v\"\tvirt_addr2\x19.test.TestMessage.Address\x1a,\b\x0e\"\tvirt_enum2\x1d.test.TestMessage.ContactTypeB\x11\n" +
+	"\x06wallet\x18\x01 \x01(\tR\x06wallet\"\xb4\x1a\n" +
+	"\vTestMessage\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
+	"\x02id\x18\x02 \x01(\v2\f.test.UserIdR\x02id\x12!\n" +
+	"\x05email\x18\x03 \x01(\v2\v.test.EmailR\x05email\x12\x10\n" +
+	"\x03age\x18\x04 \x01(\x05R\x03age\x12\x16\n" +
+	"\x06active\x18\x05 \x01(\bR\x06active\x12/\n" +
+	"\aaddress\x18\x06 \x01(\v2\r.test.AddressB\x06\x82\xa6\x1d\x02 \x01R\aaddress\x128\n" +
+	"\fwork_address\x18\a \x01(\v2\r.test.AddressB\x06\x82\xa6\x1d\x02(\x01R\vworkAddress\x12-\n" +
+	"\x05audit\x18\b \x01(\v2\x0f.test.AuditInfoB\x06\x82\xa6\x1d\x02 \x01R\x05audit\x122\n" +
+	"\bsettings\x18\t \x01(\v2\x0e.test.SettingsB\x06\x82\xa6\x1d\x02\x10\x01R\bsettings\x12;\n" +
+	"\x06raw_id\x18\n" +
+	" \x01(\tB$\x82\xa6\x1d \n" +
+	"\x1e\n" +
+	"\x04UUID\x12\x16github.com/google/uuidR\x05rawId\x12R\n" +
+	"\rcreated_at_ts\x18\v \x01(\v2\x1a.google.protobuf.TimestampB\x12\x82\xa6\x1d\x0e\n" +
+	"\f\n" +
+	"\x04Time\x12\x04timeR\vcreatedAtTs\x129\n" +
+	"\remail_contact\x18\f \x01(\v2\x12.test.ContactEmailH\x00R\femailContact\x129\n" +
+	"\rphone_contact\x18\r \x01(\v2\x12.test.ContactPhoneH\x00R\fphoneContact\x127\n" +
+	"\fbackup_email\x18\x0e \x01(\v2\x12.test.ContactEmailH\x01R\vbackupEmail\x127\n" +
+	"\fbackup_phone\x18\x0f \x01(\v2\x12.test.ContactPhoneH\x01R\vbackupPhone\x12'\n" +
+	"\x04card\x18\x10 \x01(\v2\x11.test.PaymentCardH\x02R\x04card\x12-\n" +
+	"\x06crypto\x18\x11 \x01(\v2\x13.test.PaymentCryptoH\x02R\x06crypto\x124\n" +
+	"\vbackup_card\x18\x12 \x01(\v2\x11.test.PaymentCardH\x03R\n" +
+	"backupCard\x12:\n" +
+	"\rbackup_crypto\x18\x13 \x01(\v2\x13.test.PaymentCryptoH\x03R\fbackupCrypto\x124\n" +
+	"\fcontact_type\x18\x14 \x01(\x0e2\x11.test.ContactTypeR\vcontactType\x12M\n" +
+	"\n" +
+	"enum_email\x18\x15 \x01(\v2\x12.test.ContactEmailB\x18\x82\xa6\x1d\x142\x12CONTACT_TYPE_EMAILH\x04R\tenumEmail\x12M\n" +
+	"\n" +
+	"enum_phone\x18\x16 \x01(\v2\x12.test.ContactPhoneB\x18\x82\xa6\x1d\x142\x12CONTACT_TYPE_PHONEH\x04R\tenumPhone\x12\x19\n" +
+	"\bf_double\x18\x17 \x01(\x01R\afDouble\x12\x17\n" +
+	"\af_float\x18\x18 \x01(\x02R\x06fFloat\x12\x17\n" +
+	"\af_int32\x18\x19 \x01(\x05R\x06fInt32\x12\x17\n" +
+	"\af_int64\x18\x1a \x01(\x03R\x06fInt64\x12\x19\n" +
+	"\bf_uint32\x18\x1b \x01(\rR\afUint32\x12\x19\n" +
+	"\bf_uint64\x18\x1c \x01(\x04R\afUint64\x12\x19\n" +
+	"\bf_sint32\x18\x1d \x01(\x11R\afSint32\x12\x19\n" +
+	"\bf_sint64\x18\x1e \x01(\x12R\afSint64\x12\x1b\n" +
+	"\tf_fixed32\x18\x1f \x01(\aR\bfFixed32\x12\x1b\n" +
+	"\tf_fixed64\x18  \x01(\x06R\bfFixed64\x12\x1d\n" +
+	"\n" +
+	"f_sfixed32\x18! \x01(\x0fR\tfSfixed32\x12\x1d\n" +
+	"\n" +
+	"f_sfixed64\x18\" \x01(\x10R\tfSfixed64\x12\x15\n" +
+	"\x06f_bool\x18# \x01(\bR\x05fBool\x12\x19\n" +
+	"\bf_string\x18$ \x01(\tR\afString\x12\x17\n" +
+	"\af_bytes\x18% \x01(\fR\x06fBytes\x12 \n" +
+	"\ff_int32_list\x18& \x03(\x05R\n" +
+	"fInt32List\x12\"\n" +
+	"\rf_string_list\x18' \x03(\tR\vfStringList\x127\n" +
+	"\x0ef_contact_type\x18( \x01(\x0e2\x11.test.ContactTypeR\ffContactType\x12@\n" +
+	"\x13f_contact_type_list\x18) \x03(\x0e2\x11.test.ContactTypeR\x10fContactTypeList\x12*\n" +
+	"\tf_address\x18* \x01(\v2\r.test.AddressR\bfAddress\x123\n" +
+	"\x0ef_address_list\x18+ \x03(\v2\r.test.AddressR\ffAddressList\x12S\n" +
+	"\x12f_map_string_int32\x18, \x03(\v2&.test.TestMessage.FMapStringInt32EntryR\x0ffMapStringInt32\x12Y\n" +
+	"\x14f_map_string_address\x18- \x03(\v2(.test.TestMessage.FMapStringAddressEntryR\x11fMapStringAddress\x12-\n" +
+	"\x04f_ts\x18. \x01(\v2\x1a.google.protobuf.TimestampR\x03fTs\x128\n" +
+	"\n" +
+	"f_duration\x18/ \x01(\v2\x19.google.protobuf.DurationR\tfDuration\x12)\n" +
+	"\x05f_any\x180 \x01(\v2\x14.google.protobuf.AnyR\x04fAny\x122\n" +
+	"\bf_struct\x181 \x01(\v2\x17.google.protobuf.StructR\afStruct\x12/\n" +
+	"\af_value\x182 \x01(\v2\x16.google.protobuf.ValueR\x06fValue\x12<\n" +
+	"\ff_list_value\x183 \x01(\v2\x1a.google.protobuf.ListValueR\n" +
+	"fListValue\x12/\n" +
+	"\af_empty\x184 \x01(\v2\x16.google.protobuf.EmptyR\x06fEmpty\x12B\n" +
+	"\x0ef_string_value\x185 \x01(\v2\x1c.google.protobuf.StringValueR\ffStringValue\x12<\n" +
+	"\ff_bool_value\x186 \x01(\v2\x1a.google.protobuf.BoolValueR\n" +
+	"fBoolValue\x12?\n" +
+	"\rf_int32_value\x187 \x01(\v2\x1b.google.protobuf.Int32ValueR\vfInt32Value\x12?\n" +
+	"\rf_int64_value\x188 \x01(\v2\x1b.google.protobuf.Int64ValueR\vfInt64Value\x12B\n" +
+	"\x0ef_uint32_value\x189 \x01(\v2\x1c.google.protobuf.UInt32ValueR\ffUint32Value\x12B\n" +
+	"\x0ef_uint64_value\x18: \x01(\v2\x1c.google.protobuf.UInt64ValueR\ffUint64Value\x12?\n" +
+	"\rf_float_value\x18; \x01(\v2\x1b.google.protobuf.FloatValueR\vfFloatValue\x12B\n" +
+	"\x0ef_double_value\x18< \x01(\v2\x1c.google.protobuf.DoubleValueR\ffDoubleValue\x12?\n" +
+	"\rf_bytes_value\x18= \x01(\v2\x1b.google.protobuf.BytesValueR\vfBytesValue\x1aB\n" +
+	"\x14FMapStringInt32Entry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1aS\n" +
+	"\x16FMapStringAddressEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12#\n" +
+	"\x05value\x18\x02 \x01(\v2\r.test.AddressR\x05value:\x028\x01:n\x82\xa6\x1dj\b\x01\x1a\x11\b\f\"\rpassword_hash\x1a\x13\b\x03\"\x0fcreated_at_unix\x1a\x1c\b\v\"\tvirt_addr2\r.test.Address\x1a \b\x0e\"\tvirt_enum2\x11.test.ContactTypeB\x11\n" +
 	"\acontact\x12\x06\x82\xb5\x18\x02\b\x01B\x18\n" +
 	"\x0ebackup_contact\x12\x06\x82\xb5\x18\x02\x10\x01B\x18\n" +
 	"\x0epayment_method\x12\x06\x82\xb5\x18\x02\x18\x01B\x1f\n" +
-	"\x15backup_payment_method\x12\x06\x82\xb5\x18\x02 \x01B;\n" +
-	"\x15contact_enum_dispatch\x12\"\x82\xb5\x18\x1e*\x1ctest.TestMessage.ContactTypeBW\x82\xa6\x1d&\n" +
+	"\x15backup_payment_method\x12\x06\x82\xb5\x18\x02 \x01B/\n" +
+	"\x15contact_enum_dispatch\x12\x16\x82\xb5\x18\x12*\x10test.ContactType*[\n" +
+	"\vContactType\x12\x1c\n" +
+	"\x18CONTACT_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12CONTACT_TYPE_EMAIL\x10\x01\x12\x16\n" +
+	"\x12CONTACT_TYPE_PHONE\x10\x02BW\x82\xa6\x1d&\n" +
 	"$\n" +
 	"\x02\x10\t\x12\x1e\n" +
 	"\x04UUID\x12\x16github.com/google/uuidZ+github.com/yaroher/protoc-gen-go-plain/testb\x06proto3"
@@ -931,47 +1323,87 @@ func file_test_test_proto_rawDescGZIP() []byte {
 }
 
 var file_test_test_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_test_test_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_test_test_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_test_test_proto_goTypes = []any{
-	(TestMessage_ContactType)(0),      // 0: test.TestMessage.ContactType
-	(*TestMessage)(nil),               // 1: test.TestMessage
-	(*TestMessage_UserId)(nil),        // 2: test.TestMessage.UserId
-	(*TestMessage_Email)(nil),         // 3: test.TestMessage.Email
-	(*TestMessage_Address)(nil),       // 4: test.TestMessage.Address
-	(*TestMessage_AuditInfo)(nil),     // 5: test.TestMessage.AuditInfo
-	(*TestMessage_Settings)(nil),      // 6: test.TestMessage.Settings
-	(*TestMessage_ContactEmail)(nil),  // 7: test.TestMessage.ContactEmail
-	(*TestMessage_ContactPhone)(nil),  // 8: test.TestMessage.ContactPhone
-	(*TestMessage_PaymentCard)(nil),   // 9: test.TestMessage.PaymentCard
-	(*TestMessage_PaymentCrypto)(nil), // 10: test.TestMessage.PaymentCrypto
-	(*timestamppb.Timestamp)(nil),     // 11: google.protobuf.Timestamp
+	(ContactType)(0),               // 0: test.ContactType
+	(*UserId)(nil),                 // 1: test.UserId
+	(*Email)(nil),                  // 2: test.Email
+	(*Address)(nil),                // 3: test.Address
+	(*AuditInfo)(nil),              // 4: test.AuditInfo
+	(*Settings)(nil),               // 5: test.Settings
+	(*ContactEmail)(nil),           // 6: test.ContactEmail
+	(*ContactPhone)(nil),           // 7: test.ContactPhone
+	(*PaymentCard)(nil),            // 8: test.PaymentCard
+	(*PaymentCrypto)(nil),          // 9: test.PaymentCrypto
+	(*TestMessage)(nil),            // 10: test.TestMessage
+	nil,                            // 11: test.TestMessage.FMapStringInt32Entry
+	nil,                            // 12: test.TestMessage.FMapStringAddressEntry
+	(*timestamppb.Timestamp)(nil),  // 13: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),    // 14: google.protobuf.Duration
+	(*anypb.Any)(nil),              // 15: google.protobuf.Any
+	(*structpb.Struct)(nil),        // 16: google.protobuf.Struct
+	(*structpb.Value)(nil),         // 17: google.protobuf.Value
+	(*structpb.ListValue)(nil),     // 18: google.protobuf.ListValue
+	(*emptypb.Empty)(nil),          // 19: google.protobuf.Empty
+	(*wrapperspb.StringValue)(nil), // 20: google.protobuf.StringValue
+	(*wrapperspb.BoolValue)(nil),   // 21: google.protobuf.BoolValue
+	(*wrapperspb.Int32Value)(nil),  // 22: google.protobuf.Int32Value
+	(*wrapperspb.Int64Value)(nil),  // 23: google.protobuf.Int64Value
+	(*wrapperspb.UInt32Value)(nil), // 24: google.protobuf.UInt32Value
+	(*wrapperspb.UInt64Value)(nil), // 25: google.protobuf.UInt64Value
+	(*wrapperspb.FloatValue)(nil),  // 26: google.protobuf.FloatValue
+	(*wrapperspb.DoubleValue)(nil), // 27: google.protobuf.DoubleValue
+	(*wrapperspb.BytesValue)(nil),  // 28: google.protobuf.BytesValue
 }
 var file_test_test_proto_depIdxs = []int32{
-	2,  // 0: test.TestMessage.id:type_name -> test.TestMessage.UserId
-	3,  // 1: test.TestMessage.email:type_name -> test.TestMessage.Email
-	4,  // 2: test.TestMessage.address:type_name -> test.TestMessage.Address
-	4,  // 3: test.TestMessage.work_address:type_name -> test.TestMessage.Address
-	5,  // 4: test.TestMessage.audit:type_name -> test.TestMessage.AuditInfo
-	6,  // 5: test.TestMessage.settings:type_name -> test.TestMessage.Settings
-	11, // 6: test.TestMessage.created_at_ts:type_name -> google.protobuf.Timestamp
-	7,  // 7: test.TestMessage.email_contact:type_name -> test.TestMessage.ContactEmail
-	8,  // 8: test.TestMessage.phone_contact:type_name -> test.TestMessage.ContactPhone
-	7,  // 9: test.TestMessage.backup_email:type_name -> test.TestMessage.ContactEmail
-	8,  // 10: test.TestMessage.backup_phone:type_name -> test.TestMessage.ContactPhone
-	9,  // 11: test.TestMessage.card:type_name -> test.TestMessage.PaymentCard
-	10, // 12: test.TestMessage.crypto:type_name -> test.TestMessage.PaymentCrypto
-	9,  // 13: test.TestMessage.backup_card:type_name -> test.TestMessage.PaymentCard
-	10, // 14: test.TestMessage.backup_crypto:type_name -> test.TestMessage.PaymentCrypto
-	0,  // 15: test.TestMessage.contact_type:type_name -> test.TestMessage.ContactType
-	7,  // 16: test.TestMessage.enum_email:type_name -> test.TestMessage.ContactEmail
-	8,  // 17: test.TestMessage.enum_phone:type_name -> test.TestMessage.ContactPhone
-	11, // 18: test.TestMessage.AuditInfo.created_at:type_name -> google.protobuf.Timestamp
-	11, // 19: test.TestMessage.AuditInfo.updated_at:type_name -> google.protobuf.Timestamp
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	13, // 0: test.AuditInfo.created_at:type_name -> google.protobuf.Timestamp
+	13, // 1: test.AuditInfo.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 2: test.TestMessage.id:type_name -> test.UserId
+	2,  // 3: test.TestMessage.email:type_name -> test.Email
+	3,  // 4: test.TestMessage.address:type_name -> test.Address
+	3,  // 5: test.TestMessage.work_address:type_name -> test.Address
+	4,  // 6: test.TestMessage.audit:type_name -> test.AuditInfo
+	5,  // 7: test.TestMessage.settings:type_name -> test.Settings
+	13, // 8: test.TestMessage.created_at_ts:type_name -> google.protobuf.Timestamp
+	6,  // 9: test.TestMessage.email_contact:type_name -> test.ContactEmail
+	7,  // 10: test.TestMessage.phone_contact:type_name -> test.ContactPhone
+	6,  // 11: test.TestMessage.backup_email:type_name -> test.ContactEmail
+	7,  // 12: test.TestMessage.backup_phone:type_name -> test.ContactPhone
+	8,  // 13: test.TestMessage.card:type_name -> test.PaymentCard
+	9,  // 14: test.TestMessage.crypto:type_name -> test.PaymentCrypto
+	8,  // 15: test.TestMessage.backup_card:type_name -> test.PaymentCard
+	9,  // 16: test.TestMessage.backup_crypto:type_name -> test.PaymentCrypto
+	0,  // 17: test.TestMessage.contact_type:type_name -> test.ContactType
+	6,  // 18: test.TestMessage.enum_email:type_name -> test.ContactEmail
+	7,  // 19: test.TestMessage.enum_phone:type_name -> test.ContactPhone
+	0,  // 20: test.TestMessage.f_contact_type:type_name -> test.ContactType
+	0,  // 21: test.TestMessage.f_contact_type_list:type_name -> test.ContactType
+	3,  // 22: test.TestMessage.f_address:type_name -> test.Address
+	3,  // 23: test.TestMessage.f_address_list:type_name -> test.Address
+	11, // 24: test.TestMessage.f_map_string_int32:type_name -> test.TestMessage.FMapStringInt32Entry
+	12, // 25: test.TestMessage.f_map_string_address:type_name -> test.TestMessage.FMapStringAddressEntry
+	13, // 26: test.TestMessage.f_ts:type_name -> google.protobuf.Timestamp
+	14, // 27: test.TestMessage.f_duration:type_name -> google.protobuf.Duration
+	15, // 28: test.TestMessage.f_any:type_name -> google.protobuf.Any
+	16, // 29: test.TestMessage.f_struct:type_name -> google.protobuf.Struct
+	17, // 30: test.TestMessage.f_value:type_name -> google.protobuf.Value
+	18, // 31: test.TestMessage.f_list_value:type_name -> google.protobuf.ListValue
+	19, // 32: test.TestMessage.f_empty:type_name -> google.protobuf.Empty
+	20, // 33: test.TestMessage.f_string_value:type_name -> google.protobuf.StringValue
+	21, // 34: test.TestMessage.f_bool_value:type_name -> google.protobuf.BoolValue
+	22, // 35: test.TestMessage.f_int32_value:type_name -> google.protobuf.Int32Value
+	23, // 36: test.TestMessage.f_int64_value:type_name -> google.protobuf.Int64Value
+	24, // 37: test.TestMessage.f_uint32_value:type_name -> google.protobuf.UInt32Value
+	25, // 38: test.TestMessage.f_uint64_value:type_name -> google.protobuf.UInt64Value
+	26, // 39: test.TestMessage.f_float_value:type_name -> google.protobuf.FloatValue
+	27, // 40: test.TestMessage.f_double_value:type_name -> google.protobuf.DoubleValue
+	28, // 41: test.TestMessage.f_bytes_value:type_name -> google.protobuf.BytesValue
+	3,  // 42: test.TestMessage.FMapStringAddressEntry.value:type_name -> test.Address
+	43, // [43:43] is the sub-list for method output_type
+	43, // [43:43] is the sub-list for method input_type
+	43, // [43:43] is the sub-list for extension type_name
+	43, // [43:43] is the sub-list for extension extendee
+	0,  // [0:43] is the sub-list for field type_name
 }
 
 func init() { file_test_test_proto_init() }
@@ -979,7 +1411,7 @@ func file_test_test_proto_init() {
 	if File_test_test_proto != nil {
 		return
 	}
-	file_test_test_proto_msgTypes[0].OneofWrappers = []any{
+	file_test_test_proto_msgTypes[9].OneofWrappers = []any{
 		(*TestMessage_EmailContact)(nil),
 		(*TestMessage_PhoneContact)(nil),
 		(*TestMessage_BackupEmail)(nil),
@@ -997,7 +1429,7 @@ func file_test_test_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_test_proto_rawDesc), len(file_test_test_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

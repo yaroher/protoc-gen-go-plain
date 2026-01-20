@@ -3,7 +3,12 @@
 package test
 
 import (
+	anypb "google.golang.org/protobuf/types/known/anypb"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type TestMessagePlain_PaymentMethodType int32
@@ -30,6 +35,10 @@ type TestMessagePlain struct {
 	Id string
 	// src: .test.TestMessage.email; transform: type_alias
 	Email string
+	// src: .test.TestMessage.age; transform: none
+	Age int32
+	// src: .test.TestMessage.active; transform: none
+	Active bool
 	// src: .test.TestMessage.street; transform: embed
 	Street string
 	// src: .test.TestMessage.city; transform: embed
@@ -53,37 +62,115 @@ type TestMessagePlain struct {
 	// src: .test.TestMessage.created_at_ts; transform: override_type
 	CreatedAtTs *timestamppb.Timestamp
 	// src: .test.TestMessage.contact_type; transform: none
-	ContactType TestMessage_ContactType
-	// src: .test.TestMessage.email_contact; transform: none
-	EmailContact *TestMessage_ContactEmail
-	// src: .test.TestMessage.phone_contact; transform: none
-	PhoneContact *TestMessage_ContactPhone
-	// src: .test.TestMessage.backup_email; transform: none
-	BackupContactBackupEmail *TestMessage_ContactEmail
-	// src: .test.TestMessage.backup_phone; transform: none
-	BackupContactBackupPhone *TestMessage_ContactPhone
+	ContactType ContactType
+	// src: .test.TestMessage.f_double; transform: none
+	FDouble float64
+	// src: .test.TestMessage.f_float; transform: none
+	FFloat float32
+	// src: .test.TestMessage.f_int32; transform: none
+	FInt32 int32
+	// src: .test.TestMessage.f_int64; transform: none
+	FInt64 int64
+	// src: .test.TestMessage.f_uint32; transform: none
+	FUint32 uint32
+	// src: .test.TestMessage.f_uint64; transform: none
+	FUint64 uint64
+	// src: .test.TestMessage.f_sint32; transform: none
+	FSint32 int32
+	// src: .test.TestMessage.f_sint64; transform: none
+	FSint64 int64
+	// src: .test.TestMessage.f_fixed32; transform: none
+	FFixed32 uint32
+	// src: .test.TestMessage.f_fixed64; transform: none
+	FFixed64 uint64
+	// src: .test.TestMessage.f_sfixed32; transform: none
+	FSfixed32 int32
+	// src: .test.TestMessage.f_sfixed64; transform: none
+	FSfixed64 int64
+	// src: .test.TestMessage.f_bool; transform: none
+	FBool bool
+	// src: .test.TestMessage.f_string; transform: none
+	FString string
+	// src: .test.TestMessage.f_bytes; transform: none
+	FBytes []byte
+	// src: .test.TestMessage.f_int32_list; transform: none
+	FInt32List []int32
+	// src: .test.TestMessage.f_string_list; transform: none
+	FStringList []string
+	// src: .test.TestMessage.f_contact_type; transform: none
+	FContactType ContactType
+	// src: .test.TestMessage.f_contact_type_list; transform: none
+	FContactTypeList []ContactType
+	// src: .test.TestMessage.f_address; transform: none
+	FAddress *Address
+	// src: .test.TestMessage.f_address_list; transform: none
+	FAddressList []*Address
+	// src: .test.TestMessage.f_map_string_int32; transform: none
+	FMapStringInt32 map[string]int32
+	// src: .test.TestMessage.f_map_string_address; transform: none
+	FMapStringAddress map[string]*Address
+	// src: .test.TestMessage.f_ts; transform: none
+	FTs *timestamppb.Timestamp
+	// src: .test.TestMessage.f_duration; transform: none
+	FDuration *durationpb.Duration
+	// src: .test.TestMessage.f_any; transform: none
+	FAny *anypb.Any
+	// src: .test.TestMessage.f_struct; transform: none
+	FStruct *structpb.Struct
+	// src: .test.TestMessage.f_value; transform: none
+	FValue *structpb.Value
+	// src: .test.TestMessage.f_list_value; transform: none
+	FListValue *structpb.ListValue
+	// src: .test.TestMessage.f_empty; transform: none
+	FEmpty *emptypb.Empty
+	// src: .test.TestMessage.f_string_value; transform: none
+	FStringValue *wrapperspb.StringValue
+	// src: .test.TestMessage.f_bool_value; transform: none
+	FBoolValue *wrapperspb.BoolValue
+	// src: .test.TestMessage.f_int32_value; transform: none
+	FInt32Value *wrapperspb.Int32Value
+	// src: .test.TestMessage.f_int64_value; transform: none
+	FInt64Value *wrapperspb.Int64Value
+	// src: .test.TestMessage.f_uint32_value; transform: none
+	FUint32Value *wrapperspb.UInt32Value
+	// src: .test.TestMessage.f_uint64_value; transform: none
+	FUint64Value *wrapperspb.UInt64Value
+	// src: .test.TestMessage.f_float_value; transform: none
+	FFloatValue *wrapperspb.FloatValue
+	// src: .test.TestMessage.f_double_value; transform: none
+	FDoubleValue *wrapperspb.DoubleValue
+	// src: .test.TestMessage.f_bytes_value; transform: none
+	FBytesValue *wrapperspb.BytesValue
 	// src: <virtual>; transform: virtual
 	PaymentMethodType TestMessagePlain_PaymentMethodType
 	// src: .test.TestMessage.card; transform: none
-	Card *TestMessage_PaymentCard
+	Card *PaymentCard
 	// src: .test.TestMessage.crypto; transform: none
-	Crypto *TestMessage_PaymentCrypto
+	Crypto *PaymentCrypto
 	// src: <virtual>; transform: virtual
 	BackupPaymentMethodBackupPaymentMethodType TestMessagePlain_BackupPaymentMethodType
 	// src: .test.TestMessage.backup_card; transform: none
-	BackupPaymentMethodBackupCard *TestMessage_PaymentCard
+	BackupPaymentMethodBackupCard *PaymentCard
 	// src: .test.TestMessage.backup_crypto; transform: none
-	BackupPaymentMethodBackupCrypto *TestMessage_PaymentCrypto
+	BackupPaymentMethodBackupCrypto *PaymentCrypto
 	// src: .test.TestMessage.enum_email; transform: none
-	EnumEmail *TestMessage_ContactEmail
+	EnumEmail *ContactEmail
 	// src: .test.TestMessage.enum_phone; transform: none
-	EnumPhone *TestMessage_ContactPhone
+	EnumPhone *ContactPhone
+	// src: .test.TestMessage.email_contact; transform: none
+	EmailContact *ContactEmail
+	// src: .test.TestMessage.phone_contact; transform: none
+	PhoneContact *ContactPhone
+	// src: .test.TestMessage.backup_email; transform: none
+	BackupContactBackupEmail *ContactEmail
+	// src: .test.TestMessage.backup_phone; transform: none
+	BackupContactBackupPhone *ContactPhone
 	// src: <virtual>; transform: virtual
 	PasswordHash []byte
 	// src: <virtual>; transform: virtual
 	CreatedAtUnix int64
 	// src: <virtual>; transform: virtual
-	VirtAddr *TestMessage_Address
+	VirtAddr *Address
 	// src: <virtual>; transform: virtual
-	VirtEnum TestMessage_ContactType
+	VirtEnum ContactType
 }
