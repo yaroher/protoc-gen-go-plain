@@ -3,12 +3,15 @@
 package test
 
 import (
+	uuid "github.com/google/uuid"
+	cast "github.com/yaroher/protoc-gen-go-plain/cast"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+	time "time"
 )
 
 type TestMessagePlain_PaymentMethodType int32
@@ -58,9 +61,9 @@ type TestMessagePlain struct {
 	// src: .test.TestMessage.settings; transform: serialize
 	Settings []byte
 	// src: .test.TestMessage.raw_id; transform: override_type
-	RawId string
+	RawId uuid.UUID
 	// src: .test.TestMessage.created_at_ts; transform: override_type
-	CreatedAtTs *timestamppb.Timestamp
+	CreatedAtTs time.Time
 	// src: .test.TestMessage.contact_type; transform: none
 	ContactType ContactType
 	// src: .test.TestMessage.f_double; transform: none
@@ -141,30 +144,30 @@ type TestMessagePlain struct {
 	FDoubleValue *wrapperspb.DoubleValue
 	// src: .test.TestMessage.f_bytes_value; transform: none
 	FBytesValue *wrapperspb.BytesValue
+	// src: .test.TestMessage.email_contact; transform: oneof
+	EmailContact *ContactEmail
+	// src: .test.TestMessage.phone_contact; transform: oneof
+	PhoneContact *ContactPhone
+	// src: .test.TestMessage.backup_email; transform: oneof
+	BackupContactBackupEmail *ContactEmail
+	// src: .test.TestMessage.backup_phone; transform: oneof
+	BackupContactBackupPhone *ContactPhone
 	// src: <virtual>; transform: virtual
 	PaymentMethodType TestMessagePlain_PaymentMethodType
-	// src: .test.TestMessage.card; transform: none
+	// src: .test.TestMessage.card; transform: oneof
 	Card *PaymentCard
-	// src: .test.TestMessage.crypto; transform: none
+	// src: .test.TestMessage.crypto; transform: oneof
 	Crypto *PaymentCrypto
 	// src: <virtual>; transform: virtual
 	BackupPaymentMethodBackupPaymentMethodType TestMessagePlain_BackupPaymentMethodType
-	// src: .test.TestMessage.backup_card; transform: none
+	// src: .test.TestMessage.backup_card; transform: oneof
 	BackupPaymentMethodBackupCard *PaymentCard
-	// src: .test.TestMessage.backup_crypto; transform: none
+	// src: .test.TestMessage.backup_crypto; transform: oneof
 	BackupPaymentMethodBackupCrypto *PaymentCrypto
-	// src: .test.TestMessage.enum_email; transform: none
+	// src: .test.TestMessage.enum_email; transform: oneof
 	EnumEmail *ContactEmail
-	// src: .test.TestMessage.enum_phone; transform: none
+	// src: .test.TestMessage.enum_phone; transform: oneof
 	EnumPhone *ContactPhone
-	// src: .test.TestMessage.email_contact; transform: none
-	EmailContact *ContactEmail
-	// src: .test.TestMessage.phone_contact; transform: none
-	PhoneContact *ContactPhone
-	// src: .test.TestMessage.backup_email; transform: none
-	BackupContactBackupEmail *ContactEmail
-	// src: .test.TestMessage.backup_phone; transform: none
-	BackupContactBackupPhone *ContactPhone
 	// src: <virtual>; transform: virtual
 	PasswordHash []byte
 	// src: <virtual>; transform: virtual
@@ -173,4 +176,566 @@ type TestMessagePlain struct {
 	VirtAddr *Address
 	// src: <virtual>; transform: virtual
 	VirtEnum ContactType
+}
+
+func (m *TestMessage) IntoPlain(rawIdCast cast.Caster[string, uuid.UUID], createdAtTsCast cast.Caster[*timestamppb.Timestamp, time.Time]) *TestMessagePlain {
+	if m == nil {
+		return nil
+	}
+	var oneof_emailContact *ContactEmail
+	var oneof_phoneContact *ContactPhone
+	switch x := m.GetContact().(type) {
+	case *TestMessage_EmailContact:
+		oneof_emailContact = x.EmailContact
+	case *TestMessage_PhoneContact:
+		oneof_phoneContact = x.PhoneContact
+	}
+	var oneof_backupContactBackupEmail *ContactEmail
+	var oneof_backupContactBackupPhone *ContactPhone
+	switch x := m.GetBackupContact().(type) {
+	case *TestMessage_BackupEmail:
+		oneof_backupContactBackupEmail = x.BackupEmail
+	case *TestMessage_BackupPhone:
+		oneof_backupContactBackupPhone = x.BackupPhone
+	}
+	var oneof_card *PaymentCard
+	var oneof_crypto *PaymentCrypto
+	switch x := m.GetPaymentMethod().(type) {
+	case *TestMessage_Card:
+		oneof_card = x.Card
+	case *TestMessage_Crypto:
+		oneof_crypto = x.Crypto
+	}
+	var oneof_backupPaymentMethodBackupCard *PaymentCard
+	var oneof_backupPaymentMethodBackupCrypto *PaymentCrypto
+	switch x := m.GetBackupPaymentMethod().(type) {
+	case *TestMessage_BackupCard:
+		oneof_backupPaymentMethodBackupCard = x.BackupCard
+	case *TestMessage_BackupCrypto:
+		oneof_backupPaymentMethodBackupCrypto = x.BackupCrypto
+	}
+	var oneof_enumEmail *ContactEmail
+	var oneof_enumPhone *ContactPhone
+	switch x := m.GetContactEnumDispatch().(type) {
+	case *TestMessage_EnumEmail:
+		oneof_enumEmail = x.EnumEmail
+	case *TestMessage_EnumPhone:
+		oneof_enumPhone = x.EnumPhone
+	}
+	return &TestMessagePlain{
+		Name: m.GetName(),
+		Id: func() string {
+			if m.GetId() == nil {
+				return ""
+			}
+			return m.GetId().Value
+		}(),
+		Email: func() string {
+			if m.GetEmail() == nil {
+				return ""
+			}
+			return m.GetEmail().Value
+		}(),
+		Age:    m.GetAge(),
+		Active: m.GetActive(),
+		Street: func() string {
+			if m.GetAddress() == nil {
+				return ""
+			}
+			return m.GetAddress().Street
+		}(),
+		City: func() string {
+			if m.GetAddress() == nil {
+				return ""
+			}
+			return m.GetAddress().City
+		}(),
+		Country: func() string {
+			if m.GetAddress() == nil {
+				return ""
+			}
+			return m.GetAddress().Country
+		}(),
+		WorkAddressStreet: func() string {
+			if m.GetWorkAddress() == nil {
+				return ""
+			}
+			return m.GetWorkAddress().Street
+		}(),
+		WorkAddressCity: func() string {
+			if m.GetWorkAddress() == nil {
+				return ""
+			}
+			return m.GetWorkAddress().City
+		}(),
+		WorkAddressCountry: func() string {
+			if m.GetWorkAddress() == nil {
+				return ""
+			}
+			return m.GetWorkAddress().Country
+		}(),
+		CreatedAt: func() *timestamppb.Timestamp {
+			if m.GetAudit() == nil {
+				return nil
+			}
+			return m.GetAudit().CreatedAt
+		}(),
+		UpdatedAt: func() *timestamppb.Timestamp {
+			if m.GetAudit() == nil {
+				return nil
+			}
+			return m.GetAudit().UpdatedAt
+		}(),
+		Settings:                        cast.MessageToSliceByte(m.GetSettings()),
+		RawId:                           rawIdCast(m.GetRawId()),
+		CreatedAtTs:                     createdAtTsCast(m.GetCreatedAtTs()),
+		ContactType:                     m.GetContactType(),
+		FDouble:                         m.GetFDouble(),
+		FFloat:                          m.GetFFloat(),
+		FInt32:                          m.GetFInt32(),
+		FInt64:                          m.GetFInt64(),
+		FUint32:                         m.GetFUint32(),
+		FUint64:                         m.GetFUint64(),
+		FSint32:                         m.GetFSint32(),
+		FSint64:                         m.GetFSint64(),
+		FFixed32:                        m.GetFFixed32(),
+		FFixed64:                        m.GetFFixed64(),
+		FSfixed32:                       m.GetFSfixed32(),
+		FSfixed64:                       m.GetFSfixed64(),
+		FBool:                           m.GetFBool(),
+		FString:                         m.GetFString(),
+		FBytes:                          m.GetFBytes(),
+		FInt32List:                      m.GetFInt32List(),
+		FStringList:                     m.GetFStringList(),
+		FContactType:                    m.GetFContactType(),
+		FContactTypeList:                m.GetFContactTypeList(),
+		FAddress:                        m.GetFAddress(),
+		FAddressList:                    m.GetFAddressList(),
+		FMapStringInt32:                 m.GetFMapStringInt32(),
+		FMapStringAddress:               m.GetFMapStringAddress(),
+		FTs:                             m.GetFTs(),
+		FDuration:                       m.GetFDuration(),
+		FAny:                            m.GetFAny(),
+		FStruct:                         m.GetFStruct(),
+		FValue:                          m.GetFValue(),
+		FListValue:                      m.GetFListValue(),
+		FEmpty:                          m.GetFEmpty(),
+		FStringValue:                    m.GetFStringValue(),
+		FBoolValue:                      m.GetFBoolValue(),
+		FInt32Value:                     m.GetFInt32Value(),
+		FInt64Value:                     m.GetFInt64Value(),
+		FUint32Value:                    m.GetFUint32Value(),
+		FUint64Value:                    m.GetFUint64Value(),
+		FFloatValue:                     m.GetFFloatValue(),
+		FDoubleValue:                    m.GetFDoubleValue(),
+		FBytesValue:                     m.GetFBytesValue(),
+		EmailContact:                    oneof_emailContact,
+		PhoneContact:                    oneof_phoneContact,
+		BackupContactBackupEmail:        oneof_backupContactBackupEmail,
+		BackupContactBackupPhone:        oneof_backupContactBackupPhone,
+		Card:                            oneof_card,
+		Crypto:                          oneof_crypto,
+		BackupPaymentMethodBackupCard:   oneof_backupPaymentMethodBackupCard,
+		BackupPaymentMethodBackupCrypto: oneof_backupPaymentMethodBackupCrypto,
+		EnumEmail:                       oneof_enumEmail,
+		EnumPhone:                       oneof_enumPhone,
+	}
+}
+
+func (m *TestMessage) IntoPlainErr(rawIdCast cast.CasterErr[string, uuid.UUID], createdAtTsCast cast.CasterErr[*timestamppb.Timestamp, time.Time]) (*TestMessagePlain, error) {
+	if m == nil {
+		return nil, nil
+	}
+	var oneof_backupPaymentMethodBackupCard *PaymentCard
+	var oneof_backupPaymentMethodBackupCrypto *PaymentCrypto
+	switch x := m.GetBackupPaymentMethod().(type) {
+	case *TestMessage_BackupCard:
+		oneof_backupPaymentMethodBackupCard = x.BackupCard
+	case *TestMessage_BackupCrypto:
+		oneof_backupPaymentMethodBackupCrypto = x.BackupCrypto
+	}
+	var oneof_enumEmail *ContactEmail
+	var oneof_enumPhone *ContactPhone
+	switch x := m.GetContactEnumDispatch().(type) {
+	case *TestMessage_EnumEmail:
+		oneof_enumEmail = x.EnumEmail
+	case *TestMessage_EnumPhone:
+		oneof_enumPhone = x.EnumPhone
+	}
+	var oneof_emailContact *ContactEmail
+	var oneof_phoneContact *ContactPhone
+	switch x := m.GetContact().(type) {
+	case *TestMessage_EmailContact:
+		oneof_emailContact = x.EmailContact
+	case *TestMessage_PhoneContact:
+		oneof_phoneContact = x.PhoneContact
+	}
+	var oneof_backupContactBackupEmail *ContactEmail
+	var oneof_backupContactBackupPhone *ContactPhone
+	switch x := m.GetBackupContact().(type) {
+	case *TestMessage_BackupEmail:
+		oneof_backupContactBackupEmail = x.BackupEmail
+	case *TestMessage_BackupPhone:
+		oneof_backupContactBackupPhone = x.BackupPhone
+	}
+	var oneof_card *PaymentCard
+	var oneof_crypto *PaymentCrypto
+	switch x := m.GetPaymentMethod().(type) {
+	case *TestMessage_Card:
+		oneof_card = x.Card
+	case *TestMessage_Crypto:
+		oneof_crypto = x.Crypto
+	}
+	SettingsVal, err := cast.MessageToSliceByteErr(m.GetSettings())
+	if err != nil {
+		return nil, err
+	}
+	RawIdVal, err := rawIdCast(m.GetRawId())
+	if err != nil {
+		return nil, err
+	}
+	CreatedAtTsVal, err := createdAtTsCast(m.GetCreatedAtTs())
+	if err != nil {
+		return nil, err
+	}
+	return &TestMessagePlain{
+		Name: m.GetName(),
+		Id: func() string {
+			if m.GetId() == nil {
+				return ""
+			}
+			return m.GetId().Value
+		}(),
+		Email: func() string {
+			if m.GetEmail() == nil {
+				return ""
+			}
+			return m.GetEmail().Value
+		}(),
+		Age:    m.GetAge(),
+		Active: m.GetActive(),
+		Street: func() string {
+			if m.GetAddress() == nil {
+				return ""
+			}
+			return m.GetAddress().Street
+		}(),
+		City: func() string {
+			if m.GetAddress() == nil {
+				return ""
+			}
+			return m.GetAddress().City
+		}(),
+		Country: func() string {
+			if m.GetAddress() == nil {
+				return ""
+			}
+			return m.GetAddress().Country
+		}(),
+		WorkAddressStreet: func() string {
+			if m.GetWorkAddress() == nil {
+				return ""
+			}
+			return m.GetWorkAddress().Street
+		}(),
+		WorkAddressCity: func() string {
+			if m.GetWorkAddress() == nil {
+				return ""
+			}
+			return m.GetWorkAddress().City
+		}(),
+		WorkAddressCountry: func() string {
+			if m.GetWorkAddress() == nil {
+				return ""
+			}
+			return m.GetWorkAddress().Country
+		}(),
+		CreatedAt: func() *timestamppb.Timestamp {
+			if m.GetAudit() == nil {
+				return nil
+			}
+			return m.GetAudit().CreatedAt
+		}(),
+		UpdatedAt: func() *timestamppb.Timestamp {
+			if m.GetAudit() == nil {
+				return nil
+			}
+			return m.GetAudit().UpdatedAt
+		}(),
+		Settings:                        SettingsVal,
+		RawId:                           RawIdVal,
+		CreatedAtTs:                     CreatedAtTsVal,
+		ContactType:                     m.GetContactType(),
+		FDouble:                         m.GetFDouble(),
+		FFloat:                          m.GetFFloat(),
+		FInt32:                          m.GetFInt32(),
+		FInt64:                          m.GetFInt64(),
+		FUint32:                         m.GetFUint32(),
+		FUint64:                         m.GetFUint64(),
+		FSint32:                         m.GetFSint32(),
+		FSint64:                         m.GetFSint64(),
+		FFixed32:                        m.GetFFixed32(),
+		FFixed64:                        m.GetFFixed64(),
+		FSfixed32:                       m.GetFSfixed32(),
+		FSfixed64:                       m.GetFSfixed64(),
+		FBool:                           m.GetFBool(),
+		FString:                         m.GetFString(),
+		FBytes:                          m.GetFBytes(),
+		FInt32List:                      m.GetFInt32List(),
+		FStringList:                     m.GetFStringList(),
+		FContactType:                    m.GetFContactType(),
+		FContactTypeList:                m.GetFContactTypeList(),
+		FAddress:                        m.GetFAddress(),
+		FAddressList:                    m.GetFAddressList(),
+		FMapStringInt32:                 m.GetFMapStringInt32(),
+		FMapStringAddress:               m.GetFMapStringAddress(),
+		FTs:                             m.GetFTs(),
+		FDuration:                       m.GetFDuration(),
+		FAny:                            m.GetFAny(),
+		FStruct:                         m.GetFStruct(),
+		FValue:                          m.GetFValue(),
+		FListValue:                      m.GetFListValue(),
+		FEmpty:                          m.GetFEmpty(),
+		FStringValue:                    m.GetFStringValue(),
+		FBoolValue:                      m.GetFBoolValue(),
+		FInt32Value:                     m.GetFInt32Value(),
+		FInt64Value:                     m.GetFInt64Value(),
+		FUint32Value:                    m.GetFUint32Value(),
+		FUint64Value:                    m.GetFUint64Value(),
+		FFloatValue:                     m.GetFFloatValue(),
+		FDoubleValue:                    m.GetFDoubleValue(),
+		FBytesValue:                     m.GetFBytesValue(),
+		EmailContact:                    oneof_emailContact,
+		PhoneContact:                    oneof_phoneContact,
+		BackupContactBackupEmail:        oneof_backupContactBackupEmail,
+		BackupContactBackupPhone:        oneof_backupContactBackupPhone,
+		Card:                            oneof_card,
+		Crypto:                          oneof_crypto,
+		BackupPaymentMethodBackupCard:   oneof_backupPaymentMethodBackupCard,
+		BackupPaymentMethodBackupCrypto: oneof_backupPaymentMethodBackupCrypto,
+		EnumEmail:                       oneof_enumEmail,
+		EnumPhone:                       oneof_enumPhone,
+	}, nil
+}
+
+func (m *TestMessagePlain) IntoPb(rawIdCast cast.Caster[uuid.UUID, string], createdAtTsCast cast.Caster[time.Time, *timestamppb.Timestamp]) *TestMessage {
+	if m == nil {
+		return nil
+	}
+	var embed_work_address *Address
+	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity, Country: m.WorkAddressCountry}
+	var embed_audit *AuditInfo
+	embed_audit = &AuditInfo{CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt}
+	var embed_address *Address
+	embed_address = &Address{Street: m.Street, City: m.City, Country: m.Country}
+	var oneof_contact isTestMessage_Contact
+	if m.EmailContact != nil {
+		oneof_contact = &TestMessage_EmailContact{EmailContact: m.EmailContact}
+	}
+	if m.PhoneContact != nil {
+		oneof_contact = &TestMessage_PhoneContact{PhoneContact: m.PhoneContact}
+	}
+	var oneof_backupContact isTestMessage_BackupContact
+	if m.BackupContactBackupEmail != nil {
+		oneof_backupContact = &TestMessage_BackupEmail{BackupEmail: m.BackupContactBackupEmail}
+	}
+	if m.BackupContactBackupPhone != nil {
+		oneof_backupContact = &TestMessage_BackupPhone{BackupPhone: m.BackupContactBackupPhone}
+	}
+	var oneof_paymentMethod isTestMessage_PaymentMethod
+	if m.Card != nil {
+		oneof_paymentMethod = &TestMessage_Card{Card: m.Card}
+	}
+	if m.Crypto != nil {
+		oneof_paymentMethod = &TestMessage_Crypto{Crypto: m.Crypto}
+	}
+	var oneof_backupPaymentMethod isTestMessage_BackupPaymentMethod
+	if m.BackupPaymentMethodBackupCard != nil {
+		oneof_backupPaymentMethod = &TestMessage_BackupCard{BackupCard: m.BackupPaymentMethodBackupCard}
+	}
+	if m.BackupPaymentMethodBackupCrypto != nil {
+		oneof_backupPaymentMethod = &TestMessage_BackupCrypto{BackupCrypto: m.BackupPaymentMethodBackupCrypto}
+	}
+	var oneof_contactEnumDispatch isTestMessage_ContactEnumDispatch
+	if m.EnumEmail != nil {
+		oneof_contactEnumDispatch = &TestMessage_EnumEmail{EnumEmail: m.EnumEmail}
+	}
+	if m.EnumPhone != nil {
+		oneof_contactEnumDispatch = &TestMessage_EnumPhone{EnumPhone: m.EnumPhone}
+	}
+	return &TestMessage{
+		Name:                m.Name,
+		Id:                  &UserId{Value: m.Id},
+		Email:               &Email{Value: m.Email},
+		Age:                 m.Age,
+		Active:              m.Active,
+		Settings:            cast.MessageFromSliceByte[*Settings](m.Settings),
+		RawId:               rawIdCast(m.RawId),
+		CreatedAtTs:         createdAtTsCast(m.CreatedAtTs),
+		ContactType:         m.ContactType,
+		FDouble:             m.FDouble,
+		FFloat:              m.FFloat,
+		FInt32:              m.FInt32,
+		FInt64:              m.FInt64,
+		FUint32:             m.FUint32,
+		FUint64:             m.FUint64,
+		FSint32:             m.FSint32,
+		FSint64:             m.FSint64,
+		FFixed32:            m.FFixed32,
+		FFixed64:            m.FFixed64,
+		FSfixed32:           m.FSfixed32,
+		FSfixed64:           m.FSfixed64,
+		FBool:               m.FBool,
+		FString:             m.FString,
+		FBytes:              m.FBytes,
+		FInt32List:          m.FInt32List,
+		FStringList:         m.FStringList,
+		FContactType:        m.FContactType,
+		FContactTypeList:    m.FContactTypeList,
+		FAddress:            m.FAddress,
+		FAddressList:        m.FAddressList,
+		FMapStringInt32:     m.FMapStringInt32,
+		FMapStringAddress:   m.FMapStringAddress,
+		FTs:                 m.FTs,
+		FDuration:           m.FDuration,
+		FAny:                m.FAny,
+		FStruct:             m.FStruct,
+		FValue:              m.FValue,
+		FListValue:          m.FListValue,
+		FEmpty:              m.FEmpty,
+		FStringValue:        m.FStringValue,
+		FBoolValue:          m.FBoolValue,
+		FInt32Value:         m.FInt32Value,
+		FInt64Value:         m.FInt64Value,
+		FUint32Value:        m.FUint32Value,
+		FUint64Value:        m.FUint64Value,
+		FFloatValue:         m.FFloatValue,
+		FDoubleValue:        m.FDoubleValue,
+		FBytesValue:         m.FBytesValue,
+		Audit:               embed_audit,
+		Address:             embed_address,
+		WorkAddress:         embed_work_address,
+		Contact:             oneof_contact,
+		BackupContact:       oneof_backupContact,
+		PaymentMethod:       oneof_paymentMethod,
+		BackupPaymentMethod: oneof_backupPaymentMethod,
+		ContactEnumDispatch: oneof_contactEnumDispatch,
+	}
+}
+
+func (m *TestMessagePlain) IntoPbErr(rawIdCast cast.CasterErr[uuid.UUID, string], createdAtTsCast cast.CasterErr[time.Time, *timestamppb.Timestamp]) (*TestMessage, error) {
+	if m == nil {
+		return nil, nil
+	}
+	SettingsVal, err := cast.MessageFromSliceByteErr[*Settings](m.Settings)
+	if err != nil {
+		return nil, err
+	}
+	RawIdVal, err := rawIdCast(m.RawId)
+	if err != nil {
+		return nil, err
+	}
+	CreatedAtTsVal, err := createdAtTsCast(m.CreatedAtTs)
+	if err != nil {
+		return nil, err
+	}
+	var embed_address *Address
+	embed_address = &Address{Street: m.Street, City: m.City, Country: m.Country}
+	var embed_work_address *Address
+	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity, Country: m.WorkAddressCountry}
+	var embed_audit *AuditInfo
+	embed_audit = &AuditInfo{CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt}
+	var oneof_paymentMethod isTestMessage_PaymentMethod
+	if m.Card != nil {
+		oneof_paymentMethod = &TestMessage_Card{Card: m.Card}
+	}
+	if m.Crypto != nil {
+		oneof_paymentMethod = &TestMessage_Crypto{Crypto: m.Crypto}
+	}
+	var oneof_backupPaymentMethod isTestMessage_BackupPaymentMethod
+	if m.BackupPaymentMethodBackupCard != nil {
+		oneof_backupPaymentMethod = &TestMessage_BackupCard{BackupCard: m.BackupPaymentMethodBackupCard}
+	}
+	if m.BackupPaymentMethodBackupCrypto != nil {
+		oneof_backupPaymentMethod = &TestMessage_BackupCrypto{BackupCrypto: m.BackupPaymentMethodBackupCrypto}
+	}
+	var oneof_contactEnumDispatch isTestMessage_ContactEnumDispatch
+	if m.EnumEmail != nil {
+		oneof_contactEnumDispatch = &TestMessage_EnumEmail{EnumEmail: m.EnumEmail}
+	}
+	if m.EnumPhone != nil {
+		oneof_contactEnumDispatch = &TestMessage_EnumPhone{EnumPhone: m.EnumPhone}
+	}
+	var oneof_contact isTestMessage_Contact
+	if m.EmailContact != nil {
+		oneof_contact = &TestMessage_EmailContact{EmailContact: m.EmailContact}
+	}
+	if m.PhoneContact != nil {
+		oneof_contact = &TestMessage_PhoneContact{PhoneContact: m.PhoneContact}
+	}
+	var oneof_backupContact isTestMessage_BackupContact
+	if m.BackupContactBackupEmail != nil {
+		oneof_backupContact = &TestMessage_BackupEmail{BackupEmail: m.BackupContactBackupEmail}
+	}
+	if m.BackupContactBackupPhone != nil {
+		oneof_backupContact = &TestMessage_BackupPhone{BackupPhone: m.BackupContactBackupPhone}
+	}
+	return &TestMessage{
+		Name:                m.Name,
+		Id:                  &UserId{Value: m.Id},
+		Email:               &Email{Value: m.Email},
+		Age:                 m.Age,
+		Active:              m.Active,
+		Settings:            SettingsVal,
+		RawId:               RawIdVal,
+		CreatedAtTs:         CreatedAtTsVal,
+		ContactType:         m.ContactType,
+		FDouble:             m.FDouble,
+		FFloat:              m.FFloat,
+		FInt32:              m.FInt32,
+		FInt64:              m.FInt64,
+		FUint32:             m.FUint32,
+		FUint64:             m.FUint64,
+		FSint32:             m.FSint32,
+		FSint64:             m.FSint64,
+		FFixed32:            m.FFixed32,
+		FFixed64:            m.FFixed64,
+		FSfixed32:           m.FSfixed32,
+		FSfixed64:           m.FSfixed64,
+		FBool:               m.FBool,
+		FString:             m.FString,
+		FBytes:              m.FBytes,
+		FInt32List:          m.FInt32List,
+		FStringList:         m.FStringList,
+		FContactType:        m.FContactType,
+		FContactTypeList:    m.FContactTypeList,
+		FAddress:            m.FAddress,
+		FAddressList:        m.FAddressList,
+		FMapStringInt32:     m.FMapStringInt32,
+		FMapStringAddress:   m.FMapStringAddress,
+		FTs:                 m.FTs,
+		FDuration:           m.FDuration,
+		FAny:                m.FAny,
+		FStruct:             m.FStruct,
+		FValue:              m.FValue,
+		FListValue:          m.FListValue,
+		FEmpty:              m.FEmpty,
+		FStringValue:        m.FStringValue,
+		FBoolValue:          m.FBoolValue,
+		FInt32Value:         m.FInt32Value,
+		FInt64Value:         m.FInt64Value,
+		FUint32Value:        m.FUint32Value,
+		FUint64Value:        m.FUint64Value,
+		FFloatValue:         m.FFloatValue,
+		FDoubleValue:        m.FDoubleValue,
+		FBytesValue:         m.FBytesValue,
+		Address:             embed_address,
+		WorkAddress:         embed_work_address,
+		Audit:               embed_audit,
+		ContactEnumDispatch: oneof_contactEnumDispatch,
+		Contact:             oneof_contact,
+		BackupContact:       oneof_backupContact,
+		PaymentMethod:       oneof_paymentMethod,
+		BackupPaymentMethod: oneof_backupPaymentMethod,
+	}, nil
 }

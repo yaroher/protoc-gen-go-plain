@@ -411,6 +411,12 @@ func MessageToSliceByte[T proto.Message](v T) []byte {
 	}
 	return b
 }
+func MessageToSliceByteErr[T proto.Message](v T) ([]byte, error) {
+	if !v.ProtoReflect().IsValid() {
+		return nil, nil
+	}
+	return protojson.Marshal(v)
+}
 func MessageFromSliceByte[T proto.Message](v []byte) T {
 	ret := protoNew[T]()
 	err := protojson.Unmarshal(v, ret)
@@ -418,4 +424,12 @@ func MessageFromSliceByte[T proto.Message](v []byte) T {
 		panic(err)
 	}
 	return ret
+}
+func MessageFromSliceByteErr[T proto.Message](v []byte) (T, error) {
+	ret := protoNew[T]()
+	if err := protojson.Unmarshal(v, ret); err != nil {
+		var zero T
+		return zero, err
+	}
+	return ret, nil
 }

@@ -314,10 +314,12 @@ func buildFieldPlan(plan *IR, msgIR *MessageIR, field *descriptorpb.FieldDescrip
 	}
 	origin := FieldOrigin{}
 	var fpOps []FieldOp
-	if fs.OneofIndex != nil && !clearOneof {
+	if field.OneofIndex != nil {
 		origin.IsOneof = true
-		if name, ok := oneofIndexToName[*fs.OneofIndex]; ok {
-			origin.OneofGroup = name
+		if oneofIndexToName != nil {
+			if name, ok := oneofIndexToName[field.GetOneofIndex()]; ok {
+				origin.OneofGroup = name
+			}
 		}
 	}
 

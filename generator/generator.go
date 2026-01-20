@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type Generator struct {
@@ -68,6 +69,12 @@ func (g *Generator) AddOverride(override *goplain.TypeOverride) {
 }
 
 func (g *Generator) Generate() error {
+	origReq := proto.Clone(g.Plugin.Request).(*pluginpb.CodeGeneratorRequest)
+	origPlugin, origErr := protogen.Options{}.New(origReq)
+	if origErr != nil {
+		logger.Error("Build original plugin failed", zap.Error(origErr))
+	}
+
 	plan, err := ir.BuildIR(g.Plugin, ir.IRConfig{PlainSuffix: g.suffix})
 	if err != nil {
 		logger.Error("BuildIR failed", zap.Error(err))
@@ -86,6 +93,7 @@ func (g *Generator) Generate() error {
 	}
 
 	generatedEnums := buildGeneratedEnumSet(plan)
+	origMsgs := buildMessageMap(origPlugin)
 
 	genCount := 0
 	for _, fd := range newPlugin.Files {
@@ -126,6 +134,11 @@ func (g *Generator) Generate() error {
 			genCount++
 			msgIR := irByNew[string(m.Desc.FullName())]
 			generateModel(plainFile, m, generatedEnums, msgIR)
+			pbFull := strings.TrimSuffix(string(m.Desc.FullName()), g.suffix)
+			pbMsg := origMsgs[pbFull]
+			if pbMsg != nil {
+				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums)
+			}
 		}
 		if fileCount == 0 {
 			plainFile.Skip()
@@ -174,6 +187,9 @@ func generateModel(g *protogen.GeneratedFile, m *protogen.Message, generatedEnum
 
 	for _, f := range m.Fields {
 		fieldType := getFieldGoTypeForGenWithEnums(g, f, parentGoName, origParentGoName, generatedEnums)
+		if fp := irFields[string(f.Desc.Name())]; fp != nil && hasOverride(fp) {
+			fieldType = getOverrideGoType(g, f, fp)
+		}
 		comment := buildFieldComment(f, irFields, origParentGoName)
 		if comment != "" {
 			g.P("\t// " + comment)
