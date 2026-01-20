@@ -389,6 +389,13 @@ func buildFieldPlan(plan *IR, msgIR *MessageIR, field *descriptorpb.FieldDescrip
 	applyTypeAlias(plan, &fs, msgIndex, &origin)
 	applySerialize(&fs, opts, &origin)
 	applyEnumFormat(&fs, opts, field, &origin)
+	if fs.Type == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && fs.TypeName != "" {
+		if tm := msgIndex[fs.TypeName]; tm != nil {
+			if topts := getMessageOptions(tm); topts != nil && topts.GetGenerate() {
+				origin.HasPlainMessage = true
+			}
+		}
+	}
 	applyOverride(&fs, opts, &origin, &fpOps)
 
 	fp := &FieldPlan{

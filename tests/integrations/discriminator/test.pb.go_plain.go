@@ -106,14 +106,6 @@ func (m *UserPlain) IntoPb() *User {
 	if m == nil {
 		return nil
 	}
-	var oneof_identity isUser_Identity
-	if disc, err := oneoff.ParseDiscriminator(m.IdentityDisc); err == nil {
-		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorIdKind && disc.Number() == 1 {
-			if v, ok := m.Identity.(*UserId); ok {
-				oneof_identity = &User_UserId{UserId: v}
-			}
-		}
-	}
 	var oneof_contact isUser_Contact
 	if disc, err := oneoff.ParseDiscriminator(m.ContactDisc); err == nil {
 		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorContactKind && disc.Number() == 1 {
@@ -127,11 +119,19 @@ func (m *UserPlain) IntoPb() *User {
 			}
 		}
 	}
+	var oneof_identity isUser_Identity
+	if disc, err := oneoff.ParseDiscriminator(m.IdentityDisc); err == nil {
+		if string(disc.Descriptor().FullName()) == enumFull_TestDiscriminatorIdKind && disc.Number() == 1 {
+			if v, ok := m.Identity.(*UserId); ok {
+				oneof_identity = &User_UserId{UserId: v}
+			}
+		}
+	}
 	return &User{
 		ContactKind: m.ContactKind,
 		IdKind:      m.IdKind,
-		Identity:    oneof_identity,
 		Contact:     oneof_contact,
+		Identity:    oneof_identity,
 	}
 }
 

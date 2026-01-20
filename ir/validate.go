@@ -168,17 +168,18 @@ func validateOneofOptions(oneof *descriptorpb.OneofDescriptorProto, fullName str
 		if f == nil {
 			continue
 		}
-		if f.GetOptions() == nil {
+		fopts := getFieldOptions(f)
+		if embed || enumDispatch {
+			if fopts != nil && len(fopts.GetWithEnums()) > 0 {
+				*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums only allowed when no oneof-level options are set", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
+			}
+			continue
+		}
+		if fopts == nil || len(fopts.GetWithEnums()) == 0 {
 			*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums required for oneof field", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
 			continue
 		}
-		fopts := proto.GetExtension(f.GetOptions(), goplain.E_Field)
-		fieldOpts, _ := fopts.(*goplain.FieldOptions)
-		if fieldOpts == nil || len(fieldOpts.GetWithEnums()) == 0 {
-			*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums required for oneof field", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
-			continue
-		}
-		for _, v := range fieldOpts.GetWithEnums() {
+		for _, v := range fopts.GetWithEnums() {
 			ef, _ := parseEnumValueFullName(v)
 			if ef == "" {
 				*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums must be full enum value name", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
@@ -190,15 +191,6 @@ func validateOneofOptions(oneof *descriptorpb.OneofDescriptorProto, fullName str
 		}
 	}
 	if !hasAnyEnums {
-		return
-	}
-	for _, f := range fields {
-		fopts := getFieldOptions(f)
-		if fopts == nil || len(fopts.GetWithEnums()) == 0 {
-			*diags = append(*diags, Diagnostic{Level: DiagError, Message: "with_enums required for oneof field when using enum discriminator", Subject: fmt.Sprintf("%s.%s", fullName, f.GetName())})
-		}
-	}
-	if enumDispatch || embed {
 		return
 	}
 }

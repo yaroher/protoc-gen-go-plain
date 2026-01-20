@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package test.embed;
+
+import "goplain/goplain.proto";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/tests/integrations/embed;embed";
+
+message Address {
+    string street = 1;
+    string city = 2;
+}
+
+message User {
+    option (goplain.message).generate = true;
+    string name = 1;
+    oneof contact {
+        option (goplain.oneof).embed = true;
+        string email = 4;
+        string phone = 5;
+    }
+}
+
+message UserWrapper {
+    option (goplain.message).generate = true;
+    User user = 1;
+}
+

@@ -92,17 +92,18 @@ type FieldSpec struct {
 }
 
 type FieldOrigin struct {
-	IsVirtual    bool
-	IsEmbedded   bool
-	EmbedSource  *FieldRef
-	IsTypeAlias  bool
-	IsSerialized bool
-	IsOneof      bool
-	OneofGroup   string
-	OneofEnums   []string
-	OriginalType string
-	EnumAsString bool
-	EnumAsInt    bool
+	IsVirtual       bool
+	IsEmbedded      bool
+	EmbedSource     *FieldRef
+	IsTypeAlias     bool
+	IsSerialized    bool
+	IsOneof         bool
+	OneofGroup      string
+	OneofEnums      []string
+	OriginalType    string
+	EnumAsString    bool
+	EnumAsInt       bool
+	HasPlainMessage bool
 }
 
 type FieldOpKind string

@@ -28,7 +28,7 @@ func generateJSONMethods(g *protogen.GeneratedFile, plainMsg *protogen.Message, 
 		}
 	}
 	generateMarshalJSON(g, plainMsg, msgIR, fieldPlans)
-	generateUnmarshalJSON(g, plainMsg, msgIR, fieldPlans)
+	generateUnmarshalJSON(g, plainMsg, msgIR, fieldPlans, pbFields)
 	generateMarshalJSONWith(g, plainMsg, fieldPlans, pbFields)
 	generateUnmarshalJSONWith(g, plainMsg, fieldPlans, pbFields)
 }
@@ -56,7 +56,7 @@ func generateMarshalJSON(g *protogen.GeneratedFile, plainMsg *protogen.Message, 
 	g.P("")
 }
 
-func generateUnmarshalJSON(g *protogen.GeneratedFile, plainMsg *protogen.Message, msgIR *ir.MessageIR, fieldPlans map[string]*ir.FieldPlan) {
+func generateUnmarshalJSON(g *protogen.GeneratedFile, plainMsg *protogen.Message, msgIR *ir.MessageIR, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field) {
 	jxDecode := g.QualifiedGoIdent(protogen.GoIdent{GoName: "DecodeBytes", GoImportPath: "github.com/go-faster/jx"})
 	jxDecoder := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Decoder", GoImportPath: "github.com/go-faster/jx"})
 	protojsonUnmarshal := g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"})
@@ -73,7 +73,7 @@ func generateUnmarshalJSON(g *protogen.GeneratedFile, plainMsg *protogen.Message
 		jsonName := string(f.Desc.JSONName())
 		g.P("\t\tcase ", strconv.Quote(jsonName), ":")
 		fp := fieldPlans[string(f.Desc.Name())]
-		emitJSONDecodeField(g, f, fp, protojsonUnmarshal, jsonUnmarshal)
+		emitJSONDecodeField(g, f, fp, protojsonUnmarshal, jsonUnmarshal, pbFields)
 	}
 	g.P("\t\tdefault:")
 	g.P("\t\t\treturn d.Skip()")
@@ -146,7 +146,7 @@ func generateUnmarshalJSONWith(g *protogen.GeneratedFile, plainMsg *protogen.Mes
 				continue
 			}
 		}
-		emitJSONDecodeField(g, f, fp, protojsonUnmarshal, jsonUnmarshal)
+		emitJSONDecodeField(g, f, fp, protojsonUnmarshal, jsonUnmarshal, pbFields)
 	}
 	g.P("\t\tdefault:")
 	g.P("\t\t\treturn d.Skip()")
@@ -170,6 +170,12 @@ func emitJSONEncodeField(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.Fi
 			return
 		}
 		g.P("\t\tif b, err := ", jsonMarshal, "(m.", f.GoName, "); err != nil { return nil, err } else { e.Raw(b) }")
+		return
+	}
+	if fp != nil && fp.Origin.HasPlainMessage {
+		g.P("\tif m.", f.GoName, " == nil { e.Null() } else {")
+		g.P("\t\tif b, err := ", protojsonMarshal, "(m.", f.GoName, ".IntoPb()); err != nil { return nil, err } else { e.Raw(b) }")
+		g.P("\t}")
 		return
 	}
 	switch {
@@ -331,7 +337,7 @@ func mapKeyToStringExpr(f *protogen.Field, g *protogen.GeneratedFile) string {
 	}
 }
 
-func emitJSONDecodeField(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.FieldPlan, protojsonUnmarshal, jsonUnmarshal string) {
+func emitJSONDecodeField(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.FieldPlan, protojsonUnmarshal, jsonUnmarshal string, pbFields map[string]*protogen.Field) {
 	if fp != nil && hasOverride(fp) {
 		overrideName := getOverrideName(fp)
 		if overrideName == "EnumDiscriminator" {
@@ -356,6 +362,19 @@ func emitJSONDecodeField(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.Fi
 		g.P("\t\t\tif err != nil { return err }")
 		g.P("\t\t\treturn ", jsonUnmarshal, "(raw, &m.", f.GoName, ")")
 		return
+	}
+	if fp != nil && fp.Origin.HasPlainMessage && fp.OrigField != nil {
+		if pbField := pbFields[fp.OrigField.FieldName]; pbField != nil && pbField.Message != nil {
+			msgType := g.QualifiedGoIdent(pbField.Message.GoIdent)
+			g.P("\t\t\traw, err := d.Raw()")
+			g.P("\t\t\tif err != nil { return err }")
+			g.P("\t\t\tif string(raw) == \"null\" { m.", f.GoName, " = nil; return nil }")
+			g.P("\t\t\tpb := &", msgType, "{}")
+			g.P("\t\t\tif err := ", protojsonUnmarshal, "(raw, pb); err != nil { return err }")
+			g.P("\t\t\tm.", f.GoName, " = pb.IntoPlain()")
+			g.P("\t\t\treturn nil")
+			return
+		}
 	}
 	switch {
 	case f.Desc.IsMap():

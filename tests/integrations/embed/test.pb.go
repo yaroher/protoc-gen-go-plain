@@ -291,15 +291,15 @@ const file_tests_integrations_embed_test_proto_rawDesc = "" +
 	"test.embed\x1a\x15goplain/goplain.proto\"5\n" +
 	"\aAddress\x12\x16\n" +
 	"\x06street\x18\x01 \x01(\tR\x06street\x12\x12\n" +
-	"\x04city\x18\x02 \x01(\tR\x04city\"\xc4\x04\n" +
+	"\x04city\x18\x02 \x01(\tR\x04city\"\xfc\x02\n" +
 	"\x04User\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
 	"\aaddress\x18\x02 \x01(\v2\x13.test.embed.AddressB\x06\x82\xa6\x1d\x02 \x01R\aaddress\x12>\n" +
-	"\fwork_address\x18\x03 \x01(\v2\x13.test.embed.AddressB\x06\x82\xa6\x1d\x02(\x01R\vworkAddress\x12H\n" +
-	"\x05email\x18\x04 \x01(\tB0\x82\xa6\x1d,2*.test.embed.ContactType.CONTACT_TYPE_EMAILH\x00R\x05email\x12H\n" +
-	"\x05phone\x18\x05 \x01(\tB0\x82\xa6\x1d,2*.test.embed.ContactType.CONTACT_TYPE_PHONEH\x00R\x05phone\x12U\n" +
-	"\fbackup_email\x18\x06 \x01(\tB0\x82\xa6\x1d,2*.test.embed.ContactType.CONTACT_TYPE_EMAILH\x01R\vbackupEmail\x12U\n" +
-	"\fbackup_phone\x18\a \x01(\tB0\x82\xa6\x1d,2*.test.embed.ContactType.CONTACT_TYPE_PHONEH\x01R\vbackupPhone\x12:\n" +
+	"\fwork_address\x18\x03 \x01(\v2\x13.test.embed.AddressB\x06\x82\xa6\x1d\x02(\x01R\vworkAddress\x12\x16\n" +
+	"\x05email\x18\x04 \x01(\tH\x00R\x05email\x12\x16\n" +
+	"\x05phone\x18\x05 \x01(\tH\x00R\x05phone\x12#\n" +
+	"\fbackup_email\x18\x06 \x01(\tH\x01R\vbackupEmail\x12#\n" +
+	"\fbackup_phone\x18\a \x01(\tH\x01R\vbackupPhone\x12:\n" +
 	"\fcontact_type\x18\b \x01(\x0e2\x17.test.embed.ContactTypeR\vcontactType:\x06\x82\xa6\x1d\x02\b\x01B\x11\n" +
 	"\acontact\x12\x06\x82\xb5\x18\x02\b\x01B\x18\n" +
 	"\x0ebackup_contact\x12\x06\x82\xb5\x18\x02\x10\x01*[\n" +

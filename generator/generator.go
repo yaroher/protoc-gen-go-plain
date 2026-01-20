@@ -139,7 +139,7 @@ func (g *Generator) Generate() error {
 			pbFull := strings.TrimSuffix(string(m.Desc.FullName()), g.suffix)
 			pbMsg := origMsgs[pbFull]
 			if pbMsg != nil {
-				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues, enumByFull)
+				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues, enumByFull, plan.Options.PlainSuffix)
 			}
 			if g.Settings != nil && g.Settings.JSONJX {
 				generateJSONMethods(plainFile, m, pbMsg, msgIR)

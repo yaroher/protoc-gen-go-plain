@@ -32,13 +32,10 @@ type UserPlain struct {
 	BackupContactBackupPhone string
 }
 
-const enumFull_TestEmbedContactType = "test.embed.ContactType"
-
 func (m *User) IntoPlain() *UserPlain {
 	if m == nil {
 		return nil
 	}
-	var disc_contactType ContactType
 	var oneof_email string
 	var oneof_phone string
 	switch x := m.GetContact().(type) {
@@ -81,7 +78,7 @@ func (m *User) IntoPlain() *UserPlain {
 			}
 			return m.GetWorkAddress().City
 		}(),
-		ContactType:              disc_contactType,
+		ContactType:              m.GetContactType(),
 		Email:                    oneof_email,
 		Phone:                    oneof_phone,
 		BackupContactBackupEmail: oneof_backupContactBackupEmail,
@@ -93,7 +90,6 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var disc_contactType ContactType
 	var oneof_email string
 	var oneof_phone string
 	switch x := m.GetContact().(type) {
@@ -136,7 +132,7 @@ func (m *User) IntoPlainErr() (*UserPlain, error) {
 			}
 			return m.GetWorkAddress().City
 		}(),
-		ContactType:              disc_contactType,
+		ContactType:              m.GetContactType(),
 		Email:                    oneof_email,
 		Phone:                    oneof_phone,
 		BackupContactBackupEmail: oneof_backupContactBackupEmail,
@@ -153,17 +149,17 @@ func (m *UserPlain) IntoPb() *User {
 	var embed_work_address *Address
 	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity}
 	var oneof_contact isUser_Contact
-	switch m.ContactType {
-	case ContactType_CONTACT_TYPE_EMAIL:
+	if m.Email != "" {
 		oneof_contact = &User_Email{Email: m.Email}
-	case ContactType_CONTACT_TYPE_PHONE:
+	}
+	if m.Phone != "" {
 		oneof_contact = &User_Phone{Phone: m.Phone}
 	}
 	var oneof_backupContact isUser_BackupContact
-	switch m.ContactType {
-	case ContactType_CONTACT_TYPE_EMAIL:
+	if m.BackupContactBackupEmail != "" {
 		oneof_backupContact = &User_BackupEmail{BackupEmail: m.BackupContactBackupEmail}
-	case ContactType_CONTACT_TYPE_PHONE:
+	}
+	if m.BackupContactBackupPhone != "" {
 		oneof_backupContact = &User_BackupPhone{BackupPhone: m.BackupContactBackupPhone}
 	}
 	return &User{
@@ -180,22 +176,22 @@ func (m *UserPlain) IntoPbErr() (*User, error) {
 	if m == nil {
 		return nil, nil
 	}
-	var embed_work_address *Address
-	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity}
 	var embed_address *Address
 	embed_address = &Address{Street: m.Street, City: m.City}
+	var embed_work_address *Address
+	embed_work_address = &Address{Street: m.WorkAddressStreet, City: m.WorkAddressCity}
 	var oneof_backupContact isUser_BackupContact
-	switch m.ContactType {
-	case ContactType_CONTACT_TYPE_EMAIL:
+	if m.BackupContactBackupEmail != "" {
 		oneof_backupContact = &User_BackupEmail{BackupEmail: m.BackupContactBackupEmail}
-	case ContactType_CONTACT_TYPE_PHONE:
+	}
+	if m.BackupContactBackupPhone != "" {
 		oneof_backupContact = &User_BackupPhone{BackupPhone: m.BackupContactBackupPhone}
 	}
 	var oneof_contact isUser_Contact
-	switch m.ContactType {
-	case ContactType_CONTACT_TYPE_EMAIL:
+	if m.Email != "" {
 		oneof_contact = &User_Email{Email: m.Email}
-	case ContactType_CONTACT_TYPE_PHONE:
+	}
+	if m.Phone != "" {
 		oneof_contact = &User_Phone{Phone: m.Phone}
 	}
 	return &User{

@@ -40,8 +40,6 @@ type PaymentPlain struct {
 	BackupMethodBackupCrypto *PaymentCrypto
 }
 
-const enumFull_TestEnumDispatchedMethodType = "test.enum_dispatched.MethodType"
-
 func (m *Payment) IntoPlain() *PaymentPlain {
 	if m == nil {
 		return nil

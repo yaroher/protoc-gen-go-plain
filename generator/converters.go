@@ -68,7 +68,7 @@ func emitEnumFullConsts(g *protogen.GeneratedFile, oneofEnums map[string]map[str
 	g.P("")
 }
 
-func generateConverters(g *protogen.GeneratedFile, plainMsg *protogen.Message, pbMsg *protogen.Message, msgIR *ir.MessageIR, generatedEnums map[string]struct{}, enumValues map[string]*protogen.EnumValue, enumByFull map[string]*protogen.Enum) {
+func generateConverters(g *protogen.GeneratedFile, plainMsg *protogen.Message, pbMsg *protogen.Message, msgIR *ir.MessageIR, generatedEnums map[string]struct{}, enumValues map[string]*protogen.EnumValue, enumByFull map[string]*protogen.Enum, plainSuffix string) {
 	if plainMsg == nil || pbMsg == nil || msgIR == nil {
 		return
 	}
@@ -99,13 +99,13 @@ func generateConverters(g *protogen.GeneratedFile, plainMsg *protogen.Message, p
 
 	oneofEnums := buildOneofEnumInfo(plainMsg, pbMsg, msgIR, fieldPlans, pbFields, enumValues, enumByFull)
 	emitEnumFullConsts(g, oneofEnums)
-	generateIntoPlain(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
-	generateIntoPlainErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
-	generateIntoPb(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
-	generateIntoPbErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR)
+	generateIntoPlain(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR, plainSuffix)
+	generateIntoPlainErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR, plainSuffix)
+	generateIntoPb(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR, plainSuffix)
+	generateIntoPbErr(g, plainMsg, pbMsg, fieldPlans, pbFields, embedSources, oneofEnums, msgIR, plainSuffix)
 }
 
-func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
+func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR, plainSuffix string) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, false, false)
 	g.P("func (m *", pbMsg.GoIdent.GoName, ") IntoPlain(", strings.Join(params, ", "), ") *", plainMsg.GoIdent.GoName, " {")
 	g.P("\tif m == nil { return nil }")
@@ -130,7 +130,7 @@ func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 			continue
 		}
 		if fp.Origin.EnumAsString || fp.Origin.EnumAsInt {
-			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
+			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false, plainSuffix)
 			if expr == "" {
 				continue
 			}
@@ -154,7 +154,7 @@ func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 			g.P("\t\t", f.GoName, ": ", expr, ",")
 			continue
 		}
-		expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
+		expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false, plainSuffix)
 		if expr == "" {
 			continue
 		}
@@ -168,7 +168,7 @@ func generateIntoPlain(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 	g.P("")
 }
 
-func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
+func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR, plainSuffix string) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, true, false)
 	g.P("func (m *", pbMsg.GoIdent.GoName, ") IntoPlainErr(", strings.Join(params, ", "), ") (*", plainMsg.GoIdent.GoName, ", error) {")
 	g.P("\tif m == nil { return nil, nil }")
@@ -212,7 +212,7 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 			continue
 		}
 		if hasOverride(fp) {
-			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
+			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false, plainSuffix)
 			g.P("\t", f.GoName, "Val, err := ", casterName(f), ".CastErr(", expr, ")")
 			g.P("\tif err != nil { return nil, err }")
 		}
@@ -233,7 +233,7 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 			continue
 		}
 		if fp.Origin.EnumAsString || fp.Origin.EnumAsInt {
-			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, true)
+			expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, true, plainSuffix)
 			if expr == "" {
 				continue
 			}
@@ -270,7 +270,7 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 			g.P("\t\t", f.GoName, ": ", f.GoName, "Val,")
 			continue
 		}
-		expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false)
+		expr := plainFieldValueExpr(g, f, fp, pbFields, embedSources, false, plainSuffix)
 		if expr == "" {
 			continue
 		}
@@ -281,7 +281,7 @@ func generateIntoPlainErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.M
 	g.P("")
 }
 
-func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
+func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR, plainSuffix string) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, false, true)
 	g.P("func (m *", plainMsg.GoIdent.GoName, ") IntoPb(", strings.Join(params, ", "), ") *", pbMsg.GoIdent.GoName, " {")
 	g.P("\tif m == nil { return nil }")
@@ -338,7 +338,7 @@ func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message
 			g.P("\t\t", pbField.GoName, ": ", casterName(f), ".Cast(m.", f.GoName, "),")
 			continue
 		}
-		expr := pbFieldValueExpr(g, f, fp, pbField, false)
+		expr := pbFieldValueExpr(g, f, fp, pbField, false, plainSuffix)
 		if expr == "" {
 			continue
 		}
@@ -359,7 +359,7 @@ func generateIntoPb(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message
 	g.P("")
 }
 
-func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR) {
+func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Message, fieldPlans map[string]*ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, oneofEnums map[string]map[string]*oneofEnumInfo, msgIR *ir.MessageIR, plainSuffix string) {
 	params := buildCasterParams(g, plainMsg, fieldPlans, pbFields, true, true)
 	g.P("func (m *", plainMsg.GoIdent.GoName, ") IntoPbErr(", strings.Join(params, ", "), ") (*", pbMsg.GoIdent.GoName, ", error) {")
 	g.P("\tif m == nil { return nil, nil }")
@@ -466,7 +466,7 @@ func generateIntoPbErr(g *protogen.GeneratedFile, plainMsg, pbMsg *protogen.Mess
 			g.P("\t\t", pbField.GoName, ": ", f.GoName, "Val,")
 			continue
 		}
-		expr := pbFieldValueExpr(g, f, fp, pbField, true)
+		expr := pbFieldValueExpr(g, f, fp, pbField, true, plainSuffix)
 		if expr == "" {
 			continue
 		}
@@ -554,7 +554,7 @@ func embedVarName(name string) string {
 	return "embed_" + name
 }
 
-func plainFieldValueExpr(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, useErr bool) string {
+func plainFieldValueExpr(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.FieldPlan, pbFields map[string]*protogen.Field, embedSources map[string]*protogen.Field, useErr bool, plainSuffix string) string {
 	if fp == nil || fp.OrigField == nil {
 		return ""
 	}
@@ -575,6 +575,15 @@ func plainFieldValueExpr(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.Fi
 	if pbField == nil {
 		return ""
 	}
+	if fp.Origin.HasPlainMessage && pbField.Message != nil {
+		getter := "m.Get" + pbField.GoName + "()"
+		suffix := plainSuffix
+		if suffix == "" {
+			suffix = "Plain"
+		}
+		plainType := pbField.Message.GoIdent.GoName + suffix
+		return fmt.Sprintf("func() *%s { v := %s; if v == nil { return nil }; return v.IntoPlain() }()", plainType, getter)
+	}
 	getter := "m.Get" + pbField.GoName + "()"
 	if fp.Origin.IsTypeAlias {
 		zero := zeroValueForField(g, f)
@@ -593,7 +602,7 @@ func plainFieldValueExpr(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.Fi
 	return getter
 }
 
-func pbFieldValueExpr(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.FieldPlan, pbField *protogen.Field, useErr bool) string {
+func pbFieldValueExpr(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.FieldPlan, pbField *protogen.Field, useErr bool, plainSuffix string) string {
 	if fp == nil || fp.OrigField == nil || pbField == nil {
 		return ""
 	}
@@ -608,6 +617,9 @@ func pbFieldValueExpr(g *protogen.GeneratedFile, f *protogen.Field, fp *ir.Field
 	if fp.Origin.IsTypeAlias {
 		aliasIdent := pbField.Message.GoIdent
 		return fmt.Sprintf("&%s{Value: m.%s}", aliasIdent.GoName, f.GoName)
+	}
+	if fp.Origin.HasPlainMessage && pbField.Message != nil {
+		return fmt.Sprintf("func() *%s { if m.%s == nil { return nil }; return m.%s.IntoPb() }()", pbField.Message.GoIdent.GoName, f.GoName, f.GoName)
 	}
 	if fp.Origin.IsOneof {
 		wrapper := pbField.Parent.GoIdent.GoName + "_" + pbField.GoName

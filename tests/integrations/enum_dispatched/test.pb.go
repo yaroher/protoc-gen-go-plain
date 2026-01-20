@@ -295,13 +295,13 @@ const file_tests_integrations_enum_dispatched_test_proto_rawDesc = "" +
 	"\vPaymentCard\x12\x16\n" +
 	"\x06number\x18\x01 \x01(\tR\x06number\")\n" +
 	"\rPaymentCrypto\x12\x18\n" +
-	"\aaddress\x18\x01 \x01(\tR\aaddress\"\xaf\x04\n" +
-	"\aPayment\x12p\n" +
-	"\x04card\x18\x01 \x01(\v2!.test.enum_dispatched.PaymentCardB7\x82\xa6\x1d321.test.enum_dispatched.MethodType.METHOD_TYPE_CARDH\x00R\x04card\x12x\n" +
-	"\x06crypto\x18\x02 \x01(\v2#.test.enum_dispatched.PaymentCryptoB9\x82\xa6\x1d523.test.enum_dispatched.MethodType.METHOD_TYPE_CRYPTOH\x00R\x06crypto\x12}\n" +
-	"\vbackup_card\x18\x03 \x01(\v2!.test.enum_dispatched.PaymentCardB7\x82\xa6\x1d321.test.enum_dispatched.MethodType.METHOD_TYPE_CARDH\x01R\n" +
-	"backupCard\x12\x85\x01\n" +
-	"\rbackup_crypto\x18\x04 \x01(\v2#.test.enum_dispatched.PaymentCryptoB9\x82\xa6\x1d523.test.enum_dispatched.MethodType.METHOD_TYPE_CRYPTOH\x01R\fbackupCrypto:\x06\x82\xa6\x1d\x02\b\x01B\x10\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\"\xc6\x02\n" +
+	"\aPayment\x127\n" +
+	"\x04card\x18\x01 \x01(\v2!.test.enum_dispatched.PaymentCardH\x00R\x04card\x12=\n" +
+	"\x06crypto\x18\x02 \x01(\v2#.test.enum_dispatched.PaymentCryptoH\x00R\x06crypto\x12D\n" +
+	"\vbackup_card\x18\x03 \x01(\v2!.test.enum_dispatched.PaymentCardH\x01R\n" +
+	"backupCard\x12J\n" +
+	"\rbackup_crypto\x18\x04 \x01(\v2#.test.enum_dispatched.PaymentCryptoH\x01R\fbackupCrypto:\x06\x82\xa6\x1d\x02\b\x01B\x10\n" +
 	"\x06method\x12\x06\x82\xb5\x18\x02\x18\x01B\x17\n" +
 	"\rbackup_method\x12\x06\x82\xb5\x18\x02 \x01*W\n" +
 	"\n" +
