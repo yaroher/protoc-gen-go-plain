@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.1
-// source: test/test.proto
+// source: test/crf/test.proto
 
-package test
+package crf
 
 import (
 	_ "github.com/yaroher/protoc-gen-go-plain/goplain"
@@ -23,16 +23,15 @@ const (
 )
 
 type File struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// option (goplain.message).generate = true;
-	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *File) Reset() {
 	*x = File{}
-	mi := &file_test_test_proto_msgTypes[0]
+	mi := &file_test_crf_test_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +43,7 @@ func (x *File) String() string {
 func (*File) ProtoMessage() {}
 
 func (x *File) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[0]
+	mi := &file_test_crf_test_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +56,7 @@ func (x *File) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use File.ProtoReflect.Descriptor instead.
 func (*File) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{0}
+	return file_test_crf_test_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *File) GetPath() string {
@@ -76,7 +75,7 @@ type FileRename struct {
 
 func (x *FileRename) Reset() {
 	*x = FileRename{}
-	mi := &file_test_test_proto_msgTypes[1]
+	mi := &file_test_crf_test_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +87,7 @@ func (x *FileRename) String() string {
 func (*FileRename) ProtoMessage() {}
 
 func (x *FileRename) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[1]
+	mi := &file_test_crf_test_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +100,7 @@ func (x *FileRename) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileRename.ProtoReflect.Descriptor instead.
 func (*FileRename) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{1}
+	return file_test_crf_test_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *FileRename) GetFile() *File {
@@ -120,7 +119,7 @@ type FileCreate struct {
 
 func (x *FileCreate) Reset() {
 	*x = FileCreate{}
-	mi := &file_test_test_proto_msgTypes[2]
+	mi := &file_test_crf_test_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +131,7 @@ func (x *FileCreate) String() string {
 func (*FileCreate) ProtoMessage() {}
 
 func (x *FileCreate) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[2]
+	mi := &file_test_crf_test_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +144,7 @@ func (x *FileCreate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileCreate.ProtoReflect.Descriptor instead.
 func (*FileCreate) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{2}
+	return file_test_crf_test_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *FileCreate) GetFile() *File {
@@ -164,7 +163,7 @@ type Process struct {
 
 func (x *Process) Reset() {
 	*x = Process{}
-	mi := &file_test_test_proto_msgTypes[3]
+	mi := &file_test_crf_test_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -176,7 +175,7 @@ func (x *Process) String() string {
 func (*Process) ProtoMessage() {}
 
 func (x *Process) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[3]
+	mi := &file_test_crf_test_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -189,7 +188,7 @@ func (x *Process) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Process.ProtoReflect.Descriptor instead.
 func (*Process) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{3}
+	return file_test_crf_test_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Process) GetFile() *File {
@@ -223,7 +222,7 @@ type EventData struct {
 
 func (x *EventData) Reset() {
 	*x = EventData{}
-	mi := &file_test_test_proto_msgTypes[4]
+	mi := &file_test_crf_test_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +234,7 @@ func (x *EventData) String() string {
 func (*EventData) ProtoMessage() {}
 
 func (x *EventData) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[4]
+	mi := &file_test_crf_test_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +247,7 @@ func (x *EventData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventData.ProtoReflect.Descriptor instead.
 func (*EventData) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{4}
+	return file_test_crf_test_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EventData) GetPlatformEvent() isEventData_PlatformEvent {
@@ -402,7 +401,7 @@ type Event struct {
 
 func (x *Event) Reset() {
 	*x = Event{}
-	mi := &file_test_test_proto_msgTypes[5]
+	mi := &file_test_crf_test_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -414,7 +413,7 @@ func (x *Event) String() string {
 func (*Event) ProtoMessage() {}
 
 func (x *Event) ProtoReflect() protoreflect.Message {
-	mi := &file_test_test_proto_msgTypes[5]
+	mi := &file_test_crf_test_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +426,7 @@ func (x *Event) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Event.ProtoReflect.Descriptor instead.
 func (*Event) Descriptor() ([]byte, []int) {
-	return file_test_test_proto_rawDescGZIP(), []int{5}
+	return file_test_crf_test_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Event) GetEventId() int32 {
@@ -465,81 +464,76 @@ func (x *Event) GetParentEventId() string {
 	return ""
 }
 
-var File_test_test_proto protoreflect.FileDescriptor
+var File_test_crf_test_proto protoreflect.FileDescriptor
 
-const file_test_test_proto_rawDesc = "" +
+const file_test_crf_test_proto_rawDesc = "" +
 	"\n" +
-	"\x0ftest/test.proto\x12\x04test\x1a\x15goplain/goplain.proto\"\x1a\n" +
+	"\x13test/crf/test.proto\x12\atestcrf\x1a\x15goplain/goplain.proto\"\x1a\n" +
 	"\x04File\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"<\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"?\n" +
 	"\n" +
-	"FileRename\x12&\n" +
-	"\x04file\x18\x01 \x01(\v2\n" +
-	".test.FileB\x06\x82\xa6\x1d\x02 \x01R\x04file:\x06\x82\xa6\x1d\x02\b\x01\"<\n" +
+	"FileRename\x12)\n" +
+	"\x04file\x18\x01 \x01(\v2\r.testcrf.FileB\x06\x82\xa6\x1d\x02 \x01R\x04file:\x06\x82\xa6\x1d\x02\b\x01\"?\n" +
 	"\n" +
-	"FileCreate\x12&\n" +
-	"\x04file\x18\x01 \x01(\v2\n" +
-	".test.FileB\x06\x82\xa6\x1d\x02 \x01R\x04file:\x06\x82\xa6\x1d\x02\b\x01\"1\n" +
-	"\aProcess\x12\x1e\n" +
-	"\x04file\x18\x01 \x01(\v2\n" +
-	".test.FileR\x04file:\x06\x82\xa6\x1d\x02\b\x01\"\xb2\x03\n" +
-	"\tEventData\x12;\n" +
-	"\vfile_rename\x18\x01 \x01(\v2\x10.test.FileRenameB\x06\x82\xa6\x1d\x02 \x01H\x00R\n" +
-	"fileRename\x12;\n" +
-	"\vfile_create\x18\x02 \x01(\v2\x10.test.FileCreateB\x06\x82\xa6\x1d\x02 \x01H\x00R\n" +
+	"FileCreate\x12)\n" +
+	"\x04file\x18\x01 \x01(\v2\r.testcrf.FileB\x06\x82\xa6\x1d\x02 \x01R\x04file:\x06\x82\xa6\x1d\x02\b\x01\"4\n" +
+	"\aProcess\x12!\n" +
+	"\x04file\x18\x01 \x01(\v2\r.testcrf.FileR\x04file:\x06\x82\xa6\x1d\x02\b\x01\"\xbe\x03\n" +
+	"\tEventData\x12>\n" +
+	"\vfile_rename\x18\x01 \x01(\v2\x13.testcrf.FileRenameB\x06\x82\xa6\x1d\x02 \x01H\x00R\n" +
+	"fileRename\x12>\n" +
+	"\vfile_create\x18\x02 \x01(\v2\x13.testcrf.FileCreateB\x06\x82\xa6\x1d\x02 \x01H\x00R\n" +
 	"fileCreate\x12)\n" +
 	"\vother_event\x18\x03 \x01(\tB\x06\x82\xa6\x1d\x02 \x01H\x00R\n" +
 	"otherEvent\x12#\n" +
-	"\fcustom_event\x18\x04 \x01(\tH\x01R\vcustomEvent\x12(\n" +
-	"\x04file\x18\x05 \x01(\v2\n" +
-	".test.FileB\x06\x82\xa6\x1d\x02 \x01H\x01R\x04file\x12\x1d\n" +
-	"\tno_remove\x18\x06 \x01(\tH\x02R\bnoRemove\x12>\n" +
-	"\x10not_removed_file\x18\a \x01(\v2\n" +
-	".test.FileB\x06\x82\xa6\x1d\x02 \x01H\x02R\x0enotRemovedFile:\x06\x82\xa6\x1d\x02\b\x01B\x18\n" +
+	"\fcustom_event\x18\x04 \x01(\tH\x01R\vcustomEvent\x12+\n" +
+	"\x04file\x18\x05 \x01(\v2\r.testcrf.FileB\x06\x82\xa6\x1d\x02 \x01H\x01R\x04file\x12\x1d\n" +
+	"\tno_remove\x18\x06 \x01(\tH\x02R\bnoRemove\x12A\n" +
+	"\x10not_removed_file\x18\a \x01(\v2\r.testcrf.FileB\x06\x82\xa6\x1d\x02 \x01H\x02R\x0enotRemovedFile:\x06\x82\xa6\x1d\x02\b\x01B\x18\n" +
 	"\x0eplatform_event\x12\x06\x82\xb5\x18\x02\b\x01B\x1c\n" +
 	"\x12non_platform_event\x12\x06\x82\xb5\x18\x02\x10\x01B\x12\n" +
-	"\x10no_removed_oneof\"\xa1\x02\n" +
+	"\x10no_removed_oneof\"\xa7\x02\n" +
 	"\x05Event\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\x05R\aeventId\x12_\n" +
 	"\x19some_event_string_payload\x18\x02 \x01(\tB$\x82\xa6\x1d \n" +
 	"\x1e\n" +
-	"\x04UUID\x12\x16github.com/google/uuidR\x16someEventStringPayload\x12'\n" +
-	"\aprocess\x18\x03 \x01(\v2\r.test.ProcessR\aprocess\x12+\n" +
-	"\x04data\x18\x04 \x01(\v2\x0f.test.EventDataB\x06\x82\xa6\x1d\x02 \x01R\x04data\x12&\n" +
-	"\x0fparent_event_id\x18\x05 \x01(\tR\rparentEventId:\x1e\x82\xa6\x1d\x1a\b\x01\x1a\x16\b\t\"\x12event_virtual_typeBY\x82\xa6\x1d(\x12&\n" +
-	"\vVirtualType\x12\x17\b\v\x10\x01\x18\x01\"\x04file2\ttest.FileZ+github.com/yaroher/protoc-gen-go-plain/testb\x06proto3"
+	"\x04UUID\x12\x16github.com/google/uuidR\x16someEventStringPayload\x12*\n" +
+	"\aprocess\x18\x03 \x01(\v2\x10.testcrf.ProcessR\aprocess\x12.\n" +
+	"\x04data\x18\x04 \x01(\v2\x12.testcrf.EventDataB\x06\x82\xa6\x1d\x02 \x01R\x04data\x12&\n" +
+	"\x0fparent_event_id\x18\x05 \x01(\tR\rparentEventId:\x1e\x82\xa6\x1d\x1a\b\x01\x1a\x16\b\t\"\x12event_virtual_typeB`\x82\xa6\x1d+\x12)\n" +
+	"\vVirtualType\x12\x1a\b\v\x10\x01\x18\x01\"\x04file2\ftestcrf.FileZ/github.com/yaroher/protoc-gen-go-plain/test/crfb\x06proto3"
 
 var (
-	file_test_test_proto_rawDescOnce sync.Once
-	file_test_test_proto_rawDescData []byte
+	file_test_crf_test_proto_rawDescOnce sync.Once
+	file_test_crf_test_proto_rawDescData []byte
 )
 
-func file_test_test_proto_rawDescGZIP() []byte {
-	file_test_test_proto_rawDescOnce.Do(func() {
-		file_test_test_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_test_test_proto_rawDesc), len(file_test_test_proto_rawDesc)))
+func file_test_crf_test_proto_rawDescGZIP() []byte {
+	file_test_crf_test_proto_rawDescOnce.Do(func() {
+		file_test_crf_test_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_test_crf_test_proto_rawDesc), len(file_test_crf_test_proto_rawDesc)))
 	})
-	return file_test_test_proto_rawDescData
+	return file_test_crf_test_proto_rawDescData
 }
 
-var file_test_test_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_test_test_proto_goTypes = []any{
-	(*File)(nil),       // 0: test.File
-	(*FileRename)(nil), // 1: test.FileRename
-	(*FileCreate)(nil), // 2: test.FileCreate
-	(*Process)(nil),    // 3: test.Process
-	(*EventData)(nil),  // 4: test.EventData
-	(*Event)(nil),      // 5: test.Event
+var file_test_crf_test_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_test_crf_test_proto_goTypes = []any{
+	(*File)(nil),       // 0: testcrf.File
+	(*FileRename)(nil), // 1: testcrf.FileRename
+	(*FileCreate)(nil), // 2: testcrf.FileCreate
+	(*Process)(nil),    // 3: testcrf.Process
+	(*EventData)(nil),  // 4: testcrf.EventData
+	(*Event)(nil),      // 5: testcrf.Event
 }
-var file_test_test_proto_depIdxs = []int32{
-	0, // 0: test.FileRename.file:type_name -> test.File
-	0, // 1: test.FileCreate.file:type_name -> test.File
-	0, // 2: test.Process.file:type_name -> test.File
-	1, // 3: test.EventData.file_rename:type_name -> test.FileRename
-	2, // 4: test.EventData.file_create:type_name -> test.FileCreate
-	0, // 5: test.EventData.file:type_name -> test.File
-	0, // 6: test.EventData.not_removed_file:type_name -> test.File
-	3, // 7: test.Event.process:type_name -> test.Process
-	4, // 8: test.Event.data:type_name -> test.EventData
+var file_test_crf_test_proto_depIdxs = []int32{
+	0, // 0: testcrf.FileRename.file:type_name -> testcrf.File
+	0, // 1: testcrf.FileCreate.file:type_name -> testcrf.File
+	0, // 2: testcrf.Process.file:type_name -> testcrf.File
+	1, // 3: testcrf.EventData.file_rename:type_name -> testcrf.FileRename
+	2, // 4: testcrf.EventData.file_create:type_name -> testcrf.FileCreate
+	0, // 5: testcrf.EventData.file:type_name -> testcrf.File
+	0, // 6: testcrf.EventData.not_removed_file:type_name -> testcrf.File
+	3, // 7: testcrf.Event.process:type_name -> testcrf.Process
+	4, // 8: testcrf.Event.data:type_name -> testcrf.EventData
 	9, // [9:9] is the sub-list for method output_type
 	9, // [9:9] is the sub-list for method input_type
 	9, // [9:9] is the sub-list for extension type_name
@@ -547,12 +541,12 @@ var file_test_test_proto_depIdxs = []int32{
 	0, // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_test_test_proto_init() }
-func file_test_test_proto_init() {
-	if File_test_test_proto != nil {
+func init() { file_test_crf_test_proto_init() }
+func file_test_crf_test_proto_init() {
+	if File_test_crf_test_proto != nil {
 		return
 	}
-	file_test_test_proto_msgTypes[4].OneofWrappers = []any{
+	file_test_crf_test_proto_msgTypes[4].OneofWrappers = []any{
 		(*EventData_FileRename)(nil),
 		(*EventData_FileCreate)(nil),
 		(*EventData_OtherEvent)(nil),
@@ -565,17 +559,17 @@ func file_test_test_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_test_proto_rawDesc), len(file_test_test_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_crf_test_proto_rawDesc), len(file_test_crf_test_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_test_test_proto_goTypes,
-		DependencyIndexes: file_test_test_proto_depIdxs,
-		MessageInfos:      file_test_test_proto_msgTypes,
+		GoTypes:           file_test_crf_test_proto_goTypes,
+		DependencyIndexes: file_test_crf_test_proto_depIdxs,
+		MessageInfos:      file_test_crf_test_proto_msgTypes,
 	}.Build()
-	File_test_test_proto = out.File
-	file_test_test_proto_goTypes = nil
-	file_test_test_proto_depIdxs = nil
+	File_test_crf_test_proto = out.File
+	file_test_crf_test_proto_goTypes = nil
+	file_test_crf_test_proto_depIdxs = nil
 }

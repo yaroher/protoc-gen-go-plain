@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package test;
+package testcrf;
 
 import "goplain/goplain.proto";
 
-option go_package = "github.com/yaroher/protoc-gen-go-plain/test";
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/crf";
 
 option (goplain.file).virtual_types = {
     name: "VirtualType",
@@ -14,13 +14,12 @@ option (goplain.file).virtual_types = {
         cardinality: CARDINALITY_OPTIONAL,
         number: 1,
         name: "file",
-        type_url: "test.File",
+        type_url: "testcrf.File",
     }
     ],
 };
 
 message File {
-//    option (goplain.message).generate = true;
     string path = 1;
 }
 
@@ -70,16 +69,3 @@ message Event {
     EventData data = 4 [(goplain.field).embed = true];
     string parent_event_id = 5;
 }
-
-/*
-{
-  "process": {
-    "file": {
-      "path": "..."
-    }
-  },
-  "file": {
-    "path": "...."
-  }
-}
-*/

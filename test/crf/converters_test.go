@@ -1,4 +1,4 @@
-package test
+package crf
 
 import (
 	"encoding/json"

@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package testplain;
+
+import "goplain/goplain.proto";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/plain";
+
+message BaseInfo {
+    option (goplain.message).generate = true;
+    string id = 1;
+    string source = 2;
+}
+
+message User {
+    option (goplain.message).generate = true;
+
+    BaseInfo base = 1 [(goplain.field).embed = true];
+    string name = 2;
+
+    oneof contact {
+        option (goplain.oneof).embed_with_prefix = true;
+        string email = 3;
+        string phone = 4;
+    }
+}
+
+message UserEvent {
+    option (goplain.message).generate = true;
+
+    User user = 1 [(goplain.field).embed = true];
+    string event_type = 2;
+}
