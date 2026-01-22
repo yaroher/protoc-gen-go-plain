@@ -14,25 +14,27 @@ type BasePlain struct {
 }
 
 type ComplexPlain struct {
-	Note         *string                 `json:"note,omitempty"`
 	Raw          []byte                  `json:"raw"`
-	ContactPhone *string                 `json:"contactPhone,omitempty"`
-	CustomId     uuid.UUID               `json:"customId"`
 	RawList      [][]byte                `json:"rawList,omitempty"`
-	Status       int32                   `json:"status"`
 	Comment      *wrapperspb.StringValue `json:"comment,omitempty"`
+	ContactEmail *string                 `json:"contactEmail,omitempty"`
+	AliasList    []string                `json:"aliasList,omitempty"`
 	Id           *string                 `json:"id,omitempty"`
 	IdCRF        string                  `json:"idCRF"`
 	Tag          string                  `json:"tag"`
-	Name         string                  `json:"name"`
-	ContactEmail *string                 `json:"contactEmail,omitempty"`
-	Archived     *bool                   `json:"archived,omitempty"`
-	Meta         map[string]string       `json:"meta,omitempty"`
 	CreatedAt    *timestamppb.Timestamp  `json:"createdAt,omitempty"`
-	StatusList   []int32                 `json:"statusList,omitempty"`
-	Counters     map[string]int32        `json:"counters,omitempty"`
-	VirtualNote  string                  `json:"virtualNote"`
 	Source       string                  `json:"source"`
+	Note         *string                 `json:"note,omitempty"`
+	Meta         map[string]string       `json:"meta,omitempty"`
+	ContactPhone *string                 `json:"contactPhone,omitempty"`
+	StatusList   []int32                 `json:"statusList,omitempty"`
+	CustomId     uuid.UUID               `json:"customId"`
+	AliasId      string                  `json:"aliasId"`
+	Name         string                  `json:"name"`
+	Archived     *bool                   `json:"archived,omitempty"`
+	Counters     map[string]int32        `json:"counters,omitempty"`
+	Status       int32                   `json:"status"`
+	VirtualNote  string                  `json:"virtualNote"`
 	Labels       []string                `json:"labels,omitempty"`
 }
 

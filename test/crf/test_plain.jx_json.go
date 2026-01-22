@@ -26,10 +26,18 @@ func (x *EventPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("EventPlain")
 	}
+	if e.FieldStart("parentEventId") {
+		return nil, jxEncodeError("parentEventId")
+	}
+	e.Str(x.ParentEventId)
 	if e.FieldStart("eventVirtualType") {
 		return nil, jxEncodeError("eventVirtualType")
 	}
 	e.Str(x.EventVirtualType)
+	if e.FieldStart("eventId") {
+		return nil, jxEncodeError("eventId")
+	}
+	e.Int32(x.EventId)
 	if x.Process != nil {
 		if e.FieldStart("process") {
 			return nil, jxEncodeError("process")
@@ -78,14 +86,6 @@ func (x *EventPlain) MarshalJSON() ([]byte, error) {
 			e.Str(*x.NonPlatformEventCustomEvent)
 		}
 	}
-	if e.FieldStart("parentEventId") {
-		return nil, jxEncodeError("parentEventId")
-	}
-	e.Str(x.ParentEventId)
-	if e.FieldStart("eventId") {
-		return nil, jxEncodeError("eventId")
-	}
-	e.Int32(x.EventId)
 	if e.FieldStart("someEventStringPayload") {
 		return nil, jxEncodeError("someEventStringPayload")
 	}
@@ -112,12 +112,26 @@ func (x *EventPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
+		case "parentEventId":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("ParentEventId", err)
+			}
+			x.ParentEventId = val
+			return nil
 		case "eventVirtualType":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
 				return jxDecodeError("EventVirtualType", err)
 			}
 			x.EventVirtualType = val
+			return nil
+		case "eventId":
+			val, err := (*jx.Decoder).Int32(d)
+			if err != nil {
+				return jxDecodeError("EventId", err)
+			}
+			x.EventId = val
 			return nil
 		case "process":
 			if d.Next() == jx.Null {
@@ -185,20 +199,6 @@ func (x *EventPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("NonPlatformEventCustomEvent", err)
 			}
 			x.NonPlatformEventCustomEvent = &val
-			return nil
-		case "parentEventId":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("ParentEventId", err)
-			}
-			x.ParentEventId = val
-			return nil
-		case "eventId":
-			val, err := (*jx.Decoder).Int32(d)
-			if err != nil {
-				return jxDecodeError("EventId", err)
-			}
-			x.EventId = val
 			return nil
 		case "someEventStringPayload":
 			raw, err := d.Raw()

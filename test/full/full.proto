@@ -20,6 +20,12 @@ message Extra {
   string tag = 2;
 }
 
+message StringAlias {
+  option (goplain.message).type_alias = true;
+  option (goplain.message).type_alias_field = "value";
+  string value = 1;
+}
+
 message Complex {
   option (goplain.message).generate = true;
   option (goplain.message).virtual_fields = {
@@ -50,6 +56,8 @@ message Complex {
   repeated Status status_list = 16;
 
   string custom_id = 17 [(goplain.field).override_type = {name: "UUID", import_path: "github.com/google/uuid"}];
+  StringAlias alias_id = 18;
+  repeated StringAlias alias_list = 19;
 }
 
 enum Status {

@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/iancoleman/strcase"
+	"github.com/yaroher/protoc-gen-go-plain/generator/empath"
 	"google.golang.org/protobuf/types/known/typepb"
 )
 
@@ -105,6 +106,9 @@ func (g *Generator) renderJXJSONForMessage(out typeWriter, ir *TypePbIR, msg *ty
 	if !g.isPbMessage(ir, msg.Name) {
 		return
 	}
+	if g.isTypeAliasMessage(msg.Name) {
+		return
+	}
 	msgPlain := g.plainTypeName(msg.Name)
 
 	out.P("func (x *", msgPlain, ") MarshalJSON() ([]byte, error) {")
@@ -190,6 +194,14 @@ func (g *Generator) renderJXMarshalField(out typeWriter, ir *TypePbIR, field *ty
 	plainMessage := field.Kind == typepb.Field_TYPE_MESSAGE && g.isPlainMessage(ir, field.TypeUrl)
 	isProtoMessage := field.Kind == typepb.Field_TYPE_MESSAGE && !plainMessage
 	_, isOverride := g.overrideInfo(field)
+	if _, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
+		isPointer = g.isPointerField(field)
+		isOmitEmpty = isRepeated || isPointer || (hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker))
+	}
+	if _, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
+		isProtoMessage = false
+		plainMessage = false
+	}
 	if _, ok := mapFieldInfoFor(field); ok {
 		if isOmitEmpty {
 			out.P("\tif len(x.", fieldName, ") > 0 {")
@@ -275,8 +287,21 @@ func (g *Generator) renderJXEncodeValue(out typeWriter, ir *TypePbIR, field *typ
 	plainMessage := field.Kind == typepb.Field_TYPE_MESSAGE && g.isPlainMessage(ir, field.TypeUrl)
 	isProtoMessage := field.Kind == typepb.Field_TYPE_MESSAGE && !plainMessage
 	_, isOverride := g.overrideInfo(field)
+	alias, isAlias := g.typeAliasInfoForTypeURL(field.TypeUrl)
 
 	if isRepeated {
+		if isAlias {
+			out.P(indent, "if e.ArrStart() {")
+			out.P(indent, "\treturn nil, jxEncodeError(\"", fieldName, "\")")
+			out.P(indent, "}")
+			out.P(indent, "for _, el := range x.", fieldName, " {")
+			g.renderJXEncodeScalar(out, &typepb.Field{Kind: alias.kind}, "el", indent+"\t")
+			out.P(indent, "}")
+			out.P(indent, "if e.ArrEnd() {")
+			out.P(indent, "\treturn nil, jxEncodeError(\"", fieldName, "\")")
+			out.P(indent, "}")
+			return
+		}
 		out.P(indent, "if e.ArrStart() {")
 		out.P(indent, "\treturn nil, jxEncodeError(\"", fieldName, "\")")
 		out.P(indent, "}")
@@ -314,6 +339,11 @@ func (g *Generator) renderJXEncodeValue(out typeWriter, ir *TypePbIR, field *typ
 		out.P(indent, "if x.", fieldName, " == nil {")
 		out.P(indent, "\te.Null()")
 		out.P(indent, "} else {")
+		if isAlias {
+			g.renderJXEncodeScalar(out, &typepb.Field{Kind: alias.kind}, "*x."+fieldName, indent+"\t")
+			out.P(indent, "}")
+			return
+		}
 		switch {
 		case isOverride:
 			out.P(indent, "\traw, err := json.Marshal(x.", fieldName, ")")
@@ -341,6 +371,8 @@ func (g *Generator) renderJXEncodeValue(out typeWriter, ir *TypePbIR, field *typ
 	}
 
 	switch {
+	case isAlias:
+		g.renderJXEncodeScalar(out, &typepb.Field{Kind: alias.kind}, "x."+fieldName, indent)
 	case isOverride:
 		out.P(indent, "raw, err := json.Marshal(x.", fieldName, ")")
 		out.P(indent, "if err != nil {")
@@ -405,6 +437,12 @@ func (g *Generator) renderJXUnmarshalField(out typeWriter, ir *TypePbIR, field *
 	plainMessage := field.Kind == typepb.Field_TYPE_MESSAGE && g.isPlainMessage(ir, field.TypeUrl)
 	isProtoMessage := field.Kind == typepb.Field_TYPE_MESSAGE && !plainMessage
 	override, isOverride := g.overrideInfo(field)
+	alias, isAlias := g.typeAliasInfoForTypeURL(field.TypeUrl)
+	if isAlias {
+		isProtoMessage = false
+		plainMessage = false
+		isPointer = g.isPointerField(field)
+	}
 	if info, ok := mapFieldInfoFor(field); ok {
 		out.P("\t\t\traw, err := d.Raw()")
 		out.P("\t\t\tif err != nil {")
@@ -420,6 +458,22 @@ func (g *Generator) renderJXUnmarshalField(out typeWriter, ir *TypePbIR, field *
 	}
 
 	if isRepeated {
+		if isAlias {
+			out.P("\t\t\tvar outVal []", g.scalarGoType(&typepb.Field{Kind: alias.kind}))
+			out.P("\t\t\tif err := d.Arr(func(d *jx.Decoder) error {")
+			out.P("\t\t\t\tval, err := ", g.jxDecodeExpr(&typepb.Field{Kind: alias.kind}), "(d)")
+			out.P("\t\t\t\tif err != nil {")
+			out.P("\t\t\t\t\treturn err")
+			out.P("\t\t\t\t}")
+			out.P("\t\t\t\toutVal = append(outVal, val)")
+			out.P("\t\t\t\treturn nil")
+			out.P("\t\t\t}); err != nil {")
+			out.P("\t\t\t\treturn jxDecodeError(\"", fieldName, "\", err)")
+			out.P("\t\t\t}")
+			out.P("\t\t\tx.", fieldName, " = outVal")
+			out.P("\t\t\treturn nil")
+			return
+		}
 		switch {
 		case isOverride:
 			out.P("\t\t\tvar outVal []", override.name)
@@ -542,6 +596,19 @@ func (g *Generator) renderJXUnmarshalField(out typeWriter, ir *TypePbIR, field *
 		out.P("\t\t\t}")
 		out.P("\t\t\tx.", fieldName, " = outVal")
 	default:
+		if isAlias {
+			out.P("\t\t\tval, err := ", g.jxDecodeExpr(&typepb.Field{Kind: alias.kind}), "(d)")
+			out.P("\t\t\tif err != nil {")
+			out.P("\t\t\t\treturn jxDecodeError(\"", fieldName, "\", err)")
+			out.P("\t\t\t}")
+			if isPointer {
+				out.P("\t\t\tx.", fieldName, " = &val")
+			} else {
+				out.P("\t\t\tx.", fieldName, " = val")
+			}
+			out.P("\t\t\treturn nil")
+			return
+		}
 		out.P("\t\t\tval, err := ", g.jxDecodeExpr(field), "(d)")
 		out.P("\t\t\tif err != nil {")
 		out.P("\t\t\t\treturn jxDecodeError(\"", fieldName, "\", err)")
@@ -612,6 +679,10 @@ func (g *Generator) fieldsForOneof(msg *typepb.Type, oneofFieldName string) []*t
 }
 
 func (g *Generator) isPlainMessage(ir *TypePbIR, typeURL string) bool {
+	target := empath.Parse(typeURL).Last().Value()
+	if g.isTypeAliasMessage(target) {
+		return false
+	}
 	_, ok := g.findMessage(ir, typeURL)
 	return ok
 }

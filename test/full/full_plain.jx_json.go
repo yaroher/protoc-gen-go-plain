@@ -79,38 +79,10 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("ComplexPlain")
 	}
-	if x.Note != nil {
-		if e.FieldStart("note") {
-			return nil, jxEncodeError("note")
-		}
-		if x.Note == nil {
-			e.Null()
-		} else {
-			e.Str(*x.Note)
-		}
-	}
 	if e.FieldStart("raw") {
 		return nil, jxEncodeError("raw")
 	}
 	e.Base64(x.Raw)
-	if x.ContactPhone != nil {
-		if e.FieldStart("contactPhone") {
-			return nil, jxEncodeError("contactPhone")
-		}
-		if x.ContactPhone == nil {
-			e.Null()
-		} else {
-			e.Str(*x.ContactPhone)
-		}
-	}
-	if e.FieldStart("customId") {
-		return nil, jxEncodeError("customId")
-	}
-	raw, err := json.Marshal(x.CustomId)
-	if err != nil {
-		return nil, jxEncodeError("customId")
-	}
-	e.Raw(raw)
 	if len(x.RawList) > 0 {
 		if e.FieldStart("rawList") {
 			return nil, jxEncodeError("rawList")
@@ -125,10 +97,6 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 			return nil, jxEncodeError("RawList")
 		}
 	}
-	if e.FieldStart("status") {
-		return nil, jxEncodeError("status")
-	}
-	e.Int32(x.Status)
 	if x.Comment != nil {
 		if e.FieldStart("comment") {
 			return nil, jxEncodeError("comment")
@@ -141,6 +109,30 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 				return nil, jxEncodeError("Comment")
 			}
 			e.Raw(raw)
+		}
+	}
+	if x.ContactEmail != nil {
+		if e.FieldStart("contactEmail") {
+			return nil, jxEncodeError("contactEmail")
+		}
+		if x.ContactEmail == nil {
+			e.Null()
+		} else {
+			e.Str(*x.ContactEmail)
+		}
+	}
+	if len(x.AliasList) > 0 {
+		if e.FieldStart("aliasList") {
+			return nil, jxEncodeError("aliasList")
+		}
+		if e.ArrStart() {
+			return nil, jxEncodeError("AliasList")
+		}
+		for _, el := range x.AliasList {
+			e.Str(el)
+		}
+		if e.ArrEnd() {
+			return nil, jxEncodeError("AliasList")
 		}
 	}
 	if x.Id != nil {
@@ -161,40 +153,6 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 		return nil, jxEncodeError("tag")
 	}
 	e.Str(x.Tag)
-	if e.FieldStart("name") {
-		return nil, jxEncodeError("name")
-	}
-	e.Str(x.Name)
-	if x.ContactEmail != nil {
-		if e.FieldStart("contactEmail") {
-			return nil, jxEncodeError("contactEmail")
-		}
-		if x.ContactEmail == nil {
-			e.Null()
-		} else {
-			e.Str(*x.ContactEmail)
-		}
-	}
-	if x.Archived != nil {
-		if e.FieldStart("archived") {
-			return nil, jxEncodeError("archived")
-		}
-		if x.Archived == nil {
-			e.Null()
-		} else {
-			e.Bool(*x.Archived)
-		}
-	}
-	if len(x.Meta) > 0 {
-		if e.FieldStart("meta") {
-			return nil, jxEncodeError("meta")
-		}
-		raw, err := json.Marshal(x.Meta)
-		if err != nil {
-			return nil, jxEncodeError("meta")
-		}
-		e.Raw(raw)
-	}
 	if x.CreatedAt != nil {
 		if e.FieldStart("createdAt") {
 			return nil, jxEncodeError("createdAt")
@@ -207,6 +165,40 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 				return nil, jxEncodeError("CreatedAt")
 			}
 			e.Raw(raw)
+		}
+	}
+	if e.FieldStart("source") {
+		return nil, jxEncodeError("source")
+	}
+	e.Str(x.Source)
+	if x.Note != nil {
+		if e.FieldStart("note") {
+			return nil, jxEncodeError("note")
+		}
+		if x.Note == nil {
+			e.Null()
+		} else {
+			e.Str(*x.Note)
+		}
+	}
+	if len(x.Meta) > 0 {
+		if e.FieldStart("meta") {
+			return nil, jxEncodeError("meta")
+		}
+		raw, err := json.Marshal(x.Meta)
+		if err != nil {
+			return nil, jxEncodeError("meta")
+		}
+		e.Raw(raw)
+	}
+	if x.ContactPhone != nil {
+		if e.FieldStart("contactPhone") {
+			return nil, jxEncodeError("contactPhone")
+		}
+		if x.ContactPhone == nil {
+			e.Null()
+		} else {
+			e.Str(*x.ContactPhone)
 		}
 	}
 	if len(x.StatusList) > 0 {
@@ -223,6 +215,32 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 			return nil, jxEncodeError("StatusList")
 		}
 	}
+	if e.FieldStart("customId") {
+		return nil, jxEncodeError("customId")
+	}
+	raw, err := json.Marshal(x.CustomId)
+	if err != nil {
+		return nil, jxEncodeError("customId")
+	}
+	e.Raw(raw)
+	if e.FieldStart("aliasId") {
+		return nil, jxEncodeError("aliasId")
+	}
+	e.Str(x.AliasId)
+	if e.FieldStart("name") {
+		return nil, jxEncodeError("name")
+	}
+	e.Str(x.Name)
+	if x.Archived != nil {
+		if e.FieldStart("archived") {
+			return nil, jxEncodeError("archived")
+		}
+		if x.Archived == nil {
+			e.Null()
+		} else {
+			e.Bool(*x.Archived)
+		}
+	}
 	if len(x.Counters) > 0 {
 		if e.FieldStart("counters") {
 			return nil, jxEncodeError("counters")
@@ -233,14 +251,14 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 		}
 		e.Raw(raw)
 	}
+	if e.FieldStart("status") {
+		return nil, jxEncodeError("status")
+	}
+	e.Int32(x.Status)
 	if e.FieldStart("virtualNote") {
 		return nil, jxEncodeError("virtualNote")
 	}
 	e.Str(x.VirtualNote)
-	if e.FieldStart("source") {
-		return nil, jxEncodeError("source")
-	}
-	e.Str(x.Source)
 	if len(x.Labels) > 0 {
 		if e.FieldStart("labels") {
 			return nil, jxEncodeError("labels")
@@ -269,51 +287,12 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "note":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("Note", err)
-				}
-				x.Note = nil
-				return nil
-			}
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Note", err)
-			}
-			x.Note = &val
-			return nil
 		case "raw":
 			val, err := (*jx.Decoder).Base64(d)
 			if err != nil {
 				return jxDecodeError("Raw", err)
 			}
 			x.Raw = val
-			return nil
-		case "contactPhone":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("ContactPhone", err)
-				}
-				x.ContactPhone = nil
-				return nil
-			}
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("ContactPhone", err)
-			}
-			x.ContactPhone = &val
-			return nil
-		case "customId":
-			raw, err := d.Raw()
-			if err != nil {
-				return jxDecodeError("CustomId", err)
-			}
-			var outVal uuid.UUID
-			if err := json.Unmarshal(raw, &outVal); err != nil {
-				return jxDecodeError("CustomId", err)
-			}
-			x.CustomId = outVal
 			return nil
 		case "rawList":
 			var outVal [][]byte
@@ -328,13 +307,6 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("RawList", err)
 			}
 			x.RawList = outVal
-			return nil
-		case "status":
-			val, err := (*jx.Decoder).Int32(d)
-			if err != nil {
-				return jxDecodeError("Status", err)
-			}
-			x.Status = val
 			return nil
 		case "comment":
 			if d.Next() == jx.Null {
@@ -353,6 +325,34 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("Comment", err)
 			}
 			x.Comment = outVal
+			return nil
+		case "contactEmail":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("ContactEmail", err)
+				}
+				x.ContactEmail = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("ContactEmail", err)
+			}
+			x.ContactEmail = &val
+			return nil
+		case "aliasList":
+			var outVal []string
+			if err := d.Arr(func(d *jx.Decoder) error {
+				val, err := (*jx.Decoder).Str(d)
+				if err != nil {
+					return err
+				}
+				outVal = append(outVal, val)
+				return nil
+			}); err != nil {
+				return jxDecodeError("AliasList", err)
+			}
+			x.AliasList = outVal
 			return nil
 		case "id":
 			if d.Next() == jx.Null {
@@ -382,52 +382,6 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.Tag = val
 			return nil
-		case "name":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Name", err)
-			}
-			x.Name = val
-			return nil
-		case "contactEmail":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("ContactEmail", err)
-				}
-				x.ContactEmail = nil
-				return nil
-			}
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("ContactEmail", err)
-			}
-			x.ContactEmail = &val
-			return nil
-		case "archived":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("Archived", err)
-				}
-				x.Archived = nil
-				return nil
-			}
-			val, err := (*jx.Decoder).Bool(d)
-			if err != nil {
-				return jxDecodeError("Archived", err)
-			}
-			x.Archived = &val
-			return nil
-		case "meta":
-			raw, err := d.Raw()
-			if err != nil {
-				return jxDecodeError("Meta", err)
-			}
-			var outVal map[string]string
-			if err := json.Unmarshal(raw, &outVal); err != nil {
-				return jxDecodeError("Meta", err)
-			}
-			x.Meta = outVal
-			return nil
 		case "createdAt":
 			if d.Next() == jx.Null {
 				if err := d.Null(); err != nil {
@@ -446,6 +400,52 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.CreatedAt = outVal
 			return nil
+		case "source":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Source", err)
+			}
+			x.Source = val
+			return nil
+		case "note":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("Note", err)
+				}
+				x.Note = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Note", err)
+			}
+			x.Note = &val
+			return nil
+		case "meta":
+			raw, err := d.Raw()
+			if err != nil {
+				return jxDecodeError("Meta", err)
+			}
+			var outVal map[string]string
+			if err := json.Unmarshal(raw, &outVal); err != nil {
+				return jxDecodeError("Meta", err)
+			}
+			x.Meta = outVal
+			return nil
+		case "contactPhone":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("ContactPhone", err)
+				}
+				x.ContactPhone = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("ContactPhone", err)
+			}
+			x.ContactPhone = &val
+			return nil
 		case "statusList":
 			var outVal []int32
 			if err := d.Arr(func(d *jx.Decoder) error {
@@ -460,6 +460,45 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.StatusList = outVal
 			return nil
+		case "customId":
+			raw, err := d.Raw()
+			if err != nil {
+				return jxDecodeError("CustomId", err)
+			}
+			var outVal uuid.UUID
+			if err := json.Unmarshal(raw, &outVal); err != nil {
+				return jxDecodeError("CustomId", err)
+			}
+			x.CustomId = outVal
+			return nil
+		case "aliasId":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("AliasId", err)
+			}
+			x.AliasId = val
+			return nil
+		case "name":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Name", err)
+			}
+			x.Name = val
+			return nil
+		case "archived":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("Archived", err)
+				}
+				x.Archived = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Bool(d)
+			if err != nil {
+				return jxDecodeError("Archived", err)
+			}
+			x.Archived = &val
+			return nil
 		case "counters":
 			raw, err := d.Raw()
 			if err != nil {
@@ -471,19 +510,19 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.Counters = outVal
 			return nil
+		case "status":
+			val, err := (*jx.Decoder).Int32(d)
+			if err != nil {
+				return jxDecodeError("Status", err)
+			}
+			x.Status = val
+			return nil
 		case "virtualNote":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
 				return jxDecodeError("VirtualNote", err)
 			}
 			x.VirtualNote = val
-			return nil
-		case "source":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Source", err)
-			}
-			x.Source = val
 			return nil
 		case "labels":
 			var outVal []string

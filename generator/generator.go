@@ -24,7 +24,8 @@ type Generator struct {
 	Plugin   *protogen.Plugin
 	suffix   string
 
-	overrides []*goplain.TypeOverride
+	overrides   []*goplain.TypeOverride
+	typeAliases map[string]typeAliasInfo
 }
 
 type Option func(*Generator) error
@@ -49,9 +50,10 @@ func NewGenerator(p *protogen.Plugin, opts ...Option) (*Generator, error) {
 		return nil, err
 	}
 	g := &Generator{
-		Settings: settings,
-		Plugin:   p,
-		suffix:   "Plain",
+		Settings:    settings,
+		Plugin:      p,
+		suffix:      "Plain",
+		typeAliases: make(map[string]typeAliasInfo),
 	}
 	for _, opt := range opts {
 		if opt == nil {
@@ -77,6 +79,13 @@ type ResultMessage struct {
 type TypePbIR struct {
 	File     *protogen.File
 	Messages map[string]*typepb.Type
+}
+
+type typeAliasInfo struct {
+	fieldName   string
+	fieldGoName string
+	kind        typepb.Field_Kind
+	pbTypeName  string
 }
 
 const (
@@ -135,6 +144,24 @@ func (g *Generator) Collect() []*TypePbIR {
 				SourceContext: &sourcecontextpb.SourceContext{
 					FileName: string(file.Desc.Package()) + "." + string(file.Desc.FullName()),
 				},
+			}
+			if msgGen.GetTypeAlias() {
+				fieldName := msgGen.GetTypeAliasField()
+				if fieldName == "" {
+					fieldName = "value"
+				}
+				for _, f := range message.Fields {
+					if string(f.Desc.Name()) != fieldName {
+						continue
+					}
+					g.typeAliases[string(message.Desc.FullName())] = typeAliasInfo{
+						fieldName:   fieldName,
+						fieldGoName: f.GoName,
+						kind:        typepb.Field_Kind(f.Desc.Kind()),
+						pbTypeName:  message.GoIdent.GoName,
+					}
+					break
+				}
 			}
 			for cnt, vf := range msgGen.GetVirtualFields() {
 				// TODO: VALIDATE

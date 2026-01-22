@@ -177,6 +177,50 @@ func (x *Extra) GetTag() string {
 	return ""
 }
 
+type StringAlias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StringAlias) Reset() {
+	*x = StringAlias{}
+	mi := &file_test_full_full_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StringAlias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StringAlias) ProtoMessage() {}
+
+func (x *StringAlias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StringAlias.ProtoReflect.Descriptor instead.
+func (*StringAlias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *StringAlias) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
 type Complex struct {
 	state     protoimpl.MessageState  `protogen:"open.v1"`
 	Base      *Base                   `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
@@ -199,13 +243,15 @@ type Complex struct {
 	Status        Status            `protobuf:"varint,15,opt,name=status,proto3,enum=testfull.Status" json:"status,omitempty"`
 	StatusList    []Status          `protobuf:"varint,16,rep,packed,name=status_list,json=statusList,proto3,enum=testfull.Status" json:"status_list,omitempty"`
 	CustomId      string            `protobuf:"bytes,17,opt,name=custom_id,json=customId,proto3" json:"custom_id,omitempty"`
+	AliasId       *StringAlias      `protobuf:"bytes,18,opt,name=alias_id,json=aliasId,proto3" json:"alias_id,omitempty"`
+	AliasList     []*StringAlias    `protobuf:"bytes,19,rep,name=alias_list,json=aliasList,proto3" json:"alias_list,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Complex) Reset() {
 	*x = Complex{}
-	mi := &file_test_full_full_proto_msgTypes[2]
+	mi := &file_test_full_full_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -217,7 +263,7 @@ func (x *Complex) String() string {
 func (*Complex) ProtoMessage() {}
 
 func (x *Complex) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_full_proto_msgTypes[2]
+	mi := &file_test_full_full_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -230,7 +276,7 @@ func (x *Complex) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Complex.ProtoReflect.Descriptor instead.
 func (*Complex) Descriptor() ([]byte, []int) {
-	return file_test_full_full_proto_rawDescGZIP(), []int{2}
+	return file_test_full_full_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Complex) GetBase() *Base {
@@ -363,6 +409,20 @@ func (x *Complex) GetCustomId() string {
 	return ""
 }
 
+func (x *Complex) GetAliasId() *StringAlias {
+	if x != nil {
+		return x.AliasId
+	}
+	return nil
+}
+
+func (x *Complex) GetAliasList() []*StringAlias {
+	if x != nil {
+		return x.AliasList
+	}
+	return nil
+}
+
 type isComplex_Contact interface {
 	isComplex_Contact()
 }
@@ -389,7 +449,9 @@ const file_test_full_full_proto_rawDesc = "" +
 	"\x06source\x18\x02 \x01(\tR\x06source:\x06\x82\xa6\x1d\x02\b\x01\"1\n" +
 	"\x05Extra\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
-	"\x03tag\x18\x02 \x01(\tR\x03tag:\x06\x82\xa6\x1d\x02\b\x01\"\xe1\x06\n" +
+	"\x03tag\x18\x02 \x01(\tR\x03tag:\x06\x82\xa6\x1d\x02\b\x01\"2\n" +
+	"\vStringAlias\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value:\r\x82\xa6\x1d\t\x10\x01\x1a\x05value\"\xc9\a\n" +
 	"\aComplex\x12*\n" +
 	"\x04base\x18\x01 \x01(\v2\x0e.testfull.BaseB\x06\x82\xa6\x1d\x02 \x01R\x04base\x12-\n" +
 	"\x05extra\x18\x02 \x01(\v2\x0f.testfull.ExtraB\x06\x82\xa6\x1d\x02 \x01R\x05extra\x12\x12\n" +
@@ -412,7 +474,10 @@ const file_test_full_full_proto_rawDesc = "" +
 	"statusList\x12A\n" +
 	"\tcustom_id\x18\x11 \x01(\tB$\x82\xa6\x1d \n" +
 	"\x1e\n" +
-	"\x04UUID\x12\x16github.com/google/uuidR\bcustomId\x1a;\n" +
+	"\x04UUID\x12\x16github.com/google/uuidR\bcustomId\x120\n" +
+	"\balias_id\x18\x12 \x01(\v2\x15.testfull.StringAliasR\aaliasId\x124\n" +
+	"\n" +
+	"alias_list\x18\x13 \x03(\v2\x15.testfull.StringAliasR\taliasList\x1a;\n" +
 	"\rCountersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a7\n" +
@@ -440,31 +505,34 @@ func file_test_full_full_proto_rawDescGZIP() []byte {
 }
 
 var file_test_full_full_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_test_full_full_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_test_full_full_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_test_full_full_proto_goTypes = []any{
 	(Status)(0),                    // 0: testfull.Status
 	(*Base)(nil),                   // 1: testfull.Base
 	(*Extra)(nil),                  // 2: testfull.Extra
-	(*Complex)(nil),                // 3: testfull.Complex
-	nil,                            // 4: testfull.Complex.CountersEntry
-	nil,                            // 5: testfull.Complex.MetaEntry
-	(*timestamppb.Timestamp)(nil),  // 6: google.protobuf.Timestamp
-	(*wrapperspb.StringValue)(nil), // 7: google.protobuf.StringValue
+	(*StringAlias)(nil),            // 3: testfull.StringAlias
+	(*Complex)(nil),                // 4: testfull.Complex
+	nil,                            // 5: testfull.Complex.CountersEntry
+	nil,                            // 6: testfull.Complex.MetaEntry
+	(*timestamppb.Timestamp)(nil),  // 7: google.protobuf.Timestamp
+	(*wrapperspb.StringValue)(nil), // 8: google.protobuf.StringValue
 }
 var file_test_full_full_proto_depIdxs = []int32{
-	1, // 0: testfull.Complex.base:type_name -> testfull.Base
-	2, // 1: testfull.Complex.extra:type_name -> testfull.Extra
-	4, // 2: testfull.Complex.counters:type_name -> testfull.Complex.CountersEntry
-	5, // 3: testfull.Complex.meta:type_name -> testfull.Complex.MetaEntry
-	6, // 4: testfull.Complex.created_at:type_name -> google.protobuf.Timestamp
-	7, // 5: testfull.Complex.comment:type_name -> google.protobuf.StringValue
-	0, // 6: testfull.Complex.status:type_name -> testfull.Status
-	0, // 7: testfull.Complex.status_list:type_name -> testfull.Status
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	1,  // 0: testfull.Complex.base:type_name -> testfull.Base
+	2,  // 1: testfull.Complex.extra:type_name -> testfull.Extra
+	5,  // 2: testfull.Complex.counters:type_name -> testfull.Complex.CountersEntry
+	6,  // 3: testfull.Complex.meta:type_name -> testfull.Complex.MetaEntry
+	7,  // 4: testfull.Complex.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 5: testfull.Complex.comment:type_name -> google.protobuf.StringValue
+	0,  // 6: testfull.Complex.status:type_name -> testfull.Status
+	0,  // 7: testfull.Complex.status_list:type_name -> testfull.Status
+	3,  // 8: testfull.Complex.alias_id:type_name -> testfull.StringAlias
+	3,  // 9: testfull.Complex.alias_list:type_name -> testfull.StringAlias
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_test_full_full_proto_init() }
@@ -472,7 +540,7 @@ func file_test_full_full_proto_init() {
 	if File_test_full_full_proto != nil {
 		return
 	}
-	file_test_full_full_proto_msgTypes[2].OneofWrappers = []any{
+	file_test_full_full_proto_msgTypes[3].OneofWrappers = []any{
 		(*Complex_Email)(nil),
 		(*Complex_Phone)(nil),
 	}
@@ -482,7 +550,7 @@ func file_test_full_full_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_full_full_proto_rawDesc), len(file_test_full_full_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

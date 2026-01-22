@@ -32,7 +32,9 @@ func (x *EventPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, string
 		return nil
 	}
 	out := &Event{}
+	out.ParentEventId = x.ParentEventId
 	// skip invalid path for EventVirtualType
+	out.EventId = x.EventId
 	if x.Process != nil {
 		out.Process = x.Process.IntoPb()
 	}
@@ -90,8 +92,6 @@ func (x *EventPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, string
 		}
 		out.Data.NonPlatformEvent = &EventData_CustomEvent{CustomEvent: *x.NonPlatformEventCustomEvent}
 	}
-	out.ParentEventId = x.ParentEventId
-	out.EventId = x.EventId
 	if casterUuidUuidToString == nil {
 		panic("missing caster: casterUuidUuidToString")
 	}
@@ -117,7 +117,9 @@ func (x *Event) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID])
 		return nil
 	}
 	out := &EventPlain{}
+	out.ParentEventId = x.ParentEventId
 	// skip invalid path for EventVirtualType
+	out.EventId = x.EventId
 	if x.Process != nil {
 		out.Process = x.Process.IntoPlain()
 	}
@@ -148,8 +150,6 @@ func (x *Event) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID])
 			out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
 		}
 	}
-	out.ParentEventId = x.ParentEventId
-	out.EventId = x.EventId
 	if x.SomeEventStringPayload != "" {
 		if casterStringToUuidUuid == nil {
 			panic("missing caster: casterStringToUuidUuid")
@@ -171,7 +171,9 @@ func (x *EventPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID, 
 		return nil, nil
 	}
 	out := &Event{}
+	out.ParentEventId = x.ParentEventId
 	// skip invalid path for EventVirtualType
+	out.EventId = x.EventId
 	if x.Process != nil {
 		mv, err := x.Process.IntoPbErr()
 		if err != nil {
@@ -233,8 +235,6 @@ func (x *EventPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID, 
 		}
 		out.Data.NonPlatformEvent = &EventData_CustomEvent{CustomEvent: *x.NonPlatformEventCustomEvent}
 	}
-	out.ParentEventId = x.ParentEventId
-	out.EventId = x.EventId
 	if casterUuidUuidToString == nil {
 		return nil, fmt.Errorf("missing caster: casterUuidUuidToString")
 	}
@@ -263,7 +263,9 @@ func (x *Event) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uuid.
 		return nil, nil
 	}
 	out := &EventPlain{}
+	out.ParentEventId = x.ParentEventId
 	// skip invalid path for EventVirtualType
+	out.EventId = x.EventId
 	if x.Process != nil {
 		plainVal, err := x.Process.IntoPlainErr()
 		if err != nil {
@@ -298,8 +300,6 @@ func (x *Event) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uuid.
 			out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
 		}
 	}
-	out.ParentEventId = x.ParentEventId
-	out.EventId = x.EventId
 	if x.SomeEventStringPayload != "" {
 		if casterStringToUuidUuid == nil {
 			return nil, fmt.Errorf("missing caster: casterStringToUuidUuid")

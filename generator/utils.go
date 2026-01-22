@@ -72,6 +72,23 @@ func jsonTagFromPlain(name string) string {
 	return strcase.ToLowerCamel(name)
 }
 
+func (g *Generator) typeAliasInfoForTypeURL(typeURL string) (typeAliasInfo, bool) {
+	if typeURL == "" {
+		return typeAliasInfo{}, false
+	}
+	target := empath.Parse(typeURL).Last().Value()
+	info, ok := g.typeAliases[target]
+	return info, ok
+}
+
+func (g *Generator) isTypeAliasMessage(fullName string) bool {
+	if fullName == "" {
+		return false
+	}
+	_, ok := g.typeAliases[fullName]
+	return ok
+}
+
 type mapFieldInfo struct {
 	keyKind   typepb.Field_Kind
 	valueKind typepb.Field_Kind

@@ -72,25 +72,22 @@ func (x *ComplexPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, stri
 		return nil
 	}
 	out := &Complex{}
-	if x.Note != nil {
-		_valNote := *x.Note
-		out.Note = &_valNote
-	}
 	out.Raw = x.Raw
-	if x.ContactPhone != nil {
-		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
-	}
-	if casterUuidUuidToString == nil {
-		panic("missing caster: casterUuidUuidToString")
-	}
-	val := casterUuidUuidToString.Cast(x.CustomId)
-	out.CustomId = val
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
 	}
-	out.Status = Status(x.Status)
 	if x.Comment != nil {
 		out.Comment = x.Comment
+	}
+	if x.ContactEmail != nil {
+		out.Contact = &Complex_Email{Email: *x.ContactEmail}
+	}
+	if len(x.AliasList) > 0 {
+		vals := make([]*StringAlias, len(x.AliasList))
+		for i, v := range x.AliasList {
+			vals[i] = &StringAlias{Value: v}
+		}
+		out.AliasList = vals
 	}
 	if x.IdCRF != "" {
 		_crfPath := strings.Join(parseCRFPath(x.IdCRF), "/")
@@ -123,17 +120,20 @@ func (x *ComplexPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, stri
 		out.Extra = &Extra{}
 	}
 	out.Extra.Tag = x.Tag
-	out.Name = x.Name
-	if x.ContactEmail != nil {
-		out.Contact = &Complex_Email{Email: *x.ContactEmail}
-	}
-	if x.Archived != nil {
-		_valArchived := *x.Archived
-		out.Archived = &_valArchived
-	}
-	out.Meta = x.Meta
 	if x.CreatedAt != nil {
 		out.CreatedAt = x.CreatedAt
+	}
+	if out.Base == nil {
+		out.Base = &Base{}
+	}
+	out.Base.Source = x.Source
+	if x.Note != nil {
+		_valNote := *x.Note
+		out.Note = &_valNote
+	}
+	out.Meta = x.Meta
+	if x.ContactPhone != nil {
+		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
 	}
 	if len(x.StatusList) > 0 {
 		_valStatusListSlice := make([]Status, len(x.StatusList))
@@ -142,12 +142,20 @@ func (x *ComplexPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, stri
 		}
 		out.StatusList = _valStatusListSlice
 	}
-	out.Counters = x.Counters
-	// skip invalid path for VirtualNote
-	if out.Base == nil {
-		out.Base = &Base{}
+	if casterUuidUuidToString == nil {
+		panic("missing caster: casterUuidUuidToString")
 	}
-	out.Base.Source = x.Source
+	val := casterUuidUuidToString.Cast(x.CustomId)
+	out.CustomId = val
+	out.AliasId = &StringAlias{Value: x.AliasId}
+	out.Name = x.Name
+	if x.Archived != nil {
+		_valArchived := *x.Archived
+		out.Archived = &_valArchived
+	}
+	out.Counters = x.Counters
+	out.Status = Status(x.Status)
+	// skip invalid path for VirtualNote
 	if len(x.Labels) > 0 {
 		out.Labels = x.Labels
 	}
@@ -159,27 +167,26 @@ func (x *Complex) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID
 		return nil
 	}
 	out := &ComplexPlain{}
-	if x.Note != nil {
-		_valNote := *x.Note
-		out.Note = &_valNote
-	}
 	out.Raw = x.Raw
-	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
-		_valContactPhone := _oneofPhone0.Phone
-		out.ContactPhone = &_valContactPhone
-	}
-	if x.CustomId != "" {
-		if casterStringToUuidUuid == nil {
-			panic("missing caster: casterStringToUuidUuid")
-		}
-		out.CustomId = casterStringToUuidUuid.Cast(x.CustomId)
-	}
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
 	}
-	out.Status = int32(x.Status)
 	if x.Comment != nil {
 		out.Comment = x.Comment
+	}
+	if _oneofEmail0, ok := x.Contact.(*Complex_Email); ok {
+		_valContactEmail := _oneofEmail0.Email
+		out.ContactEmail = &_valContactEmail
+	}
+	if len(x.AliasList) > 0 {
+		vals := make([]string, 0, len(x.AliasList))
+		for _, v := range x.AliasList {
+			if v == nil {
+				continue
+			}
+			vals = append(vals, v.Value)
+		}
+		out.AliasList = vals
 	}
 	// CRF paths
 	if x.Base != nil {
@@ -200,20 +207,22 @@ func (x *Complex) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID
 	if x.Extra != nil {
 		out.Tag = x.Extra.Tag
 	}
-	out.Name = x.Name
-	if _oneofEmail0, ok := x.Contact.(*Complex_Email); ok {
-		_valContactEmail := _oneofEmail0.Email
-		out.ContactEmail = &_valContactEmail
+	if x.CreatedAt != nil {
+		out.CreatedAt = x.CreatedAt
 	}
-	if x.Archived != nil {
-		_valArchived := *x.Archived
-		out.Archived = &_valArchived
+	if x.Base != nil {
+		out.Source = x.Base.Source
+	}
+	if x.Note != nil {
+		_valNote := *x.Note
+		out.Note = &_valNote
 	}
 	if len(x.Meta) > 0 {
 		out.Meta = x.Meta
 	}
-	if x.CreatedAt != nil {
-		out.CreatedAt = x.CreatedAt
+	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
+		_valContactPhone := _oneofPhone0.Phone
+		out.ContactPhone = &_valContactPhone
 	}
 	if len(x.StatusList) > 0 {
 		_valStatusListSlice := make([]int32, len(x.StatusList))
@@ -222,13 +231,26 @@ func (x *Complex) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID
 		}
 		out.StatusList = _valStatusListSlice
 	}
+	if x.CustomId != "" {
+		if casterStringToUuidUuid == nil {
+			panic("missing caster: casterStringToUuidUuid")
+		}
+		out.CustomId = casterStringToUuidUuid.Cast(x.CustomId)
+	}
+	if x.AliasId != nil {
+		val := x.AliasId.Value
+		out.AliasId = val
+	}
+	out.Name = x.Name
+	if x.Archived != nil {
+		_valArchived := *x.Archived
+		out.Archived = &_valArchived
+	}
 	if len(x.Counters) > 0 {
 		out.Counters = x.Counters
 	}
+	out.Status = int32(x.Status)
 	// skip invalid path for VirtualNote
-	if x.Base != nil {
-		out.Source = x.Base.Source
-	}
 	if len(x.Labels) > 0 {
 		out.Labels = x.Labels
 	}
@@ -240,28 +262,22 @@ func (x *ComplexPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID
 		return nil, nil
 	}
 	out := &Complex{}
-	if x.Note != nil {
-		_valNote := *x.Note
-		out.Note = &_valNote
-	}
 	out.Raw = x.Raw
-	if x.ContactPhone != nil {
-		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
-	}
-	if casterUuidUuidToString == nil {
-		return nil, fmt.Errorf("missing caster: casterUuidUuidToString")
-	}
-	val, err := casterUuidUuidToString.CastErr(x.CustomId)
-	if err != nil {
-		return nil, err
-	}
-	out.CustomId = val
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
 	}
-	out.Status = Status(x.Status)
 	if x.Comment != nil {
 		out.Comment = x.Comment
+	}
+	if x.ContactEmail != nil {
+		out.Contact = &Complex_Email{Email: *x.ContactEmail}
+	}
+	if len(x.AliasList) > 0 {
+		vals := make([]*StringAlias, len(x.AliasList))
+		for i, v := range x.AliasList {
+			vals[i] = &StringAlias{Value: v}
+		}
+		out.AliasList = vals
 	}
 	if x.IdCRF != "" {
 		_crfPath := strings.Join(parseCRFPath(x.IdCRF), "/")
@@ -294,17 +310,20 @@ func (x *ComplexPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID
 		out.Extra = &Extra{}
 	}
 	out.Extra.Tag = x.Tag
-	out.Name = x.Name
-	if x.ContactEmail != nil {
-		out.Contact = &Complex_Email{Email: *x.ContactEmail}
-	}
-	if x.Archived != nil {
-		_valArchived := *x.Archived
-		out.Archived = &_valArchived
-	}
-	out.Meta = x.Meta
 	if x.CreatedAt != nil {
 		out.CreatedAt = x.CreatedAt
+	}
+	if out.Base == nil {
+		out.Base = &Base{}
+	}
+	out.Base.Source = x.Source
+	if x.Note != nil {
+		_valNote := *x.Note
+		out.Note = &_valNote
+	}
+	out.Meta = x.Meta
+	if x.ContactPhone != nil {
+		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
 	}
 	if len(x.StatusList) > 0 {
 		_valStatusListSlice := make([]Status, len(x.StatusList))
@@ -313,12 +332,23 @@ func (x *ComplexPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID
 		}
 		out.StatusList = _valStatusListSlice
 	}
-	out.Counters = x.Counters
-	// skip invalid path for VirtualNote
-	if out.Base == nil {
-		out.Base = &Base{}
+	if casterUuidUuidToString == nil {
+		return nil, fmt.Errorf("missing caster: casterUuidUuidToString")
 	}
-	out.Base.Source = x.Source
+	val, err := casterUuidUuidToString.CastErr(x.CustomId)
+	if err != nil {
+		return nil, err
+	}
+	out.CustomId = val
+	out.AliasId = &StringAlias{Value: x.AliasId}
+	out.Name = x.Name
+	if x.Archived != nil {
+		_valArchived := *x.Archived
+		out.Archived = &_valArchived
+	}
+	out.Counters = x.Counters
+	out.Status = Status(x.Status)
+	// skip invalid path for VirtualNote
 	if len(x.Labels) > 0 {
 		out.Labels = x.Labels
 	}
@@ -330,31 +360,26 @@ func (x *Complex) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uui
 		return nil, nil
 	}
 	out := &ComplexPlain{}
-	if x.Note != nil {
-		_valNote := *x.Note
-		out.Note = &_valNote
-	}
 	out.Raw = x.Raw
-	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
-		_valContactPhone := _oneofPhone0.Phone
-		out.ContactPhone = &_valContactPhone
-	}
-	if x.CustomId != "" {
-		if casterStringToUuidUuid == nil {
-			return nil, fmt.Errorf("missing caster: casterStringToUuidUuid")
-		}
-		val, err := casterStringToUuidUuid.CastErr(x.CustomId)
-		if err != nil {
-			return nil, err
-		}
-		out.CustomId = val
-	}
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
 	}
-	out.Status = int32(x.Status)
 	if x.Comment != nil {
 		out.Comment = x.Comment
+	}
+	if _oneofEmail0, ok := x.Contact.(*Complex_Email); ok {
+		_valContactEmail := _oneofEmail0.Email
+		out.ContactEmail = &_valContactEmail
+	}
+	if len(x.AliasList) > 0 {
+		vals := make([]string, 0, len(x.AliasList))
+		for _, v := range x.AliasList {
+			if v == nil {
+				continue
+			}
+			vals = append(vals, v.Value)
+		}
+		out.AliasList = vals
 	}
 	// CRF paths
 	if x.Base != nil {
@@ -375,20 +400,22 @@ func (x *Complex) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uui
 	if x.Extra != nil {
 		out.Tag = x.Extra.Tag
 	}
-	out.Name = x.Name
-	if _oneofEmail0, ok := x.Contact.(*Complex_Email); ok {
-		_valContactEmail := _oneofEmail0.Email
-		out.ContactEmail = &_valContactEmail
+	if x.CreatedAt != nil {
+		out.CreatedAt = x.CreatedAt
 	}
-	if x.Archived != nil {
-		_valArchived := *x.Archived
-		out.Archived = &_valArchived
+	if x.Base != nil {
+		out.Source = x.Base.Source
+	}
+	if x.Note != nil {
+		_valNote := *x.Note
+		out.Note = &_valNote
 	}
 	if len(x.Meta) > 0 {
 		out.Meta = x.Meta
 	}
-	if x.CreatedAt != nil {
-		out.CreatedAt = x.CreatedAt
+	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
+		_valContactPhone := _oneofPhone0.Phone
+		out.ContactPhone = &_valContactPhone
 	}
 	if len(x.StatusList) > 0 {
 		_valStatusListSlice := make([]int32, len(x.StatusList))
@@ -397,13 +424,30 @@ func (x *Complex) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uui
 		}
 		out.StatusList = _valStatusListSlice
 	}
+	if x.CustomId != "" {
+		if casterStringToUuidUuid == nil {
+			return nil, fmt.Errorf("missing caster: casterStringToUuidUuid")
+		}
+		val, err := casterStringToUuidUuid.CastErr(x.CustomId)
+		if err != nil {
+			return nil, err
+		}
+		out.CustomId = val
+	}
+	if x.AliasId != nil {
+		val := x.AliasId.Value
+		out.AliasId = val
+	}
+	out.Name = x.Name
+	if x.Archived != nil {
+		_valArchived := *x.Archived
+		out.Archived = &_valArchived
+	}
 	if len(x.Counters) > 0 {
 		out.Counters = x.Counters
 	}
+	out.Status = int32(x.Status)
 	// skip invalid path for VirtualNote
-	if x.Base != nil {
-		out.Source = x.Base.Source
-	}
 	if len(x.Labels) > 0 {
 		out.Labels = x.Labels
 	}

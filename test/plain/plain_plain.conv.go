@@ -52,6 +52,10 @@ func (x *UserPlain) IntoPb() *User {
 	if out.Base == nil {
 		out.Base = &BaseInfo{}
 	}
+	out.Base.Id = x.Id
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
 	out.Base.Source = x.Source
 	out.Name = x.Name
 	if x.ContactEmail != nil {
@@ -60,10 +64,6 @@ func (x *UserPlain) IntoPb() *User {
 	if x.ContactPhone != nil {
 		out.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
-	if out.Base == nil {
-		out.Base = &BaseInfo{}
-	}
-	out.Base.Id = x.Id
 	return out
 }
 
@@ -72,6 +72,9 @@ func (x *User) IntoPlain() *UserPlain {
 		return nil
 	}
 	out := &UserPlain{}
+	if x.Base != nil {
+		out.Id = x.Base.Id
+	}
 	if x.Base != nil {
 		out.Source = x.Base.Source
 	}
@@ -83,9 +86,6 @@ func (x *User) IntoPlain() *UserPlain {
 	if _oneofPhone0, ok := x.Contact.(*User_Phone); ok {
 		_valContactPhone := _oneofPhone0.Phone
 		out.ContactPhone = &_valContactPhone
-	}
-	if x.Base != nil {
-		out.Id = x.Base.Id
 	}
 	return out
 }
@@ -98,6 +98,10 @@ func (x *UserPlain) IntoPbErr() (*User, error) {
 	if out.Base == nil {
 		out.Base = &BaseInfo{}
 	}
+	out.Base.Id = x.Id
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
 	out.Base.Source = x.Source
 	out.Name = x.Name
 	if x.ContactEmail != nil {
@@ -106,10 +110,6 @@ func (x *UserPlain) IntoPbErr() (*User, error) {
 	if x.ContactPhone != nil {
 		out.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
-	if out.Base == nil {
-		out.Base = &BaseInfo{}
-	}
-	out.Base.Id = x.Id
 	return out, nil
 }
 
@@ -118,6 +118,9 @@ func (x *User) IntoPlainErr() (*UserPlain, error) {
 		return nil, nil
 	}
 	out := &UserPlain{}
+	if x.Base != nil {
+		out.Id = x.Base.Id
+	}
 	if x.Base != nil {
 		out.Source = x.Base.Source
 	}
@@ -130,9 +133,6 @@ func (x *User) IntoPlainErr() (*UserPlain, error) {
 		_valContactPhone := _oneofPhone0.Phone
 		out.ContactPhone = &_valContactPhone
 	}
-	if x.Base != nil {
-		out.Id = x.Base.Id
-	}
 	return out, nil
 }
 
@@ -141,6 +141,13 @@ func (x *UserEventPlain) IntoPb() *UserEvent {
 		return nil
 	}
 	out := &UserEvent{}
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
+	out.User.Base.Id = x.Id
 	if out.User == nil {
 		out.User = &User{}
 	}
@@ -164,13 +171,6 @@ func (x *UserEventPlain) IntoPb() *UserEvent {
 		}
 		out.User.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
-	if out.User == nil {
-		out.User = &User{}
-	}
-	if out.User.Base == nil {
-		out.User.Base = &BaseInfo{}
-	}
-	out.User.Base.Id = x.Id
 	out.EventType = x.EventType
 	return out
 }
@@ -180,6 +180,11 @@ func (x *UserEvent) IntoPlain() *UserEventPlain {
 		return nil
 	}
 	out := &UserEventPlain{}
+	if x.User != nil {
+		if x.User.Base != nil {
+			out.Id = x.User.Base.Id
+		}
+	}
 	if x.User != nil {
 		if x.User.Base != nil {
 			out.Source = x.User.Base.Source
@@ -198,11 +203,6 @@ func (x *UserEvent) IntoPlain() *UserEventPlain {
 		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
 			_valContactPhone := _oneofPhone1.Phone
 			out.ContactPhone = &_valContactPhone
-		}
-	}
-	if x.User != nil {
-		if x.User.Base != nil {
-			out.Id = x.User.Base.Id
 		}
 	}
 	out.EventType = x.EventType
@@ -220,6 +220,13 @@ func (x *UserEventPlain) IntoPbErr() (*UserEvent, error) {
 	if out.User.Base == nil {
 		out.User.Base = &BaseInfo{}
 	}
+	out.User.Base.Id = x.Id
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
 	out.User.Base.Source = x.Source
 	if out.User == nil {
 		out.User = &User{}
@@ -237,13 +244,6 @@ func (x *UserEventPlain) IntoPbErr() (*UserEvent, error) {
 		}
 		out.User.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
-	if out.User == nil {
-		out.User = &User{}
-	}
-	if out.User.Base == nil {
-		out.User.Base = &BaseInfo{}
-	}
-	out.User.Base.Id = x.Id
 	out.EventType = x.EventType
 	return out, nil
 }
@@ -253,6 +253,11 @@ func (x *UserEvent) IntoPlainErr() (*UserEventPlain, error) {
 		return nil, nil
 	}
 	out := &UserEventPlain{}
+	if x.User != nil {
+		if x.User.Base != nil {
+			out.Id = x.User.Base.Id
+		}
+	}
 	if x.User != nil {
 		if x.User.Base != nil {
 			out.Source = x.User.Base.Source
@@ -271,11 +276,6 @@ func (x *UserEvent) IntoPlainErr() (*UserEventPlain, error) {
 		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
 			_valContactPhone := _oneofPhone1.Phone
 			out.ContactPhone = &_valContactPhone
-		}
-	}
-	if x.User != nil {
-		if x.User.Base != nil {
-			out.Id = x.User.Base.Id
 		}
 	}
 	out.EventType = x.EventType

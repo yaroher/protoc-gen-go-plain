@@ -59,6 +59,9 @@ func (g *Generator) Render(typeIRs []*TypePbIR) error {
 }
 
 func (g *Generator) renderMessage(out typeWriter, ir *TypePbIR, msg *typepb.Type, imports map[string]struct{}) {
+	if g.isTypeAliasMessage(msg.Name) {
+		return
+	}
 	msgName := g.plainTypeName(msg.Name)
 	out.P("type ", msgName, " struct {")
 
@@ -153,6 +156,10 @@ func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[s
 		keyType := mapScalarGoType(info.keyKind)
 		valType := g.mapValueGoType(ir, info, imports)
 		return "map[" + keyType + "]" + valType
+	}
+	if info, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
+		base := mapScalarGoType(info.kind)
+		return g.wrapRepeatedOptional(field, base, isOptional)
 	}
 	if override, ok := g.overrideInfo(field); ok {
 		if override.importPath != "" {

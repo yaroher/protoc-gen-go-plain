@@ -98,6 +98,9 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 	if !g.isPbMessage(ir, msg.Name) {
 		return
 	}
+	if g.isTypeAliasMessage(msg.Name) {
+		return
+	}
 	msgPlain := g.plainTypeName(msg.Name)
 	msgPb := strcase.ToCamel(getShortName(msg.Name))
 	paramList := g.casterParamList(casterTypes.list, true, false)
@@ -509,6 +512,36 @@ func (g *Generator) renderFieldIntoPb(
 	indent string,
 ) {
 	_ = msg
+	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		leaf := segments[len(segments)-1]
+		access, ok := g.renderEnsurePath(out, "out", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			out.P(indent, "\tvals := make([]*", alias.pbTypeName, ", len(x.", fieldName, "))")
+			out.P(indent, "\tfor i, v := range x.", fieldName, " {")
+			out.P(indent, "\t\tvals[i] = &", alias.pbTypeName, "{", alias.fieldGoName, ": v}")
+			out.P(indent, "\t}")
+			out.P(indent, "\t", access, ".", leaf.goName, " = vals")
+			out.P(indent, "}")
+			return
+		}
+		if g.isPointerField(field) {
+			out.P(indent, "if x.", fieldName, " != nil {")
+			out.P(indent, "\t", access, ".", leaf.goName, " = &", alias.pbTypeName, "{", alias.fieldGoName, ": *x.", fieldName, "}")
+			out.P(indent, "}")
+			return
+		}
+		out.P(indent, access, ".", leaf.goName, " = &", alias.pbTypeName, "{", alias.fieldGoName, ": x.", fieldName, "}")
+		return
+	}
 	if info, ok := mapFieldInfoFor(field); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid map path")
@@ -604,6 +637,36 @@ func (g *Generator) renderFieldIntoPbErr(
 	indent string,
 ) {
 	_ = msg
+	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		leaf := segments[len(segments)-1]
+		access, ok := g.renderEnsurePath(out, "out", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			out.P(indent, "\tvals := make([]*", alias.pbTypeName, ", len(x.", fieldName, "))")
+			out.P(indent, "\tfor i, v := range x.", fieldName, " {")
+			out.P(indent, "\t\tvals[i] = &", alias.pbTypeName, "{", alias.fieldGoName, ": v}")
+			out.P(indent, "\t}")
+			out.P(indent, "\t", access, ".", leaf.goName, " = vals")
+			out.P(indent, "}")
+			return
+		}
+		if g.isPointerField(field) {
+			out.P(indent, "if x.", fieldName, " != nil {")
+			out.P(indent, "\t", access, ".", leaf.goName, " = &", alias.pbTypeName, "{", alias.fieldGoName, ": *x.", fieldName, "}")
+			out.P(indent, "}")
+			return
+		}
+		out.P(indent, access, ".", leaf.goName, " = &", alias.pbTypeName, "{", alias.fieldGoName, ": x.", fieldName, "}")
+		return
+	}
 	if info, ok := mapFieldInfoFor(field); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid map path")
@@ -704,6 +767,41 @@ func (g *Generator) renderFieldIntoPlain(
 	setCrf bool,
 ) {
 	_ = msg
+	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			out.P(innerIndent, "\tvals := make([]", g.scalarGoType(&typepb.Field{Kind: alias.kind}), ", 0, len(", leafAccess, "))")
+			out.P(innerIndent, "\tfor _, v := range ", leafAccess, " {")
+			out.P(innerIndent, "\t\tif v == nil {")
+			out.P(innerIndent, "\t\t\tcontinue")
+			out.P(innerIndent, "\t\t}")
+			out.P(innerIndent, "\t\tvals = append(vals, v.", alias.fieldGoName, ")")
+			out.P(innerIndent, "\t}")
+			out.P(innerIndent, "\tout.", fieldName, " = vals")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
+		out.P(innerIndent, "if ", leafAccess, " != nil {")
+		out.P(innerIndent, "\tval := ", leafAccess, ".", alias.fieldGoName)
+		if g.isPointerField(field) {
+			out.P(innerIndent, "\tout.", fieldName, " = &val")
+		} else {
+			out.P(innerIndent, "\tout.", fieldName, " = val")
+		}
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+		return
+	}
 	if info, ok := mapFieldInfoFor(field); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid map path")
@@ -802,6 +900,41 @@ func (g *Generator) renderFieldIntoPlainErr(
 	setCrf bool,
 ) {
 	_ = msg
+	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid alias path")
+			return
+		}
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			out.P(innerIndent, "\tvals := make([]", g.scalarGoType(&typepb.Field{Kind: alias.kind}), ", 0, len(", leafAccess, "))")
+			out.P(innerIndent, "\tfor _, v := range ", leafAccess, " {")
+			out.P(innerIndent, "\t\tif v == nil {")
+			out.P(innerIndent, "\t\t\tcontinue")
+			out.P(innerIndent, "\t\t}")
+			out.P(innerIndent, "\t\tvals = append(vals, v.", alias.fieldGoName, ")")
+			out.P(innerIndent, "\t}")
+			out.P(innerIndent, "\tout.", fieldName, " = vals")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
+		out.P(innerIndent, "if ", leafAccess, " != nil {")
+		out.P(innerIndent, "\tval := ", leafAccess, ".", alias.fieldGoName)
+		if g.isPointerField(field) {
+			out.P(innerIndent, "\tout.", fieldName, " = &val")
+		} else {
+			out.P(innerIndent, "\tout.", fieldName, " = val")
+		}
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+		return
+	}
 	if info, ok := mapFieldInfoFor(field); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid map path")

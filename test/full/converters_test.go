@@ -51,6 +51,8 @@ func TestIntoPlainAndBack(t *testing.T) {
 		Comment:   wrapperspb.String("comment"),
 		Contact:   &Complex_Email{Email: "a@example.com"},
 		CustomId:  "11111111-1111-1111-1111-111111111111",
+		AliasId:   &StringAlias{Value: "alias"},
+		AliasList: []*StringAlias{{Value: "a1"}, {Value: "a2"}},
 	}
 
 	plain := in.IntoPlain(newTestCasterToPlain())
@@ -71,6 +73,9 @@ func TestIntoPlainAndBack(t *testing.T) {
 	require.Equal(t, "comment", plain.Comment.GetValue())
 	require.NotNil(t, plain.ContactEmail)
 	require.Equal(t, "a@example.com", *plain.ContactEmail)
+	require.Equal(t, "alias", plain.AliasId)
+	require.Equal(t, []string{"a1", "a2"}, plain.AliasList)
+	require.Equal(t, uuid.MustParse("11111111-1111-1111-1111-111111111111"), plain.CustomId)
 
 	out := plain.IntoPb(newTestCasterToPb())
 	require.NotNil(t, out)

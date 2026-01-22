@@ -25,6 +25,8 @@ func TestIntoPlainJSONRoundtrip(t *testing.T) {
 		Comment:   wrapperspb.String("comment"),
 		Contact:   &Complex_Email{Email: "a@example.com"},
 		CustomId:  "11111111-1111-1111-1111-111111111111",
+		AliasId:   &StringAlias{Value: "alias"},
+		AliasList: []*StringAlias{{Value: "a1"}, {Value: "a2"}},
 	}
 
 	plain := in.IntoPlain(newTestCasterToPlain())
@@ -54,6 +56,8 @@ func BenchmarkMarshalPlainJX(b *testing.B) {
 		Comment:   wrapperspb.String("comment"),
 		Contact:   &Complex_Email{Email: "a@example.com"},
 		CustomId:  "11111111-1111-1111-1111-111111111111",
+		AliasId:   &StringAlias{Value: "alias"},
+		AliasList: []*StringAlias{{Value: "a1"}, {Value: "a2"}},
 	}
 	plain := in.IntoPlain(newTestCasterToPlain())
 
@@ -79,6 +83,8 @@ func BenchmarkMarshalProtoJSON(b *testing.B) {
 		Comment:   wrapperspb.String("comment"),
 		Contact:   &Complex_Email{Email: "a@example.com"},
 		CustomId:  "11111111-1111-1111-1111-111111111111",
+		AliasId:   &StringAlias{Value: "alias"},
+		AliasList: []*StringAlias{{Value: "a1"}, {Value: "a2"}},
 	}
 
 	b.ReportAllocs()

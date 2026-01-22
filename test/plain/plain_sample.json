@@ -1,7 +1,7 @@
 {
+  "id": "u-10",
   "source": "ui",
   "name": "Eve",
   "contactEmail": "eve@example.com",
-  "id": "u-10",
   "eventType": "created"
 }
