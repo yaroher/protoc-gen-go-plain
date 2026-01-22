@@ -503,7 +503,7 @@ const file_test_test_proto_rawDesc = "" +
 	"\bevent_id\x18\x01 \x01(\x05R\aeventId\x12_\n" +
 	"\x19some_event_string_payload\x18\x02 \x01(\tB$\x82\xa6\x1d \n" +
 	"\x1e\n" +
-	"\x04uuid\x12\x16github.com/google/uuidR\x16someEventStringPayload\x12'\n" +
+	"\x04UUID\x12\x16github.com/google/uuidR\x16someEventStringPayload\x12'\n" +
 	"\aprocess\x18\x03 \x01(\v2\r.test.ProcessR\aprocess\x12+\n" +
 	"\x04data\x18\x04 \x01(\v2\x0f.test.EventDataB\x06\x82\xa6\x1d\x02 \x01R\x04data\x12&\n" +
 	"\x0fparent_event_id\x18\x05 \x01(\tR\rparentEventId:\x1e\x82\xa6\x1d\x1a\b\x01\x1a\x16\b\t\"\x12event_virtual_typeBY\x82\xa6\x1d(\x12&\n" +

@@ -4,9 +4,59 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"github.com/yaroher/protoc-gen-go-plain/cast"
 	"google.golang.org/protobuf/proto"
 )
+
+func newTestCasterToPb() cast.Caster[uuid.UUID, string] {
+	return cast.CasterFn(
+		func(v uuid.UUID) string {
+			if v == uuid.Nil {
+				return ""
+			}
+			return v.String()
+		},
+	)
+}
+
+func newTestCasterToPlain() cast.Caster[string, uuid.UUID] {
+	return cast.CasterFn(
+		func(v string) uuid.UUID {
+			if v == "" {
+				return uuid.Nil
+			}
+			id, err := uuid.Parse(v)
+			if err != nil {
+				return uuid.Nil
+			}
+			return id
+		},
+	)
+}
+
+func newTestCasterErrToPb() cast.CasterErr[uuid.UUID, string] {
+	return cast.CasterErrFn(
+		func(v uuid.UUID) (string, error) {
+			if v == uuid.Nil {
+				return "", nil
+			}
+			return v.String(), nil
+		},
+	)
+}
+
+func newTestCasterErrToPlain() cast.CasterErr[string, uuid.UUID] {
+	return cast.CasterErrFn(
+		func(v string) (uuid.UUID, error) {
+			if v == "" {
+				return uuid.Nil, nil
+			}
+			return uuid.Parse(v)
+		},
+	)
+}
 
 func TestIntoPlainAndBack(t *testing.T) {
 	in := &Event{
@@ -19,7 +69,9 @@ func TestIntoPlainAndBack(t *testing.T) {
 		ParentEventId: "parent",
 	}
 
-	plain := in.IntoPlain()
+	casterToPlain := newTestCasterToPlain()
+	casterToPb := newTestCasterToPb()
+	plain := in.IntoPlain(casterToPlain)
 	require.NotNil(t, plain, "IntoPlain returned nil")
 	require.NotNil(t, plain.Path, "expected Path to be set")
 	require.Equal(t, "/tmp/a", *plain.Path)
@@ -27,7 +79,7 @@ func TestIntoPlainAndBack(t *testing.T) {
 	require.NotEmpty(t, plain.PathCRF)
 	require.Contains(t, plain.PathCRF, "file_rename")
 
-	out := plain.IntoPb()
+	out := plain.IntoPb(casterToPb)
 	require.NotNil(t, out, "IntoPb returned nil")
 	require.True(t, proto.Equal(in, out), "roundtrip mismatch\ninput:  %v\noutput: %v", in, out)
 
@@ -38,9 +90,20 @@ func TestIntoPlainAndBack(t *testing.T) {
 	var decoded EventPlain
 	require.NoError(t, json.Unmarshal(data, &decoded))
 
-	outDecoded := decoded.IntoPb()
+	outDecoded := decoded.IntoPb(casterToPb)
 	require.NotNil(t, outDecoded, "IntoPb returned nil after json roundtrip")
 	require.True(t, proto.Equal(in, outDecoded), "json roundtrip mismatch\ninput:  %v\noutput: %v", in, outDecoded)
+
+	casterErrToPlain := newTestCasterErrToPlain()
+	casterErrToPb := newTestCasterErrToPb()
+	plainErr, err := in.IntoPlainErr(casterErrToPlain)
+	require.NoError(t, err)
+	require.NotNil(t, plainErr)
+
+	outErr, err := plainErr.IntoPbErr(casterErrToPb)
+	require.NoError(t, err)
+	require.NotNil(t, outErr)
+	require.True(t, proto.Equal(in, outErr), "err roundtrip mismatch\ninput:  %v\noutput: %v", in, outErr)
 }
 
 func BenchmarkConverters(b *testing.B) {
@@ -54,15 +117,17 @@ func BenchmarkConverters(b *testing.B) {
 		ParentEventId: "parent",
 	}
 
+	casterToPlain := newTestCasterToPlain()
+	casterToPb := newTestCasterToPb()
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		plain := in.IntoPlain()
+		plain := in.IntoPlain(casterToPlain)
 		if plain == nil || plain.Path == nil {
 			b.Fatal("IntoPlain returned nil")
 		}
-		out := plain.IntoPb()
+		out := plain.IntoPb(casterToPb)
 		if out == nil {
 			b.Fatal("IntoPb returned nil")
 		}
@@ -83,7 +148,9 @@ func BenchmarkConvertersJSON(b *testing.B) {
 		ParentEventId: "parent",
 	}
 
-	plain := in.IntoPlain()
+	casterToPlain := newTestCasterToPlain()
+	casterToPb := newTestCasterToPb()
+	plain := in.IntoPlain(casterToPlain)
 	if plain == nil {
 		b.Fatal("IntoPlain returned nil")
 	}
@@ -102,7 +169,7 @@ func BenchmarkConvertersJSON(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		out := decoded.IntoPb()
+		out := decoded.IntoPb(casterToPb)
 		if out == nil {
 			b.Fatal("IntoPb returned nil after json roundtrip")
 		}

@@ -65,7 +65,7 @@ message Event {
         kind: TYPE_STRING
     };
     int32 event_id = 1;
-    string some_event_string_payload = 2 [(goplain.field).override_type = {name: "uuid", import_path: "github.com/google/uuid"}];
+    string some_event_string_payload = 2 [(goplain.field).override_type = {name: "UUID", import_path: "github.com/google/uuid"}];
     Process process = 3;
     EventData data = 4 [(goplain.field).embed = true];
     string parent_event_id = 5;

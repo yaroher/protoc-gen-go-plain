@@ -103,6 +103,7 @@ func (g *Generator) Collect() []*TypePbIR {
 		}
 		fOpt := file.Desc.Options().(*descriptorpb.FileOptions)
 		fGen := proto.GetExtension(fOpt, goplain.E_File).(*goplain.FileOptions)
+		fileOverrides := fGen.GetGoTypesOverrides()
 		for _, vm := range fGen.GetVirtualTypes() {
 			// TODO: VALIDATE
 			mvApply := &typepb.Type{
@@ -230,6 +231,8 @@ func (g *Generator) Collect() []*TypePbIR {
 					}
 					newField.TypeUrl = fieldName
 				}
+				override := g.resolveFieldOverride(field, fieldGen.GetOverrideType(), fileOverrides)
+				g.applyOverrideMarkers(newField, override)
 				l.Debug("field", logOpts...)
 				resMessage.Fields = append(resMessage.Fields, newField)
 			}

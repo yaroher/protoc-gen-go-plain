@@ -147,6 +147,12 @@ func (g *Generator) fieldGoTypeAndTag(ir *TypePbIR, msg *typepb.Type, field *typ
 func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[string]struct{}) string {
 	isOptional := hasMarker(field.TypeUrl, isOneoffedMarker) ||
 		(hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker))
+	if override, ok := g.overrideInfo(field); ok {
+		if override.importPath != "" {
+			imports[override.importPath] = struct{}{}
+		}
+		return g.wrapRepeatedOptional(field, override.name, isOptional)
+	}
 	switch field.Kind {
 	case typepb.Field_TYPE_DOUBLE:
 		return g.wrapRepeatedOptional(field, "float64", isOptional)

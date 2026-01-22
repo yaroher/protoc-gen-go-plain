@@ -44,6 +44,16 @@ func decodeEmpath(s string) string {
 	return repl.Replace(s)
 }
 
+func encodeMarkerValue(s string) string {
+	repl := strings.NewReplacer(
+		"/", "|",
+		"?", "%3F",
+		";", "%3B",
+		"=", "%3D",
+	)
+	return repl.Replace(s)
+}
+
 func goFieldNameFromPlain(name string) string {
 	if strings.HasSuffix(name, "CRF") {
 		base := strings.TrimSuffix(name, "CRF")
