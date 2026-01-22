@@ -74,6 +74,10 @@ func (x *UserPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("UserPlain")
 	}
+	if e.FieldStart("source") {
+		return nil, jxEncodeError("source")
+	}
+	e.Str(x.Source)
 	if e.FieldStart("name") {
 		return nil, jxEncodeError("name")
 	}
@@ -102,10 +106,6 @@ func (x *UserPlain) MarshalJSON() ([]byte, error) {
 		return nil, jxEncodeError("id")
 	}
 	e.Str(x.Id)
-	if e.FieldStart("source") {
-		return nil, jxEncodeError("source")
-	}
-	e.Str(x.Source)
 	if e.ObjEnd() {
 		return nil, jxEncodeError("UserPlain")
 	}
@@ -120,6 +120,13 @@ func (x *UserPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
+		case "source":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Source", err)
+			}
+			x.Source = val
+			return nil
 		case "name":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
@@ -161,13 +168,6 @@ func (x *UserPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("Id", err)
 			}
 			x.Id = val
-			return nil
-		case "source":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Source", err)
-			}
-			x.Source = val
 			return nil
 		default:
 			return d.Skip()
@@ -184,28 +184,10 @@ func (x *UserEventPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("UserEventPlain")
 	}
-	if x.ContactPhone != nil {
-		if e.FieldStart("contactPhone") {
-			return nil, jxEncodeError("contactPhone")
-		}
-		if x.ContactPhone == nil {
-			e.Null()
-		} else {
-			e.Str(*x.ContactPhone)
-		}
-	}
-	if e.FieldStart("id") {
-		return nil, jxEncodeError("id")
-	}
-	e.Str(x.Id)
 	if e.FieldStart("source") {
 		return nil, jxEncodeError("source")
 	}
 	e.Str(x.Source)
-	if e.FieldStart("eventType") {
-		return nil, jxEncodeError("eventType")
-	}
-	e.Str(x.EventType)
 	if e.FieldStart("name") {
 		return nil, jxEncodeError("name")
 	}
@@ -220,6 +202,24 @@ func (x *UserEventPlain) MarshalJSON() ([]byte, error) {
 			e.Str(*x.ContactEmail)
 		}
 	}
+	if x.ContactPhone != nil {
+		if e.FieldStart("contactPhone") {
+			return nil, jxEncodeError("contactPhone")
+		}
+		if x.ContactPhone == nil {
+			e.Null()
+		} else {
+			e.Str(*x.ContactPhone)
+		}
+	}
+	if e.FieldStart("id") {
+		return nil, jxEncodeError("id")
+	}
+	e.Str(x.Id)
+	if e.FieldStart("eventType") {
+		return nil, jxEncodeError("eventType")
+	}
+	e.Str(x.EventType)
 	if e.ObjEnd() {
 		return nil, jxEncodeError("UserEventPlain")
 	}
@@ -234,40 +234,12 @@ func (x *UserEventPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "contactPhone":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("ContactPhone", err)
-				}
-				x.ContactPhone = nil
-				return nil
-			}
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("ContactPhone", err)
-			}
-			x.ContactPhone = &val
-			return nil
-		case "id":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Id", err)
-			}
-			x.Id = val
-			return nil
 		case "source":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
 				return jxDecodeError("Source", err)
 			}
 			x.Source = val
-			return nil
-		case "eventType":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("EventType", err)
-			}
-			x.EventType = val
 			return nil
 		case "name":
 			val, err := (*jx.Decoder).Str(d)
@@ -289,6 +261,34 @@ func (x *UserEventPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("ContactEmail", err)
 			}
 			x.ContactEmail = &val
+			return nil
+		case "contactPhone":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("ContactPhone", err)
+				}
+				x.ContactPhone = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("ContactPhone", err)
+			}
+			x.ContactPhone = &val
+			return nil
+		case "id":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Id", err)
+			}
+			x.Id = val
+			return nil
+		case "eventType":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("EventType", err)
+			}
+			x.EventType = val
 			return nil
 		default:
 			return d.Skip()

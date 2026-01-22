@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package testfull;
+
+import "goplain/goplain.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/full";
+
+message Base {
+  option (goplain.message).generate = true;
+  string id = 1;
+  string source = 2;
+}
+
+message Extra {
+  option (goplain.message).generate = true;
+  string id = 1;
+  string tag = 2;
+}
+
+message Complex {
+  option (goplain.message).generate = true;
+  option (goplain.message).virtual_fields = {
+    name: "virtual_note",
+    kind: TYPE_STRING
+  };
+
+  Base base = 1 [(goplain.field).embed = true];
+  Extra extra = 2 [(goplain.field).embed = true];
+  string name = 3;
+  repeated string labels = 4;
+  optional string note = 5;
+  optional bool archived = 6;
+  bytes raw = 7;
+  repeated bytes raw_list = 8;
+  map<string, int32> counters = 9;
+  map<string, string> meta = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.StringValue comment = 12;
+
+  oneof contact {
+    option (goplain.oneof).embed_with_prefix = true;
+    string email = 13;
+    string phone = 14;
+  }
+
+  Status status = 15;
+  repeated Status status_list = 16;
+
+  string custom_id = 17 [(goplain.field).override_type = {name: "UUID", import_path: "github.com/google/uuid"}];
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_DISABLED = 2;
+}

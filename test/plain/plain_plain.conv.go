@@ -49,6 +49,10 @@ func (x *UserPlain) IntoPb() *User {
 		return nil
 	}
 	out := &User{}
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
+	out.Base.Source = x.Source
 	out.Name = x.Name
 	if x.ContactEmail != nil {
 		out.Contact = &User_Email{Email: *x.ContactEmail}
@@ -60,10 +64,6 @@ func (x *UserPlain) IntoPb() *User {
 		out.Base = &BaseInfo{}
 	}
 	out.Base.Id = x.Id
-	if out.Base == nil {
-		out.Base = &BaseInfo{}
-	}
-	out.Base.Source = x.Source
 	return out
 }
 
@@ -72,6 +72,9 @@ func (x *User) IntoPlain() *UserPlain {
 		return nil
 	}
 	out := &UserPlain{}
+	if x.Base != nil {
+		out.Source = x.Base.Source
+	}
 	out.Name = x.Name
 	if _oneofEmail0, ok := x.Contact.(*User_Email); ok {
 		_valContactEmail := _oneofEmail0.Email
@@ -83,9 +86,6 @@ func (x *User) IntoPlain() *UserPlain {
 	}
 	if x.Base != nil {
 		out.Id = x.Base.Id
-	}
-	if x.Base != nil {
-		out.Source = x.Base.Source
 	}
 	return out
 }
@@ -95,6 +95,10 @@ func (x *UserPlain) IntoPbErr() (*User, error) {
 		return nil, nil
 	}
 	out := &User{}
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
+	out.Base.Source = x.Source
 	out.Name = x.Name
 	if x.ContactEmail != nil {
 		out.Contact = &User_Email{Email: *x.ContactEmail}
@@ -106,10 +110,6 @@ func (x *UserPlain) IntoPbErr() (*User, error) {
 		out.Base = &BaseInfo{}
 	}
 	out.Base.Id = x.Id
-	if out.Base == nil {
-		out.Base = &BaseInfo{}
-	}
-	out.Base.Source = x.Source
 	return out, nil
 }
 
@@ -118,6 +118,9 @@ func (x *User) IntoPlainErr() (*UserPlain, error) {
 		return nil, nil
 	}
 	out := &UserPlain{}
+	if x.Base != nil {
+		out.Source = x.Base.Source
+	}
 	out.Name = x.Name
 	if _oneofEmail0, ok := x.Contact.(*User_Email); ok {
 		_valContactEmail := _oneofEmail0.Email
@@ -130,9 +133,6 @@ func (x *User) IntoPlainErr() (*UserPlain, error) {
 	if x.Base != nil {
 		out.Id = x.Base.Id
 	}
-	if x.Base != nil {
-		out.Source = x.Base.Source
-	}
 	return out, nil
 }
 
@@ -141,6 +141,23 @@ func (x *UserEventPlain) IntoPb() *UserEvent {
 		return nil
 	}
 	out := &UserEvent{}
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
+	out.User.Base.Source = x.Source
+	if out.User == nil {
+		out.User = &User{}
+	}
+	out.User.Name = x.Name
+	if x.ContactEmail != nil {
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Email{Email: *x.ContactEmail}
+	}
 	if x.ContactPhone != nil {
 		if out.User == nil {
 			out.User = &User{}
@@ -154,24 +171,7 @@ func (x *UserEventPlain) IntoPb() *UserEvent {
 		out.User.Base = &BaseInfo{}
 	}
 	out.User.Base.Id = x.Id
-	if out.User == nil {
-		out.User = &User{}
-	}
-	if out.User.Base == nil {
-		out.User.Base = &BaseInfo{}
-	}
-	out.User.Base.Source = x.Source
 	out.EventType = x.EventType
-	if out.User == nil {
-		out.User = &User{}
-	}
-	out.User.Name = x.Name
-	if x.ContactEmail != nil {
-		if out.User == nil {
-			out.User = &User{}
-		}
-		out.User.Contact = &User_Email{Email: *x.ContactEmail}
-	}
 	return out
 }
 
@@ -181,6 +181,20 @@ func (x *UserEvent) IntoPlain() *UserEventPlain {
 	}
 	out := &UserEventPlain{}
 	if x.User != nil {
+		if x.User.Base != nil {
+			out.Source = x.User.Base.Source
+		}
+	}
+	if x.User != nil {
+		out.Name = x.User.Name
+	}
+	if x.User != nil {
+		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
+			_valContactEmail := _oneofEmail1.Email
+			out.ContactEmail = &_valContactEmail
+		}
+	}
+	if x.User != nil {
 		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
 			_valContactPhone := _oneofPhone1.Phone
 			out.ContactPhone = &_valContactPhone
@@ -191,21 +205,7 @@ func (x *UserEvent) IntoPlain() *UserEventPlain {
 			out.Id = x.User.Base.Id
 		}
 	}
-	if x.User != nil {
-		if x.User.Base != nil {
-			out.Source = x.User.Base.Source
-		}
-	}
 	out.EventType = x.EventType
-	if x.User != nil {
-		out.Name = x.User.Name
-	}
-	if x.User != nil {
-		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
-			_valContactEmail := _oneofEmail1.Email
-			out.ContactEmail = &_valContactEmail
-		}
-	}
 	return out
 }
 
@@ -214,6 +214,23 @@ func (x *UserEventPlain) IntoPbErr() (*UserEvent, error) {
 		return nil, nil
 	}
 	out := &UserEvent{}
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
+	out.User.Base.Source = x.Source
+	if out.User == nil {
+		out.User = &User{}
+	}
+	out.User.Name = x.Name
+	if x.ContactEmail != nil {
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Email{Email: *x.ContactEmail}
+	}
 	if x.ContactPhone != nil {
 		if out.User == nil {
 			out.User = &User{}
@@ -227,24 +244,7 @@ func (x *UserEventPlain) IntoPbErr() (*UserEvent, error) {
 		out.User.Base = &BaseInfo{}
 	}
 	out.User.Base.Id = x.Id
-	if out.User == nil {
-		out.User = &User{}
-	}
-	if out.User.Base == nil {
-		out.User.Base = &BaseInfo{}
-	}
-	out.User.Base.Source = x.Source
 	out.EventType = x.EventType
-	if out.User == nil {
-		out.User = &User{}
-	}
-	out.User.Name = x.Name
-	if x.ContactEmail != nil {
-		if out.User == nil {
-			out.User = &User{}
-		}
-		out.User.Contact = &User_Email{Email: *x.ContactEmail}
-	}
 	return out, nil
 }
 
@@ -253,6 +253,20 @@ func (x *UserEvent) IntoPlainErr() (*UserEventPlain, error) {
 		return nil, nil
 	}
 	out := &UserEventPlain{}
+	if x.User != nil {
+		if x.User.Base != nil {
+			out.Source = x.User.Base.Source
+		}
+	}
+	if x.User != nil {
+		out.Name = x.User.Name
+	}
+	if x.User != nil {
+		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
+			_valContactEmail := _oneofEmail1.Email
+			out.ContactEmail = &_valContactEmail
+		}
+	}
 	if x.User != nil {
 		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
 			_valContactPhone := _oneofPhone1.Phone
@@ -264,20 +278,6 @@ func (x *UserEvent) IntoPlainErr() (*UserEventPlain, error) {
 			out.Id = x.User.Base.Id
 		}
 	}
-	if x.User != nil {
-		if x.User.Base != nil {
-			out.Source = x.User.Base.Source
-		}
-	}
 	out.EventType = x.EventType
-	if x.User != nil {
-		out.Name = x.User.Name
-	}
-	if x.User != nil {
-		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
-			_valContactEmail := _oneofEmail1.Email
-			out.ContactEmail = &_valContactEmail
-		}
-	}
 	return out, nil
 }

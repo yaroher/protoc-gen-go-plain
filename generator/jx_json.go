@@ -34,6 +34,9 @@ func (g *Generator) RenderJXJSON(typeIRs []*TypePbIR) error {
 				if field.OneofIndex > 0 {
 					continue
 				}
+				if _, ok := mapFieldInfoFor(field); ok {
+					needsStdJSON = true
+				}
 				if override, ok := g.overrideInfo(field); ok {
 					needsStdJSON = true
 					if override.importPath != "" {
@@ -42,6 +45,10 @@ func (g *Generator) RenderJXJSON(typeIRs []*TypePbIR) error {
 				}
 				if field.Kind == typepb.Field_TYPE_MESSAGE && !g.isPlainMessage(ir, field.TypeUrl) {
 					needsProtoJSON = true
+					if typeName, importPath, ok := wktGoType(field.TypeUrl); ok {
+						_ = typeName
+						imports[importPath] = struct{}{}
+					}
 				}
 			}
 			if len(msg.Oneofs) > 0 {
@@ -183,6 +190,30 @@ func (g *Generator) renderJXMarshalField(out typeWriter, ir *TypePbIR, field *ty
 	plainMessage := field.Kind == typepb.Field_TYPE_MESSAGE && g.isPlainMessage(ir, field.TypeUrl)
 	isProtoMessage := field.Kind == typepb.Field_TYPE_MESSAGE && !plainMessage
 	_, isOverride := g.overrideInfo(field)
+	if _, ok := mapFieldInfoFor(field); ok {
+		if isOmitEmpty {
+			out.P("\tif len(x.", fieldName, ") > 0 {")
+			out.P("\t\tif e.FieldStart(\"", jsonName, "\") {")
+			out.P("\t\t\treturn nil, jxEncodeError(\"", jsonName, "\")")
+			out.P("\t\t}")
+			out.P("\t\traw, err := json.Marshal(x.", fieldName, ")")
+			out.P("\t\tif err != nil {")
+			out.P("\t\t\treturn nil, jxEncodeError(\"", jsonName, "\")")
+			out.P("\t\t}")
+			out.P("\t\te.Raw(raw)")
+			out.P("\t}")
+			return
+		}
+		out.P("\tif e.FieldStart(\"", jsonName, "\") {")
+		out.P("\t\treturn nil, jxEncodeError(\"", jsonName, "\")")
+		out.P("\t}")
+		out.P("\traw, err := json.Marshal(x.", fieldName, ")")
+		out.P("\tif err != nil {")
+		out.P("\t\treturn nil, jxEncodeError(\"", jsonName, "\")")
+		out.P("\t}")
+		out.P("\te.Raw(raw)")
+		return
+	}
 
 	cond := ""
 	switch {
@@ -374,6 +405,19 @@ func (g *Generator) renderJXUnmarshalField(out typeWriter, ir *TypePbIR, field *
 	plainMessage := field.Kind == typepb.Field_TYPE_MESSAGE && g.isPlainMessage(ir, field.TypeUrl)
 	isProtoMessage := field.Kind == typepb.Field_TYPE_MESSAGE && !plainMessage
 	override, isOverride := g.overrideInfo(field)
+	if info, ok := mapFieldInfoFor(field); ok {
+		out.P("\t\t\traw, err := d.Raw()")
+		out.P("\t\t\tif err != nil {")
+		out.P("\t\t\t\treturn jxDecodeError(\"", fieldName, "\", err)")
+		out.P("\t\t\t}")
+		out.P("\t\t\tvar outVal map[", mapScalarGoType(info.keyKind), "]", mapScalarGoType(info.valueKind))
+		out.P("\t\t\tif err := json.Unmarshal(raw, &outVal); err != nil {")
+		out.P("\t\t\t\treturn jxDecodeError(\"", fieldName, "\", err)")
+		out.P("\t\t\t}")
+		out.P("\t\t\tx.", fieldName, " = outVal")
+		out.P("\t\t\treturn nil")
+		return
+	}
 
 	if isRepeated {
 		switch {
@@ -485,6 +529,9 @@ func (g *Generator) renderJXUnmarshalField(out typeWriter, ir *TypePbIR, field *
 		out.P("\t\t\tx.", fieldName, " = &outVal")
 	case isProtoMessage:
 		pbType := g.resolvePbTypeName(ir, field.TypeUrl)
+		if typeName, _, ok := wktGoType(field.TypeUrl); ok {
+			pbType = typeName
+		}
 		out.P("\t\t\traw, err := d.Raw()")
 		out.P("\t\t\tif err != nil {")
 		out.P("\t\t\t\treturn jxDecodeError(\"", fieldName, "\", err)")

@@ -509,12 +509,68 @@ func (g *Generator) renderFieldIntoPb(
 	indent string,
 ) {
 	_ = msg
+	if info, ok := mapFieldInfoFor(field); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		leaf := segments[len(segments)-1]
+		access, ok := g.renderEnsurePath(out, "out", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		mapAccess := access + "." + leaf.goName
+		if info.valueKind == typepb.Field_TYPE_ENUM {
+			enumType := g.mapEnumGoType(out, leaf)
+			if enumType == "" {
+				out.P(indent, mapAccess, " = x.", fieldName)
+				return
+			}
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			out.P(indent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]", enumType, ", len(x.", fieldName, "))")
+			out.P(indent, "\tfor k, v := range x.", fieldName, " {")
+			out.P(indent, "\t\tvals[k] = ", enumType, "(v)")
+			out.P(indent, "\t}")
+			out.P(indent, "\t", mapAccess, " = vals")
+			out.P(indent, "}")
+			return
+		}
+		out.P(indent, mapAccess, " = x.", fieldName)
+		return
+	}
 	if g.hasOverride(field) {
 		g.renderOverrideIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, indent)
 		return
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
+		if !g.isPlainMessage(ir, field.TypeUrl) {
+			if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+				out.P(indent, "if len(x.", fieldName, ") > 0 {")
+				inner := indent + "\t"
+				access, ok := g.renderEnsurePath(out, "out", segments, inner)
+				if !ok {
+					out.P(inner, "// skip invalid path")
+					out.P(indent, "}")
+					return
+				}
+				out.P(inner, access, ".", segments[len(segments)-1].goName, " = x.", fieldName)
+				out.P(indent, "}")
+				return
+			}
+			out.P(indent, "if x.", fieldName, " != nil {")
+			inner := indent + "\t"
+			access, ok := g.renderEnsurePath(out, "out", segments, inner)
+			if !ok {
+				out.P(inner, "// skip invalid path")
+				out.P(indent, "}")
+				return
+			}
+			out.P(inner, access, ".", segments[len(segments)-1].goName, " = x.", fieldName)
+			out.P(indent, "}")
+			return
+		}
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 			out.P(indent, "// repeated message is not supported")
 			return
@@ -548,12 +604,68 @@ func (g *Generator) renderFieldIntoPbErr(
 	indent string,
 ) {
 	_ = msg
+	if info, ok := mapFieldInfoFor(field); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		leaf := segments[len(segments)-1]
+		access, ok := g.renderEnsurePath(out, "out", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		mapAccess := access + "." + leaf.goName
+		if info.valueKind == typepb.Field_TYPE_ENUM {
+			enumType := g.mapEnumGoType(out, leaf)
+			if enumType == "" {
+				out.P(indent, mapAccess, " = x.", fieldName)
+				return
+			}
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			out.P(indent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]", enumType, ", len(x.", fieldName, "))")
+			out.P(indent, "\tfor k, v := range x.", fieldName, " {")
+			out.P(indent, "\t\tvals[k] = ", enumType, "(v)")
+			out.P(indent, "\t}")
+			out.P(indent, "\t", mapAccess, " = vals")
+			out.P(indent, "}")
+			return
+		}
+		out.P(indent, mapAccess, " = x.", fieldName)
+		return
+	}
 	if g.hasOverride(field) {
 		g.renderOverrideIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, indent)
 		return
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
+		if !g.isPlainMessage(ir, field.TypeUrl) {
+			if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+				out.P(indent, "if len(x.", fieldName, ") > 0 {")
+				inner := indent + "\t"
+				access, ok := g.renderEnsurePath(out, "out", segments, inner)
+				if !ok {
+					out.P(inner, "// skip invalid path")
+					out.P(indent, "}")
+					return
+				}
+				out.P(inner, access, ".", segments[len(segments)-1].goName, " = x.", fieldName)
+				out.P(indent, "}")
+				return
+			}
+			out.P(indent, "if x.", fieldName, " != nil {")
+			inner := indent + "\t"
+			access, ok := g.renderEnsurePath(out, "out", segments, inner)
+			if !ok {
+				out.P(inner, "// skip invalid path")
+				out.P(indent, "}")
+				return
+			}
+			out.P(inner, access, ".", segments[len(segments)-1].goName, " = x.", fieldName)
+			out.P(indent, "}")
+			return
+		}
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 			out.P(indent, "// repeated message is not supported")
 			return
@@ -592,12 +704,66 @@ func (g *Generator) renderFieldIntoPlain(
 	setCrf bool,
 ) {
 	_ = msg
+	if info, ok := mapFieldInfoFor(field); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		if info.valueKind == typepb.Field_TYPE_ENUM {
+			enumType := g.mapEnumGoType(out, segments[len(segments)-1])
+			if enumType == "" {
+				out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+				out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+				out.P(innerIndent, "}")
+				closeGuards(out, innerIndent, closers)
+				return
+			}
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			out.P(innerIndent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]int32, len(", leafAccess, "))")
+			out.P(innerIndent, "\tfor k, v := range ", leafAccess, " {")
+			out.P(innerIndent, "\t\tvals[k] = int32(v)")
+			out.P(innerIndent, "\t}")
+			out.P(innerIndent, "\tout.", fieldName, " = vals")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
+		out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+		out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+		return
+	}
 	if g.hasOverride(field) {
 		g.renderOverrideIntoPlain(out, ir, msg, field, fieldName, segments, casterTypes, indent, pathString, setCrf)
 		return
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
+		if !g.isPlainMessage(ir, field.TypeUrl) {
+			leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+			if !ok {
+				out.P(indent, "// skip invalid path")
+				return
+			}
+			if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+				out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+				out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+				out.P(innerIndent, "}")
+				closeGuards(out, innerIndent, closers)
+				return
+			}
+			out.P(innerIndent, "if ", leafAccess, " != nil {")
+			out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 			out.P(indent, "// repeated message is not supported")
 			return
@@ -636,12 +802,66 @@ func (g *Generator) renderFieldIntoPlainErr(
 	setCrf bool,
 ) {
 	_ = msg
+	if info, ok := mapFieldInfoFor(field); ok {
+		if len(segments) == 0 {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid map path")
+			return
+		}
+		if info.valueKind == typepb.Field_TYPE_ENUM {
+			enumType := g.mapEnumGoType(out, segments[len(segments)-1])
+			if enumType == "" {
+				out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+				out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+				out.P(innerIndent, "}")
+				closeGuards(out, innerIndent, closers)
+				return
+			}
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			out.P(innerIndent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]int32, len(", leafAccess, "))")
+			out.P(innerIndent, "\tfor k, v := range ", leafAccess, " {")
+			out.P(innerIndent, "\t\tvals[k] = int32(v)")
+			out.P(innerIndent, "\t}")
+			out.P(innerIndent, "\tout.", fieldName, " = vals")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
+		out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+		out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+		return
+	}
 	if g.hasOverride(field) {
 		g.renderOverrideIntoPlainErr(out, ir, msg, field, fieldName, segments, casterTypes, indent, pathString, setCrf)
 		return
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
+		if !g.isPlainMessage(ir, field.TypeUrl) {
+			leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+			if !ok {
+				out.P(indent, "// skip invalid path")
+				return
+			}
+			if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+				out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+				out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+				out.P(innerIndent, "}")
+				closeGuards(out, innerIndent, closers)
+				return
+			}
+			out.P(innerIndent, "if ", leafAccess, " != nil {")
+			out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 			out.P(indent, "// repeated message is not supported")
 			return
@@ -841,10 +1061,10 @@ func (g *Generator) pbPathSegments(out typeWriter, ir *TypePbIR, msg *typepb.Typ
 			goName:    field.GoName,
 			field:     field,
 		}
-		if field.Desc.Kind() == protoreflect.MessageKind && field.Message != nil {
+		if i < len(path)-1 && field.Desc.Kind() == protoreflect.MessageKind && field.Message != nil {
 			seg.messageGoType = g.qualifyGoIdent(out, field.Message.GoIdent)
 		}
-		if field.Oneof != nil {
+		if field.Oneof != nil && !field.Oneof.Desc.IsSynthetic() {
 			seg.isOneof = true
 			seg.oneofGoName = field.Oneof.GoName
 			seg.oneofWrapperGo = g.oneofWrapperType(currentQualified, field.GoName)
@@ -876,7 +1096,7 @@ func isPointerScalarField(field *protogen.Field) bool {
 	if field.Desc.Cardinality() == protoreflect.Repeated {
 		return false
 	}
-	if field.Oneof != nil {
+	if field.Oneof != nil && !field.Oneof.Desc.IsSynthetic() {
 		return false
 	}
 	if field.Desc.Kind() == protoreflect.MessageKind {
@@ -996,6 +1216,17 @@ func (g *Generator) enumGoType(out typeWriter, seg pbPathSegment) string {
 		return ""
 	}
 	return g.qualifyGoIdent(out, seg.field.Enum.GoIdent)
+}
+
+func (g *Generator) mapEnumGoType(out typeWriter, seg pbPathSegment) string {
+	if seg.field == nil || seg.field.Message == nil || len(seg.field.Message.Fields) < 2 {
+		return ""
+	}
+	valField := seg.field.Message.Fields[1]
+	if valField.Enum == nil {
+		return ""
+	}
+	return g.qualifyGoIdent(out, valField.Enum.GoIdent)
 }
 
 func (g *Generator) expandCrfPaths(paths []string, basePath string) []string {

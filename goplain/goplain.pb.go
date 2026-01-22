@@ -214,7 +214,8 @@ type MessageOptions struct {
 	// message Int32AliasUSAGE {
 	// int32 value = 1;
 	// }
-	TypeAlias bool `protobuf:"varint,2,opt,name=type_alias,json=typeAlias,proto3" json:"type_alias,omitempty"`
+	TypeAlias      bool   `protobuf:"varint,2,opt,name=type_alias,json=typeAlias,proto3" json:"type_alias,omitempty"`
+	TypeAliasField string `protobuf:"bytes,3,opt,name=type_alias_field,json=typeAliasField,proto3" json:"type_alias_field,omitempty"`
 	// Virtual fields for this message.
 	// Number is filled automatically.
 	// This does not affect the original message numbers alignment cause this field does not apply to the original message.
@@ -231,7 +232,7 @@ type MessageOptions struct {
 	// string name = 1;
 	// string password_hash = 2;
 	// }
-	VirtualFields []*typepb.Field `protobuf:"bytes,3,rep,name=virtual_fields,json=virtualFields,proto3" json:"virtual_fields,omitempty"`
+	VirtualFields []*typepb.Field `protobuf:"bytes,4,rep,name=virtual_fields,json=virtualFields,proto3" json:"virtual_fields,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -278,6 +279,13 @@ func (x *MessageOptions) GetTypeAlias() bool {
 		return x.TypeAlias
 	}
 	return false
+}
+
+func (x *MessageOptions) GetTypeAliasField() string {
+	if x != nil {
+		return x.TypeAliasField
+	}
+	return ""
 }
 
 func (x *MessageOptions) GetVirtualFields() []*typepb.Field {
@@ -618,12 +626,13 @@ const file_goplain_proto_rawDesc = "" +
 	"\x0f_field_type_url\"}\n" +
 	"\fTypeOverride\x125\n" +
 	"\bselector\x18\x01 \x01(\v2\x19.goplain.OverrideSelectorR\bselector\x126\n" +
-	"\x0etarget_go_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\ftargetGoType\"\x8a\x01\n" +
+	"\x0etarget_go_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\ftargetGoType\"\xb4\x01\n" +
 	"\x0eMessageOptions\x12\x1a\n" +
 	"\bgenerate\x18\x01 \x01(\bR\bgenerate\x12\x1d\n" +
 	"\n" +
-	"type_alias\x18\x02 \x01(\bR\ttypeAlias\x12=\n" +
-	"\x0evirtual_fields\x18\x03 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"\x8e\x01\n" +
+	"type_alias\x18\x02 \x01(\bR\ttypeAlias\x12(\n" +
+	"\x10type_alias_field\x18\x03 \x01(\tR\x0etypeAliasField\x12=\n" +
+	"\x0evirtual_fields\x18\x04 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"\x8e\x01\n" +
 	"\vFileOptions\x12C\n" +
 	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\x12:\n" +
 	"\rvirtual_types\x18\x02 \x03(\v2\x15.google.protobuf.TypeR\fvirtualTypes\"\xeb\x01\n" +

@@ -45,6 +45,7 @@ message MessageOptions {
             }
     */
     bool type_alias = 2;
+    string type_alias_field = 3;
     /*
        Virtual fields for this message.
        Number is filled automatically.
@@ -63,7 +64,7 @@ message MessageOptions {
                string password_hash = 2;
            }
    */
-    repeated google.protobuf.Field virtual_fields = 3;
+    repeated google.protobuf.Field virtual_fields = 4;
 }
 
 message FileOptions {

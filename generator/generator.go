@@ -164,6 +164,9 @@ func (g *Generator) Collect() []*TypePbIR {
 			}
 			l.Debug("message", zap.String("full_path", string(message.Desc.FullName())))
 			for _, oneof := range message.Oneofs {
+				if oneof.Desc.IsSynthetic() {
+					continue
+				}
 				oneOffOpts := oneof.Desc.Options().(*descriptorpb.OneofOptions)
 				oneOffGen := proto.GetExtension(oneOffOpts, goplain.E_Oneof).(*goplain.OneofOptions)
 				l.Debug(
@@ -206,19 +209,28 @@ func (g *Generator) Collect() []*TypePbIR {
 					zap.String("go_name", field.GoName),
 				}
 				if field.Oneof != nil {
-					logOpts = append(
-						logOpts,
-						zap.String("from_oneoff", string(field.Oneof.Desc.FullName())),
-						zap.Int32("oneof_index", int32(field.Desc.ContainingOneof().Index())),
-					)
-					for idx, oneof := range message.Oneofs {
-						if oneof.Desc.FullName() == field.Oneof.Desc.FullName() {
-							newField.OneofIndex = int32(idx + 1)
-							break
+					if field.Oneof.Desc.IsSynthetic() {
+						logOpts = append(logOpts, zap.String("from_oneoff", string(field.Oneof.Desc.FullName())))
+						base := newField.TypeUrl
+						if base == "" {
+							base = newField.Name
 						}
-					}
-					if newField.OneofIndex == 0 {
-						panic("oneof not found")
+						newField.TypeUrl = marker.Parse(base).AddMarker(isOneoffedMarker, trueVal).String()
+					} else {
+						logOpts = append(
+							logOpts,
+							zap.String("from_oneoff", string(field.Oneof.Desc.FullName())),
+							zap.Int32("oneof_index", int32(field.Desc.ContainingOneof().Index())),
+						)
+						for idx, oneof := range message.Oneofs {
+							if oneof.Desc.FullName() == field.Oneof.Desc.FullName() {
+								newField.OneofIndex = int32(idx + 1)
+								break
+							}
+						}
+						if newField.OneofIndex == 0 {
+							panic("oneof not found")
+						}
 					}
 				}
 				if field.Message != nil {
@@ -230,6 +242,26 @@ func (g *Generator) Collect() []*TypePbIR {
 						fieldName = marker.New(fieldName, map[string]string{embedMarker: trueVal, prefixMarker: trueVal}).String()
 					}
 					newField.TypeUrl = fieldName
+				}
+				if field.Desc.IsMap() && field.Message != nil {
+					entry := field.Message
+					if len(entry.Fields) >= 2 {
+						key := entry.Fields[0]
+						val := entry.Fields[1]
+						base := newField.TypeUrl
+						if base == "" {
+							base = newField.Name
+						}
+						markers := map[string]string{
+							mapMarker:    trueVal,
+							mapKeyKind:   fmt.Sprint(int(typepb.Field_Kind(key.Desc.Kind()))),
+							mapValueKind: fmt.Sprint(int(typepb.Field_Kind(val.Desc.Kind()))),
+						}
+						if val.Message != nil {
+							markers[mapValueTypeURL] = encodeMarkerValue(string(val.Message.Desc.FullName()))
+						}
+						newField.TypeUrl = marker.Parse(base).AddMarkers(markers).String()
+					}
 				}
 				override := g.resolveFieldOverride(field, fieldGen.GetOverrideType(), fileOverrides)
 				g.applyOverrideMarkers(newField, override)
@@ -252,6 +284,11 @@ const (
 	crfPathsMarker = "crf_paths"  // encoded list of collided paths
 	empathMarker   = "empath"     // full EmPath for the field origin
 	plainName      = "plain_name" // final plain name for the field
+	// Map markers
+	mapMarker       = "is_map"
+	mapKeyKind      = "map_key_kind"
+	mapValueKind    = "map_val_kind"
+	mapValueTypeURL = "map_val_type_url"
 )
 
 func (g *Generator) processEmbedOneof(msg *typepb.Type) {

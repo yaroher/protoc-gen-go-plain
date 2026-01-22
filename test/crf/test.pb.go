@@ -500,7 +500,7 @@ const file_test_crf_test_proto_rawDesc = "" +
 	"\x04UUID\x12\x16github.com/google/uuidR\x16someEventStringPayload\x12*\n" +
 	"\aprocess\x18\x03 \x01(\v2\x10.testcrf.ProcessR\aprocess\x12.\n" +
 	"\x04data\x18\x04 \x01(\v2\x12.testcrf.EventDataB\x06\x82\xa6\x1d\x02 \x01R\x04data\x12&\n" +
-	"\x0fparent_event_id\x18\x05 \x01(\tR\rparentEventId:\x1e\x82\xa6\x1d\x1a\b\x01\x1a\x16\b\t\"\x12event_virtual_typeB`\x82\xa6\x1d+\x12)\n" +
+	"\x0fparent_event_id\x18\x05 \x01(\tR\rparentEventId:\x1e\x82\xa6\x1d\x1a\b\x01\"\x16\b\t\"\x12event_virtual_typeB`\x82\xa6\x1d+\x12)\n" +
 	"\vVirtualType\x12\x1a\b\v\x10\x01\x18\x01\"\x04file2\ftestcrf.FileZ/github.com/yaroher/protoc-gen-go-plain/test/crfb\x06proto3"
 
 var (

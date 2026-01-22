@@ -26,6 +26,14 @@ build-test: build
 		--go-plain_opt=paths=source_relative,json_jx=true,enable_crf=true \
 		--proto_path=$(CURDIR) \
 		$(CURDIR)/test/plain/plain.proto
+	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
+		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
+		--go_out=$(CURDIR) \
+		--go_opt=paths=source_relative \
+		--go-plain_out=$(CURDIR) \
+		--go-plain_opt=paths=source_relative,json_jx=true,enable_crf=true \
+		--proto_path=$(CURDIR) \
+		$(CURDIR)/test/full/full.proto
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt

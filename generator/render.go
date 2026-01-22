@@ -149,6 +149,11 @@ func (g *Generator) fieldGoTypeAndTag(ir *TypePbIR, msg *typepb.Type, field *typ
 func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[string]struct{}) string {
 	isOptional := hasMarker(field.TypeUrl, isOneoffedMarker) ||
 		(hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker))
+	if info, ok := mapFieldInfoFor(field); ok {
+		keyType := mapScalarGoType(info.keyKind)
+		valType := g.mapValueGoType(ir, info, imports)
+		return "map[" + keyType + "]" + valType
+	}
 	if override, ok := g.overrideInfo(field); ok {
 		if override.importPath != "" {
 			imports[override.importPath] = struct{}{}
@@ -189,6 +194,13 @@ func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[s
 	case typepb.Field_TYPE_ENUM:
 		return g.wrapRepeatedOptional(field, "int32", isOptional)
 	case typepb.Field_TYPE_MESSAGE:
+		if typeName, importPath, ok := wktGoType(field.TypeUrl); ok {
+			imports[importPath] = struct{}{}
+			if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+				return "[]*" + typeName
+			}
+			return "*" + typeName
+		}
 		typeName := g.resolveMessageType(ir, field.TypeUrl)
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 			return "[]" + typeName
@@ -196,6 +208,23 @@ func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[s
 		return "*" + typeName
 	default:
 		return g.wrapRepeated(field, "any")
+	}
+}
+
+func (g *Generator) mapValueGoType(ir *TypePbIR, info mapFieldInfo, imports map[string]struct{}) string {
+	switch info.valueKind {
+	case typepb.Field_TYPE_MESSAGE:
+		if info.valueType == "" {
+			return "any"
+		}
+		if typeName, importPath, ok := wktGoType(info.valueType); ok {
+			imports[importPath] = struct{}{}
+			return "*" + typeName
+		}
+		typeName := g.resolveMessageType(ir, info.valueType)
+		return "*" + typeName
+	default:
+		return mapScalarGoType(info.valueKind)
 	}
 }
 
