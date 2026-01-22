@@ -38,6 +38,9 @@ func (s EmPath) Append(prefix marker.StringMarker) EmPath {
 func (s EmPath) Prepend(prefix marker.StringMarker) EmPath {
 	return append([]marker.StringMarker{prefix}, s.Copy()...)
 }
+func (s EmPath) AppendPath(other EmPath) EmPath {
+	return append(s.Copy(), other...)
+}
 
 func Parse(s string) EmPath {
 	parts := strings.Split(s, empathSeparator)

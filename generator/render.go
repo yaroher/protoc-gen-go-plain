@@ -109,7 +109,7 @@ func (g *Generator) plainTypeName(fullName string) string {
 
 func (g *Generator) fieldGoName(field *typepb.Field) string {
 	name := g.plainName(field)
-	return strcase.ToCamel(name)
+	return goFieldNameFromPlain(name)
 }
 
 func (g *Generator) plainName(field *typepb.Field) string {
@@ -126,13 +126,14 @@ func (g *Generator) fieldGoTypeAndTag(ir *TypePbIR, msg *typepb.Type, field *typ
 	isRepeated := field.Cardinality == typepb.Field_CARDINALITY_REPEATED
 	isOneof := hasMarker(field.TypeUrl, isOneoffedMarker)
 	isCRF := hasMarker(field.TypeUrl, crfMarker)
+	isCRFField := hasMarker(field.TypeUrl, crfForMarker)
 
 	goType := g.fieldGoType(ir, field, imports)
-	tag := strcase.ToLowerCamel(g.plainName(field))
+	tag := jsonTagFromPlain(g.plainName(field))
 
 	if isRepeated {
 		tag += ",omitempty"
-	} else if strings.HasPrefix(goType, "*") || isOneof || isCRF {
+	} else if strings.HasPrefix(goType, "*") || isOneof || (isCRF && !isCRFField) {
 		tag += ",omitempty"
 	}
 
@@ -144,39 +145,41 @@ func (g *Generator) fieldGoTypeAndTag(ir *TypePbIR, msg *typepb.Type, field *typ
 }
 
 func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[string]struct{}) string {
+	isOptional := hasMarker(field.TypeUrl, isOneoffedMarker) ||
+		(hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker))
 	switch field.Kind {
 	case typepb.Field_TYPE_DOUBLE:
-		return g.wrapRepeated(field, "float64")
+		return g.wrapRepeatedOptional(field, "float64", isOptional)
 	case typepb.Field_TYPE_FLOAT:
-		return g.wrapRepeated(field, "float32")
+		return g.wrapRepeatedOptional(field, "float32", isOptional)
 	case typepb.Field_TYPE_INT64:
-		return g.wrapRepeated(field, "int64")
+		return g.wrapRepeatedOptional(field, "int64", isOptional)
 	case typepb.Field_TYPE_UINT64:
-		return g.wrapRepeated(field, "uint64")
+		return g.wrapRepeatedOptional(field, "uint64", isOptional)
 	case typepb.Field_TYPE_INT32:
-		return g.wrapRepeated(field, "int32")
+		return g.wrapRepeatedOptional(field, "int32", isOptional)
 	case typepb.Field_TYPE_FIXED64:
-		return g.wrapRepeated(field, "uint64")
+		return g.wrapRepeatedOptional(field, "uint64", isOptional)
 	case typepb.Field_TYPE_FIXED32:
-		return g.wrapRepeated(field, "uint32")
+		return g.wrapRepeatedOptional(field, "uint32", isOptional)
 	case typepb.Field_TYPE_BOOL:
-		return g.wrapRepeated(field, "bool")
+		return g.wrapRepeatedOptional(field, "bool", isOptional)
 	case typepb.Field_TYPE_STRING:
-		return g.wrapRepeated(field, "string")
+		return g.wrapRepeatedOptional(field, "string", isOptional)
 	case typepb.Field_TYPE_BYTES:
-		return g.wrapRepeated(field, "[]byte")
+		return g.wrapRepeatedOptional(field, "[]byte", isOptional)
 	case typepb.Field_TYPE_UINT32:
-		return g.wrapRepeated(field, "uint32")
+		return g.wrapRepeatedOptional(field, "uint32", isOptional)
 	case typepb.Field_TYPE_SFIXED32:
-		return g.wrapRepeated(field, "int32")
+		return g.wrapRepeatedOptional(field, "int32", isOptional)
 	case typepb.Field_TYPE_SFIXED64:
-		return g.wrapRepeated(field, "int64")
+		return g.wrapRepeatedOptional(field, "int64", isOptional)
 	case typepb.Field_TYPE_SINT32:
-		return g.wrapRepeated(field, "int32")
+		return g.wrapRepeatedOptional(field, "int32", isOptional)
 	case typepb.Field_TYPE_SINT64:
-		return g.wrapRepeated(field, "int64")
+		return g.wrapRepeatedOptional(field, "int64", isOptional)
 	case typepb.Field_TYPE_ENUM:
-		return g.wrapRepeated(field, "int32")
+		return g.wrapRepeatedOptional(field, "int32", isOptional)
 	case typepb.Field_TYPE_MESSAGE:
 		typeName := g.resolveMessageType(ir, field.TypeUrl)
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
@@ -201,6 +204,16 @@ func (g *Generator) resolveMessageType(ir *TypePbIR, typeURL string) string {
 func (g *Generator) wrapRepeated(field *typepb.Field, base string) string {
 	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 		return "[]" + base
+	}
+	return base
+}
+
+func (g *Generator) wrapRepeatedOptional(field *typepb.Field, base string, optional bool) string {
+	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+		return "[]" + base
+	}
+	if optional {
+		return "*" + base
 	}
 	return base
 }

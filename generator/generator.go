@@ -420,28 +420,43 @@ func (g *Generator) flattenEmbeddedFields(
 				}
 			}
 
+			// Prefer existing empath (if field was already flattened) to preserve full chain
+			empathValue := marker.Parse(fieldCopy.TypeUrl).GetMarker(empathMarker)
+			pathForMarker := newPath
+			if empathValue != "" {
+				decoded := decodeEmpath(empathValue)
+				if decoded != "" {
+					pathForMarker = currentPath.AppendPath(empath.Parse(decoded))
+				}
+			}
+
 			// Store EmPath in TypeUrl marker (encode separator chars to avoid marker parsing issues)
 			encodedEmpath := strings.NewReplacer(
 				"/", "|",
 				"?", "%3F",
 				";", "%3B",
 				"=", "%3D",
-			).Replace(newPath.String())
-			fieldCopy.TypeUrl = marker.Parse(fieldCopy.TypeUrl).
+			).Replace(pathForMarker.String())
+			segments := empath.Parse(fieldCopy.TypeUrl)
+			if len(segments) == 0 {
+				segments = empath.New(marker.Parse(field.Name))
+			}
+			lastIdx := len(segments) - 1
+			segments[lastIdx] = segments[lastIdx].
 				AddMarker(empathMarker, encodedEmpath).
-				AddMarker(plainName, computedName).
-				String()
+				AddMarker(plainName, computedName)
+			fieldCopy.TypeUrl = segments.String()
 
 			result = append(result, flattenedField{
 				field:     fieldCopy,
-				emPath:    newPath,
+				emPath:    pathForMarker,
 				plainName: computedName,
 			})
 
 			l.Debug("flattened field",
 				zap.String("original_name", field.Name),
 				zap.String("plain_name", computedName),
-				zap.String("empath", newPath.String()),
+				zap.String("empath", pathForMarker.String()),
 			)
 		}
 	}
@@ -635,6 +650,9 @@ func (g *Generator) Generate() error {
 	}
 	g.writeFile("oneoffs", oneoffs)
 	if err := g.Render(oneoffs); err != nil {
+		return err
+	}
+	if err := g.RenderConverters(oneoffs); err != nil {
 		return err
 	}
 	return nil
