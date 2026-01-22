@@ -9,6 +9,11 @@ import (
 
 type PluginSettings struct {
 	JSONJX bool
+	// EnableCRF enables Collision Resolution Fields.
+	// When true: field name collisions are allowed, CRF fields ({Field}Source) are added
+	// to track the EmPath origin of merged fields.
+	// When false (default): collisions cause generation error.
+	EnableCRF bool
 }
 
 func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue string) string {
@@ -32,7 +37,8 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{
-		JSONJX: mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
+		JSONJX:    mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
+		EnableCRF: mapGetOrDefault(paramsMap, "enable_crf", "false") == "true",
 	}
 	return settings, nil
 }
