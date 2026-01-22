@@ -15,7 +15,7 @@ build-test: build
 		--go_out=$(CURDIR) \
 		--go_opt=paths=source_relative \
 		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative,json_jx=true \
+		--go-plain_opt=paths=source_relative,json_jx=true,enable_crf=true \
 		--proto_path=$(CURDIR) \
 		$(CURDIR)/test/test.proto
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt

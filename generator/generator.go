@@ -243,6 +243,11 @@ func (g *Generator) Collect() []*TypePbIR {
 const (
 	isOneoffedMarker = "is_oneoff"
 	isMessageMarker  = "is_message"
+	// CRF markers
+	crfMarker    = "crf"        // marks field as CRF (Collision Resolution Field)
+	crfForMarker = "crf_for"    // name of the field this CRF resolves
+	empathMarker = "empath"     // full EmPath for the field origin
+	plainName    = "plain_name" // final plain name for the field
 )
 
 func (g *Generator) processEmbedOneof(msg *typepb.Type) {
@@ -270,50 +275,368 @@ func (g *Generator) processEmbedOneof(msg *typepb.Type) {
 	msg.Oneofs = newOneOffs
 }
 
-func (g *Generator) processEmbeddedMessages(ir *TypePbIR, msg *typepb.Type) {
-	l := logger.Logger.Named("processEmbeddedMessages")
-	foundMessage := func(typeUrl string) (*typepb.Type, bool) {
-		for _, m := range ir.Messages {
-			if empath.Parse(m.Name).Last().Value() == empath.Parse(typeUrl).Last().Value() {
-				return m, true
-			}
-		}
-		return nil, false
+// flattenedField represents a field with its EmPath origin and computed plain name
+type flattenedField struct {
+	field     *typepb.Field
+	emPath    empath.EmPath
+	plainName string // computed Go field name
+}
+
+// getShortName extracts the last segment from a full name like "test.File.path" -> "path"
+func getShortName(fullName string) string {
+	parts := strings.Split(fullName, ".")
+	if len(parts) == 0 {
+		return fullName
 	}
-	for _, field := range msg.Fields {
-		if empath.Parse(field.TypeUrl).Last().HasMarker(embedMarker) {
-			msgType, ok := foundMessage(field.TypeUrl)
-			if !ok {
-				panic("message not found")
-			}
-			l.Debug(
-				"found_message",
-				zap.String("full_path", msgType.Name),
-				zap.String("for_field", field.Name),
-			)
-			for _, f := range msgType.Fields {
-				msg.Fields = append(msg.Fields, f)
-			}
-			//field.TypeUrl = msgType.Name
+	return parts[len(parts)-1]
+}
+
+// findMessage looks up a message by its TypeUrl (with markers stripped)
+func (g *Generator) findMessage(ir *TypePbIR, typeUrl string) (*typepb.Type, bool) {
+	targetValue := empath.Parse(typeUrl).Last().Value()
+	for _, m := range ir.Messages {
+		if empath.Parse(m.Name).Last().Value() == targetValue {
+			return m, true
 		}
+	}
+	return nil, false
+}
+
+// flattenEmbeddedFields recursively flattens embedded fields into a list
+// currentPath is the EmPath built so far
+// prefix is the name prefix to apply (from embed_with_prefix)
+func (g *Generator) flattenEmbeddedFields(
+	ir *TypePbIR,
+	fields []*typepb.Field,
+	currentPath empath.EmPath,
+	prefix string,
+) []flattenedField {
+	l := logger.Logger.Named("flattenEmbeddedFields")
+	var result []flattenedField
+
+	for _, field := range fields {
+		// Skip fields that belong to non-embedded oneof (oneof_index > 0 means it's still in oneof)
+		if field.OneofIndex > 0 {
+			// Field belongs to a non-embedded oneof, keep as is
+			result = append(result, flattenedField{
+				field:     copyField(field),
+				emPath:    currentPath.Append(marker.Parse(field.Name)),
+				plainName: getShortName(field.Name),
+			})
+			continue
+		}
+
+		fieldPath := empath.Parse(field.TypeUrl)
+		fieldMarker := fieldPath.Last()
+		isEmbed := fieldMarker.HasMarker(embedMarker)
+
+		// Check for prefix marker anywhere in the path (could be on oneof)
+		hasPrefix := false
+		for _, segment := range fieldPath {
+			if segment.HasMarker(prefixMarker) {
+				hasPrefix = true
+				break
+			}
+		}
+
+		// Build field's marker for EmPath
+		fieldPathMarker := marker.Parse(field.Name)
+		if isEmbed {
+			fieldPathMarker = fieldPathMarker.AddMarker(embedMarker, trueVal)
+		}
+		if hasPrefix {
+			fieldPathMarker = fieldPathMarker.AddMarker(prefixMarker, trueVal)
+		}
+
+		// Extend the path
+		newPath := currentPath.Append(fieldPathMarker)
+
+		// Compute new prefix for nested fields
+		newPrefix := prefix
+		if hasPrefix && newPrefix == "" {
+			// Find the segment with prefix marker and use its name as prefix
+			for _, segment := range fieldPath {
+				if segment.HasMarker(prefixMarker) {
+					oneofShortName := getShortName(segment.Value())
+					newPrefix = strcase.ToCamel(oneofShortName)
+					break
+				}
+			}
+		}
+
+		if isEmbed && field.Kind == typepb.Field_TYPE_MESSAGE {
+			// Find the embedded message and flatten its fields
+			msgType, ok := g.findMessage(ir, field.TypeUrl)
+			if !ok {
+				l.Error("embedded message not found",
+					zap.String("type_url", field.TypeUrl),
+					zap.String("field", field.Name),
+				)
+				continue
+			}
+
+			l.Debug("flattening embedded message",
+				zap.String("message", msgType.Name),
+				zap.String("field", field.Name),
+				zap.String("path", newPath.String()),
+			)
+
+			// Recursively flatten the embedded message's fields
+			nestedFields := g.flattenEmbeddedFields(ir, msgType.Fields, newPath, newPrefix)
+			result = append(result, nestedFields...)
+		} else {
+			// Regular field or non-message embed - add to result
+			fieldCopy := copyField(field)
+
+			// Check if plain_name was already computed (from previous processing)
+			// Search in any segment of the path
+			existingPlainName := ""
+			for _, segment := range fieldPath {
+				if pn := segment.GetMarker(plainName); pn != "" {
+					existingPlainName = pn
+					break
+				}
+			}
+
+			var computedName string
+			if existingPlainName != "" {
+				// Use existing plain_name, but add current prefix if any
+				if prefix != "" {
+					computedName = prefix + strcase.ToCamel(existingPlainName)
+				} else {
+					computedName = existingPlainName
+				}
+			} else {
+				// Compute plain name from short field name
+				// Use newPrefix if it was set from oneof with prefix marker
+				fieldShortName := getShortName(field.Name)
+				effectivePrefix := prefix
+				if newPrefix != "" {
+					effectivePrefix = newPrefix
+				}
+				computedName = fieldShortName
+				if effectivePrefix != "" {
+					computedName = effectivePrefix + strcase.ToCamel(fieldShortName)
+				}
+			}
+
+			// Store EmPath in TypeUrl marker (encode separator chars to avoid marker parsing issues)
+			encodedEmpath := strings.NewReplacer(
+				"/", "|",
+				"?", "%3F",
+				";", "%3B",
+				"=", "%3D",
+			).Replace(newPath.String())
+			fieldCopy.TypeUrl = marker.Parse(fieldCopy.TypeUrl).
+				AddMarker(empathMarker, encodedEmpath).
+				AddMarker(plainName, computedName).
+				String()
+
+			result = append(result, flattenedField{
+				field:     fieldCopy,
+				emPath:    newPath,
+				plainName: computedName,
+			})
+
+			l.Debug("flattened field",
+				zap.String("original_name", field.Name),
+				zap.String("plain_name", computedName),
+				zap.String("empath", newPath.String()),
+			)
+		}
+	}
+
+	return result
+}
+
+// processCollisions detects collisions and adds CRF fields if EnableCRF is true
+func (g *Generator) processCollisions(flattened []flattenedField) ([]*typepb.Field, error) {
+	l := logger.Logger.Named("processCollisions")
+
+	// Group by plain name
+	byName := make(map[string][]flattenedField)
+	for _, ff := range flattened {
+		byName[ff.plainName] = append(byName[ff.plainName], ff)
+	}
+
+	var result []*typepb.Field
+
+	for name, fields := range byName {
+		if len(fields) == 1 {
+			// No collision
+			result = append(result, fields[0].field)
+			continue
+		}
+
+		// Collision detected
+		l.Debug("collision detected",
+			zap.String("name", name),
+			zap.Int("count", len(fields)),
+		)
+
+		if !g.Settings.EnableCRF {
+			// Collisions not allowed
+			var paths []string
+			for _, f := range fields {
+				paths = append(paths, f.emPath.String())
+			}
+			return nil, fmt.Errorf(
+				"field name collision for '%s' from paths: %v. Enable CRF to resolve collisions",
+				name, paths,
+			)
+		}
+
+		// CRF enabled - merge fields and add CRF field
+		// Use first field as the merged field
+		mergedField := fields[0].field
+
+		// Mark as having collision and add plain_name
+		mergedField.TypeUrl = marker.Parse(mergedField.TypeUrl).
+			AddMarker(crfMarker, trueVal).
+			AddMarker(plainName, name). // add plain_name for later embed
+			String()
+
+		result = append(result, mergedField)
+
+		// Create CRF field
+		crfField := &typepb.Field{
+			Kind:        typepb.Field_TYPE_STRING,
+			Cardinality: typepb.Field_CARDINALITY_OPTIONAL,
+			Number:      -(mergedField.Number + 1000), // negative to avoid conflicts
+			Name:        name + "CRF",
+			JsonName:    strcase.ToLowerCamel(name + "CRF"),
+			TypeUrl: marker.New("", map[string]string{
+				crfMarker:    trueVal,
+				crfForMarker: name,
+			}).String(),
+		}
+
+		result = append(result, crfField)
+
+		l.Debug("added CRF field",
+			zap.String("for_field", name),
+			zap.String("crf_name", crfField.Name),
+		)
+	}
+
+	return result, nil
+}
+
+func (g *Generator) processEmbeddedMessages(ir *TypePbIR, msg *typepb.Type) error {
+	l := logger.Logger.Named("processEmbeddedMessages")
+
+	l.Debug("processing message", zap.String("name", msg.Name))
+
+	// Start with empty path
+	initialPath := empath.New()
+
+	// Flatten all embedded fields
+	flattened := g.flattenEmbeddedFields(ir, msg.Fields, initialPath, "")
+
+	// Process collisions
+	processedFields, err := g.processCollisions(flattened)
+	if err != nil {
+		return fmt.Errorf("message %s: %w", msg.Name, err)
+	}
+
+	// Replace message fields with processed ones
+	msg.Fields = processedFields
+
+	return nil
+}
+
+// copyField creates a deep copy of a typepb.Field
+func copyField(f *typepb.Field) *typepb.Field {
+	return &typepb.Field{
+		Kind:         f.Kind,
+		Cardinality:  f.Cardinality,
+		Number:       f.Number,
+		Name:         f.Name,
+		TypeUrl:      f.TypeUrl,
+		OneofIndex:   f.OneofIndex,
+		Packed:       f.Packed,
+		Options:      f.Options, // shallow copy of options
+		JsonName:     f.JsonName,
+		DefaultValue: f.DefaultValue,
 	}
 }
 
-func (g *Generator) ProcessOneoffs(typeIRs []*TypePbIR) []*TypePbIR {
+func (g *Generator) ProcessOneoffs(typeIRs []*TypePbIR) ([]*TypePbIR, error) {
 	for _, ir := range typeIRs {
 		for _, msg := range ir.Messages {
 			g.processEmbedOneof(msg)
-			g.processEmbeddedMessages(ir, msg)
+		}
+		processed := make(map[string]bool)
+		visiting := make(map[string]bool)
+		for _, msg := range ir.Messages {
+			if err := g.processEmbeddedMessagesRecursive(ir, msg, visiting, processed); err != nil {
+				return nil, err
+			}
 		}
 	}
-	return typeIRs
+	return typeIRs, nil
+}
+
+func (g *Generator) processEmbeddedMessagesRecursive(
+	ir *TypePbIR,
+	msg *typepb.Type,
+	visiting map[string]bool,
+	processed map[string]bool,
+) error {
+	if processed[msg.Name] {
+		return nil
+	}
+	if visiting[msg.Name] {
+		return fmt.Errorf("embedded message cycle detected at %s", msg.Name)
+	}
+
+	visiting[msg.Name] = true
+
+	for _, field := range msg.Fields {
+		if field.OneofIndex > 0 {
+			continue
+		}
+		if field.Kind != typepb.Field_TYPE_MESSAGE {
+			continue
+		}
+
+		fieldPath := empath.Parse(field.TypeUrl)
+		if len(fieldPath) == 0 {
+			continue
+		}
+		if !fieldPath.Last().HasMarker(embedMarker) {
+			continue
+		}
+
+		embedded, ok := g.findMessage(ir, field.TypeUrl)
+		if !ok {
+			continue
+		}
+		if err := g.processEmbeddedMessagesRecursive(ir, embedded, visiting, processed); err != nil {
+			return err
+		}
+	}
+
+	if err := g.processEmbeddedMessages(ir, msg); err != nil {
+		return err
+	}
+
+	visiting[msg.Name] = false
+	processed[msg.Name] = true
+	return nil
 }
 
 func (g *Generator) Generate() error {
 	collected := g.Collect()
 	g.writeFile("collected", collected)
-	oneoffs := g.ProcessOneoffs(collected)
+	oneoffs, err := g.ProcessOneoffs(collected)
+	if err != nil {
+		return err
+	}
 	g.writeFile("oneoffs", oneoffs)
+	if err := g.Render(oneoffs); err != nil {
+		return err
+	}
 	return nil
 }
 
