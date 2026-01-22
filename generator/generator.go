@@ -3,16 +3,20 @@ package generator
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
+	"github.com/iancoleman/strcase"
+	"github.com/yaroher/protoc-gen-go-plain/generator/empath"
+	"github.com/yaroher/protoc-gen-go-plain/generator/marker"
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
-	"github.com/yaroher/protoc-gen-go-plain/ir"
 	"github.com/yaroher/protoc-gen-go-plain/logger"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/pluginpb"
+	"google.golang.org/protobuf/types/known/sourcecontextpb"
+	"google.golang.org/protobuf/types/known/typepb"
 )
 
 type Generator struct {
@@ -68,275 +72,263 @@ func (g *Generator) AddOverride(override *goplain.TypeOverride) {
 	g.overrides = append(g.overrides, override)
 }
 
+type ResultMessage struct {
+}
+type TypePbIR struct {
+	File     *protogen.File
+	Messages map[string]*typepb.Type
+}
+
+const (
+	// ---------------------------------
+	embedMarker  = "embed"
+	prefixMarker = "prefix"
+	trueVal      = "true"
+	//----------------------------------
+)
+
+func (g *Generator) Collect() []*TypePbIR {
+	result := make([]*TypePbIR, 0)
+	l := logger.Logger.Named("Collect")
+	for _, file := range g.Plugin.Files {
+		if strings.Contains(string(file.Desc.FullName()), "goplain") ||
+			strings.Contains(string(file.Desc.FullName()), "google.protobuf") {
+			continue
+		}
+
+		l.Debug("file", zap.String("full_path", string(file.Desc.FullName())))
+		newResult := &TypePbIR{
+			File:     file,
+			Messages: make(map[string]*typepb.Type),
+		}
+		fOpt := file.Desc.Options().(*descriptorpb.FileOptions)
+		fGen := proto.GetExtension(fOpt, goplain.E_File).(*goplain.FileOptions)
+		for _, vm := range fGen.GetVirtualTypes() {
+			// TODO: VALIDATE
+			mvApply := &typepb.Type{
+				Name:    fmt.Sprintf("%s.%s", string(file.Desc.Package()), string(vm.Name)),
+				Fields:  vm.Fields,
+				Oneofs:  vm.Oneofs,
+				Options: vm.Options,
+				Syntax:  typepb.Syntax_SYNTAX_PROTO3,
+				SourceContext: &sourcecontextpb.SourceContext{
+					FileName: string(file.Desc.Package()) + "." + string(file.Desc.FullName()),
+				},
+			}
+			newResult.Messages[vm.Name] = mvApply
+			l.Debug("virtual_type", zap.String("full_path", vm.Name))
+		}
+		for _, message := range file.Messages {
+			msgOpt := message.Desc.Options().(*descriptorpb.MessageOptions)
+			msgGen := proto.GetExtension(msgOpt, goplain.E_Message).(*goplain.MessageOptions)
+			//if !msgGen.GetGenerate() {
+			//	continue
+			//}
+
+			resMessage := &typepb.Type{
+				Name:    string(message.Desc.FullName()),
+				Fields:  []*typepb.Field{},
+				Oneofs:  []string{},
+				Syntax:  typepb.Syntax_SYNTAX_PROTO3,
+				Options: []*typepb.Option{},
+				SourceContext: &sourcecontextpb.SourceContext{
+					FileName: string(file.Desc.Package()) + "." + string(file.Desc.FullName()),
+				},
+			}
+			for cnt, vf := range msgGen.GetVirtualFields() {
+				// TODO: VALIDATE
+				vfApply := &typepb.Field{
+					Kind:         vf.Kind,
+					Cardinality:  vf.Cardinality,
+					Number:       int32(-(cnt + 1)), // virtual fields are negative for alignment
+					Name:         vf.Name,
+					JsonName:     stringOrDefault(vf.JsonName, strcase.ToLowerCamel(vf.Name)),
+					DefaultValue: vf.DefaultValue,
+					TypeUrl:      vf.TypeUrl,
+					OneofIndex:   0,
+					//Options: []*typepb.Option{
+					//	{Name: fmt.Sprintf("generate=%t", msgGen.GetGenerate())},
+					//},
+					Packed: vf.Packed,
+				}
+				l.Debug(
+					"virtual_field",
+					zap.String("full_path", vfApply.Name),
+					zap.Int32("number", vfApply.Number),
+					zap.String("kind", vfApply.Kind.String()),
+					zap.String("cardinality", vfApply.Cardinality.String()),
+					zap.String("json_name", vfApply.JsonName),
+				)
+				resMessage.Fields = append(resMessage.Fields, vfApply)
+			}
+			l.Debug("message", zap.String("full_path", string(message.Desc.FullName())))
+			for _, oneof := range message.Oneofs {
+				oneOffOpts := oneof.Desc.Options().(*descriptorpb.OneofOptions)
+				oneOffGen := proto.GetExtension(oneOffOpts, goplain.E_Oneof).(*goplain.OneofOptions)
+				l.Debug(
+					"oneof",
+					zap.String("full_path", string(oneof.Desc.FullName())),
+					zap.String("go_name", oneof.GoName),
+					zap.Bool("generate", oneOffGen.GetEmbed()),
+					zap.Bool("generate_prefix", oneOffGen.GetEmbedWithPrefix()),
+				)
+				oneoffName := string(oneof.Desc.FullName())
+				if oneOffGen.GetEmbed() {
+					oneoffName = marker.New(oneoffName, map[string]string{embedMarker: trueVal}).String()
+				} else if oneOffGen.GetEmbedWithPrefix() {
+					oneoffName = marker.New(oneoffName, map[string]string{embedMarker: trueVal, prefixMarker: trueVal}).String()
+				}
+				resMessage.Oneofs = append(resMessage.Oneofs, oneoffName)
+			}
+			for _, field := range message.Fields {
+				fieldOpt := field.Desc.Options().(*descriptorpb.FieldOptions)
+				fieldGen := proto.GetExtension(fieldOpt, goplain.E_Field).(*goplain.FieldOptions)
+				var fieldOptions []*typepb.Option
+				//for _, opt := range field.Desc.Options() {
+				//	fieldOptions = &typepb.Option{
+				//		Name:  opt.Get(),
+				//		path: opt.GetValue(),
+				//	}
+				//}
+				newField := &typepb.Field{
+					Kind:         typepb.Field_Kind(field.Desc.Kind()),
+					Cardinality:  typepb.Field_Cardinality(field.Desc.Cardinality()),
+					Number:       int32(field.Desc.Number()),
+					Name:         string(field.Desc.FullName()),
+					Options:      fieldOptions,
+					Packed:       field.Desc.IsPacked(),
+					JsonName:     field.Desc.JSONName(),
+					DefaultValue: field.Desc.Default().String(),
+				}
+				logOpts := []zap.Field{
+					zap.String("full_path", string(field.Desc.FullName())),
+					zap.String("go_name", field.GoName),
+				}
+				if field.Oneof != nil {
+					logOpts = append(
+						logOpts,
+						zap.String("from_oneoff", string(field.Oneof.Desc.FullName())),
+						zap.Int32("oneof_index", int32(field.Desc.ContainingOneof().Index())),
+					)
+					for idx, oneof := range message.Oneofs {
+						if oneof.Desc.FullName() == field.Oneof.Desc.FullName() {
+							newField.OneofIndex = int32(idx + 1)
+							break
+						}
+					}
+					if newField.OneofIndex == 0 {
+						panic("oneof not found")
+					}
+				}
+				if field.Message != nil {
+					logOpts = append(logOpts, zap.String("is_message", string(field.Message.Desc.FullName())))
+					fieldName := string(field.Message.Desc.FullName())
+					if fieldGen.GetEmbed() {
+						fieldName = marker.New(fieldName, map[string]string{embedMarker: trueVal}).String()
+					} else if fieldGen.GetEmbedWithPrefix() {
+						fieldName = marker.New(fieldName, map[string]string{embedMarker: trueVal, prefixMarker: trueVal}).String()
+					}
+					newField.TypeUrl = fieldName
+				}
+				l.Debug("field", logOpts...)
+				resMessage.Fields = append(resMessage.Fields, newField)
+			}
+			newResult.Messages[string(message.Desc.FullName())] = resMessage
+		}
+		result = append(result, newResult)
+	}
+	return result
+}
+
+const (
+	isOneoffedMarker = "is_oneoff"
+	isMessageMarker  = "is_message"
+)
+
+func (g *Generator) processEmbedOneof(msg *typepb.Type) {
+	//l := logger.Logger.Named("processEmbedOneof")
+	newOneOffs := make([]string, 0)
+	for oldIdx, oneoff := range msg.Oneofs {
+		if !marker.Parse(oneoff).HasMarker(embedMarker) {
+			for _, field := range msg.Fields {
+				if field.OneofIndex != 0 && field.OneofIndex == int32(oldIdx+1) {
+					field.OneofIndex = int32(len(newOneOffs) + 1)
+				}
+			}
+			newOneOffs = append(newOneOffs, oneoff)
+		}
+		if marker.Parse(oneoff).HasMarker(embedMarker) {
+			for _, field := range msg.Fields {
+				if field.OneofIndex == int32(oldIdx+1) {
+					field.OneofIndex = 0
+					oneoffPath := empath.New(marker.Parse(oneoff).AddMarker(isOneoffedMarker, trueVal))
+					field.TypeUrl = oneoffPath.Append(marker.Parse(field.TypeUrl)).String()
+				}
+			}
+		}
+	}
+	msg.Oneofs = newOneOffs
+}
+
+func (g *Generator) processEmbeddedMessages(ir *TypePbIR, msg *typepb.Type) {
+	l := logger.Logger.Named("processEmbeddedMessages")
+	foundMessage := func(typeUrl string) (*typepb.Type, bool) {
+		for _, m := range ir.Messages {
+			if empath.Parse(m.Name).Last().Value() == empath.Parse(typeUrl).Last().Value() {
+				return m, true
+			}
+		}
+		return nil, false
+	}
+	for _, field := range msg.Fields {
+		if empath.Parse(field.TypeUrl).Last().HasMarker(embedMarker) {
+			msgType, ok := foundMessage(field.TypeUrl)
+			if !ok {
+				panic("message not found")
+			}
+			l.Debug(
+				"found_message",
+				zap.String("full_path", msgType.Name),
+				zap.String("for_field", field.Name),
+			)
+			for _, f := range msgType.Fields {
+				msg.Fields = append(msg.Fields, f)
+			}
+			//field.TypeUrl = msgType.Name
+		}
+	}
+}
+
+func (g *Generator) ProcessOneoffs(typeIRs []*TypePbIR) []*TypePbIR {
+	for _, ir := range typeIRs {
+		for _, msg := range ir.Messages {
+			g.processEmbedOneof(msg)
+			g.processEmbeddedMessages(ir, msg)
+		}
+	}
+	return typeIRs
+}
+
 func (g *Generator) Generate() error {
-	origReq := proto.Clone(g.Plugin.Request).(*pluginpb.CodeGeneratorRequest)
-	origPlugin, origErr := protogen.Options{}.New(origReq)
-	if origErr != nil {
-		logger.Error("Build original plugin failed", zap.Error(origErr))
-	}
-
-	plan, err := ir.BuildIR(g.Plugin, ir.IRConfig{PlainSuffix: g.suffix})
-	if err != nil {
-		logger.Error("BuildIR failed", zap.Error(err))
-	}
-	newPlugin, applyErr := ir.ApplyIR(g.Plugin, plan)
-	if applyErr != nil {
-		logger.Error("ApplyIR failed", zap.Error(applyErr))
-		return applyErr
-	}
-
-	encoded, encErr := json.MarshalIndent(plan, "", "  ")
-	if encErr != nil {
-		logger.Error("IR marshal failed", zap.Error(encErr))
-	} else {
-		logger.Info("IR", zap.String("plan", string(encoded)))
-	}
-
-	generatedEnums := buildGeneratedEnumSet(plan)
-	origMsgs := buildMessageMap(origPlugin)
-	enumValues := buildEnumValueMap(origPlugin)
-	enumByFull := buildEnumMap(origPlugin)
-
-	genCount := 0
-	for _, fd := range newPlugin.Files {
-		if !fd.Generate {
-			continue
-		}
-		plainFile := g.Plugin.NewGeneratedFile(fd.GeneratedFilenamePrefix+".pb.go_plain.go", fd.GoImportPath)
-		plainFile.P("// Code generated by protoc-gen-go-plain. DO NOT EDIT.\n\n")
-		plainFile.P("package " + fd.GoPackageName + "\n\n")
-
-		fileCount := 0
-		// build IR lookup by new full name for this file
-		irByNew := make(map[string]*ir.MessageIR)
-		for _, msgIR := range plan.Messages {
-			if msgIR == nil {
-				continue
-			}
-			if msgIR.File == fd.Desc.Path() && msgIR.Generate {
-				key := msgIR.NewFullName
-				irByNew[key] = msgIR
-				irByNew[strings.TrimPrefix(key, ".")] = msgIR
-			}
-		}
-
-		for _, m := range fd.Messages {
-			if m.Desc.Parent() != m.Desc.ParentFile() {
-				continue
-			}
-			msgOpts := m.Desc.Options().(*descriptorpb.MessageOptions)
-			if !proto.HasExtension(msgOpts, goplain.E_Message) {
-				continue
-			}
-			msgGenerate := proto.GetExtension(msgOpts, goplain.E_Message).(*goplain.MessageOptions)
-			if !msgGenerate.GetGenerate() {
-				continue
-			}
-			fileCount++
-			genCount++
-			msgIR := irByNew[string(m.Desc.FullName())]
-			generateModel(plainFile, m, generatedEnums, msgIR)
-			pbFull := strings.TrimSuffix(string(m.Desc.FullName()), g.suffix)
-			pbMsg := origMsgs[pbFull]
-			if pbMsg != nil {
-				generateConverters(plainFile, m, pbMsg, msgIR, generatedEnums, enumValues, enumByFull, plan.Options.PlainSuffix)
-			}
-			if g.Settings != nil && g.Settings.JSONJX {
-				generateJSONMethods(plainFile, m, pbMsg, msgIR)
-			}
-		}
-		if fileCount == 0 {
-			plainFile.Skip()
-		}
-	}
-
-	logger.Info("Generated models", zap.Int("count", genCount))
-	return err
+	collected := g.Collect()
+	g.writeFile("collected", collected)
+	oneoffs := g.ProcessOneoffs(collected)
+	g.writeFile("oneoffs", oneoffs)
+	return nil
 }
 
-func buildGeneratedEnumSet(plan *ir.IR) map[string]struct{} {
-	result := make(map[string]struct{})
-	for _, msg := range plan.Messages {
-		for _, e := range msg.GeneratedEnums {
-			if e == nil {
-				continue
-			}
-			full := strings.TrimPrefix(msg.NewFullName+"."+e.Name, ".")
-			result[full] = struct{}{}
+func (g *Generator) writeFile(name string, typeIRs []*TypePbIR) {
+	for _, r := range typeIRs {
+		jsonMessages, err := json.MarshalIndent(struct {
+			Messages map[string]*typepb.Type `json:"messages"`
+		}{Messages: r.Messages}, "", "  ")
+		if err != nil {
+			panic(err)
 		}
+		os.WriteFile(
+			"bin/json/"+name+".json",
+			jsonMessages,
+			0644,
+		)
 	}
-	return result
-}
-
-func buildEnumValueMap(p *protogen.Plugin) map[string]*protogen.EnumValue {
-	result := make(map[string]*protogen.EnumValue)
-	if p == nil {
-		return result
-	}
-	for _, f := range p.Files {
-		for _, e := range f.Enums {
-			registerEnumValues(result, e)
-		}
-		for _, m := range f.Messages {
-			registerMessageEnums(result, m)
-		}
-	}
-	return result
-}
-
-func buildEnumMap(p *protogen.Plugin) map[string]*protogen.Enum {
-	result := make(map[string]*protogen.Enum)
-	if p == nil {
-		return result
-	}
-	for _, f := range p.Files {
-		for _, e := range f.Enums {
-			registerEnums(result, e)
-		}
-		for _, m := range f.Messages {
-			registerMessageEnumsOnly(result, m)
-		}
-	}
-	return result
-}
-
-func registerMessageEnums(result map[string]*protogen.EnumValue, m *protogen.Message) {
-	if m == nil {
-		return
-	}
-	for _, e := range m.Enums {
-		registerEnumValues(result, e)
-	}
-	for _, nested := range m.Messages {
-		registerMessageEnums(result, nested)
-	}
-}
-
-func registerMessageEnumsOnly(result map[string]*protogen.Enum, m *protogen.Message) {
-	if m == nil {
-		return
-	}
-	for _, e := range m.Enums {
-		registerEnums(result, e)
-	}
-	for _, nested := range m.Messages {
-		registerMessageEnumsOnly(result, nested)
-	}
-}
-
-func registerEnumValues(result map[string]*protogen.EnumValue, e *protogen.Enum) {
-	if e == nil {
-		return
-	}
-	for _, v := range e.Values {
-		full := "." + string(v.Desc.FullName())
-		result[full] = v
-	}
-}
-
-func registerEnums(result map[string]*protogen.Enum, e *protogen.Enum) {
-	if e == nil {
-		return
-	}
-	full := "." + string(e.Desc.FullName())
-	result[full] = e
-}
-
-func generateModel(g *protogen.GeneratedFile, m *protogen.Message, generatedEnums map[string]struct{}, msgIR *ir.MessageIR) {
-	parentGoName := m.GoIdent.GoName
-	origParentGoName := strings.TrimSuffix(parentGoName, "Plain")
-
-	for _, enum := range m.Enums {
-		if _, ok := generatedEnums[string(enum.Desc.FullName())]; !ok {
-			continue
-		}
-		generateEnum(g, enum)
-	}
-
-	g.P("type " + m.GoIdent.GoName + " struct {\n")
-	irFields := make(map[string]*ir.FieldPlan)
-	if msgIR != nil {
-		for _, fp := range msgIR.FieldPlan {
-			if fp == nil {
-				continue
-			}
-			irFields[fp.NewField.Name] = fp
-		}
-	}
-
-	for _, f := range m.Fields {
-		fieldType := getFieldGoTypeForGenWithEnums(g, f, parentGoName, origParentGoName, generatedEnums)
-		if fp := irFields[string(f.Desc.Name())]; fp != nil && hasOverride(fp) {
-			fieldType = getOverrideGoType(g, f, fp)
-		}
-		comment := buildFieldComment(f, irFields, origParentGoName)
-		if comment != "" {
-			g.P("\t// " + comment)
-			g.P("\t" + f.GoName + " " + fieldType)
-		} else {
-			g.P("\t" + f.GoName + " " + fieldType)
-		}
-	}
-	g.P("}\n\n")
-}
-
-func buildFieldComment(field *protogen.Field, irFields map[string]*ir.FieldPlan, origParentGoName string) string {
-	if field == nil {
-		return ""
-	}
-	fp, ok := irFields[string(field.Desc.Name())]
-	if !ok {
-		return ""
-	}
-	transform := describeTransform(fp)
-	if fp.OrigField == nil {
-		return "src: <virtual>; transform: " + transform
-	}
-	origName := fp.OrigField.FieldName
-	origMsg := fp.OrigField.MessageFullName
-	if fp.Origin.IsEmbedded && fp.Origin.EmbedSource != nil {
-		return "src: " + origMsg + "." + origName + "; transform: " + transform
-	}
-	return "src: " + origMsg + "." + origName + "; transform: " + transform
-}
-
-func describeTransform(fp *ir.FieldPlan) string {
-	if fp == nil {
-		return "none"
-	}
-	parts := make([]string, 0, 4)
-	if fp.Origin.IsEmbedded {
-		parts = append(parts, "embed")
-	}
-	if fp.Origin.IsSerialized {
-		parts = append(parts, "serialize")
-	}
-	if fp.Origin.IsTypeAlias {
-		parts = append(parts, "type_alias")
-	}
-	if fp.Origin.IsVirtual {
-		parts = append(parts, "virtual")
-	}
-	if fp.Origin.IsOneof {
-		parts = append(parts, "oneof")
-	}
-	for _, op := range fp.Ops {
-		if op.Kind == ir.OpOverrideType {
-			parts = append(parts, "override_type")
-			break
-		}
-	}
-	if len(parts) == 0 {
-		return "none"
-	}
-	return strings.Join(parts, "|")
-}
-
-func generateEnum(g *protogen.GeneratedFile, e *protogen.Enum) {
-	g.P("type " + e.GoIdent.GoName + " int32\n\n")
-	g.P("const (")
-	for _, v := range e.Values {
-		g.P("\t" + v.GoIdent.GoName + " " + e.GoIdent.GoName + " = " + fmt.Sprintf("%d", v.Desc.Number()))
-	}
-	g.P(")\n\n")
 }

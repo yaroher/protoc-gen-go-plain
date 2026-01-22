@@ -290,6 +290,7 @@ func (x *MessageOptions) GetVirtualFields() []*typepb.Field {
 type FileOptions struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	GoTypesOverrides []*TypeOverride        `protobuf:"bytes,1,rep,name=go_types_overrides,json=goTypesOverrides,proto3" json:"go_types_overrides,omitempty"`
+	VirtualTypes     []*typepb.Type         `protobuf:"bytes,2,rep,name=virtual_types,json=virtualTypes,proto3" json:"virtual_types,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -327,6 +328,13 @@ func (*FileOptions) Descriptor() ([]byte, []int) {
 func (x *FileOptions) GetGoTypesOverrides() []*TypeOverride {
 	if x != nil {
 		return x.GoTypesOverrides
+	}
+	return nil
+}
+
+func (x *FileOptions) GetVirtualTypes() []*typepb.Type {
+	if x != nil {
+		return x.VirtualTypes
 	}
 	return nil
 }
@@ -375,20 +383,11 @@ type FieldOptions struct {
 	// string address_street = 3;
 	// }
 	Embed           bool `protobuf:"varint,4,opt,name=embed,proto3" json:"embed,omitempty"`
-	EmbedWithPrefix bool `protobuf:"varint,5,opt,name=embed_with_prefix,json=embedWithPrefix,proto3" json:"embed_with_prefix,omitempty"` // Same as embed but with prefix of parent field name
-	// Enum discriminator values for oneof dispatching.
-	// Required for all fields inside a oneof.
-	//
-	// Example values:
-	// "test.CustomUserFieldEnum.SOME_ENUM_ADDRESS"
-	// ".test.CustomUserFieldEnum.SOME_ENUM_STREET"
-	WithEnums []string `protobuf:"bytes,6,rep,name=with_enums,json=withEnums,proto3" json:"with_enums,omitempty"`
-	// If set, enum fields will be represented as string in plain model.
-	EnumAsString bool `protobuf:"varint,7,opt,name=enum_as_string,json=enumAsString,proto3" json:"enum_as_string,omitempty"`
-	// If set, enum fields will be represented as int32 in plain model.
-	EnumAsInt     bool `protobuf:"varint,8,opt,name=enum_as_int,json=enumAsInt,proto3" json:"enum_as_int,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	EmbedWithPrefix bool `protobuf:"varint,5,opt,name=embed_with_prefix,json=embedWithPrefix,proto3" json:"embed_with_prefix,omitempty"`
+	EnumAsString    bool `protobuf:"varint,7,opt,name=enum_as_string,json=enumAsString,proto3" json:"enum_as_string,omitempty"`
+	EnumAsInt       bool `protobuf:"varint,8,opt,name=enum_as_int,json=enumAsInt,proto3" json:"enum_as_int,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *FieldOptions) Reset() {
@@ -449,13 +448,6 @@ func (x *FieldOptions) GetEmbedWithPrefix() bool {
 	return false
 }
 
-func (x *FieldOptions) GetWithEnums() []string {
-	if x != nil {
-		return x.WithEnums
-	}
-	return nil
-}
-
 func (x *FieldOptions) GetEnumAsString() bool {
 	if x != nil {
 		return x.EnumAsString
@@ -498,35 +490,8 @@ type OneofOptions struct {
 	// }
 	Embed           bool `protobuf:"varint,1,opt,name=embed,proto3" json:"embed,omitempty"`
 	EmbedWithPrefix bool `protobuf:"varint,2,opt,name=embed_with_prefix,json=embedWithPrefix,proto3" json:"embed_with_prefix,omitempty"`
-	// Enum dispatching options.
-	// If set to true, the oneof field will be dispatched as an enum.
-	//
-	// Example:
-	// message User {
-	// oneof address {
-	// option (goplain.oneof).enum_dispatched = true;
-	// Address address = 2;
-	// string street = 3;
-	// }
-	// }
-	//
-	// Becomes:
-	// message UserPlain {
-	// enum AddressType {
-	// ADDRESS_TYPE_UNSPECIFIED = 0;
-	// ADDRESS_TYPE_ADDRESS = 1;
-	// ADDRESS_TYPE_STREET = 2;
-	// }
-	// // without prefix:
-	// AddressType address_type = 2;
-	// Address address = 3;
-	// // or with prefix:
-	// AddressType address_address_type = 4;
-	// }
-	EnumDispatched           bool `protobuf:"varint,3,opt,name=enum_dispatched,json=enumDispatched,proto3" json:"enum_dispatched,omitempty"`
-	EnumDispatchedWithPrefix bool `protobuf:"varint,4,opt,name=enum_dispatched_with_prefix,json=enumDispatchedWithPrefix,proto3" json:"enum_dispatched_with_prefix,omitempty"` // Same as enum_dispatched but with prefix of oneof field name
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *OneofOptions) Reset() {
@@ -569,20 +534,6 @@ func (x *OneofOptions) GetEmbed() bool {
 func (x *OneofOptions) GetEmbedWithPrefix() bool {
 	if x != nil {
 		return x.EmbedWithPrefix
-	}
-	return false
-}
-
-func (x *OneofOptions) GetEnumDispatched() bool {
-	if x != nil {
-		return x.EnumDispatched
-	}
-	return false
-}
-
-func (x *OneofOptions) GetEnumDispatchedWithPrefix() bool {
-	if x != nil {
-		return x.EnumDispatchedWithPrefix
 	}
 	return false
 }
@@ -672,23 +623,20 @@ const file_goplain_proto_rawDesc = "" +
 	"\bgenerate\x18\x01 \x01(\bR\bgenerate\x12\x1d\n" +
 	"\n" +
 	"type_alias\x18\x02 \x01(\bR\ttypeAlias\x12=\n" +
-	"\x0evirtual_fields\x18\x03 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"R\n" +
+	"\x0evirtual_fields\x18\x03 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"\x8e\x01\n" +
 	"\vFileOptions\x12C\n" +
-	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\"\x8a\x02\n" +
+	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\x12:\n" +
+	"\rvirtual_types\x18\x02 \x03(\v2\x15.google.protobuf.TypeR\fvirtualTypes\"\xeb\x01\n" +
 	"\fFieldOptions\x125\n" +
 	"\roverride_type\x18\x01 \x01(\v2\x10.goplain.GoIdentR\foverrideType\x12\x1c\n" +
 	"\tserialize\x18\x02 \x01(\bR\tserialize\x12\x14\n" +
 	"\x05embed\x18\x04 \x01(\bR\x05embed\x12*\n" +
-	"\x11embed_with_prefix\x18\x05 \x01(\bR\x0fembedWithPrefix\x12\x1d\n" +
-	"\n" +
-	"with_enums\x18\x06 \x03(\tR\twithEnums\x12$\n" +
+	"\x11embed_with_prefix\x18\x05 \x01(\bR\x0fembedWithPrefix\x12$\n" +
 	"\x0eenum_as_string\x18\a \x01(\bR\fenumAsString\x12\x1e\n" +
-	"\venum_as_int\x18\b \x01(\bR\tenumAsInt\"\xb8\x01\n" +
+	"\venum_as_int\x18\b \x01(\bR\tenumAsInt\"P\n" +
 	"\fOneofOptions\x12\x14\n" +
 	"\x05embed\x18\x01 \x01(\bR\x05embed\x12*\n" +
-	"\x11embed_with_prefix\x18\x02 \x01(\bR\x0fembedWithPrefix\x12'\n" +
-	"\x0fenum_dispatched\x18\x03 \x01(\bR\x0eenumDispatched\x12=\n" +
-	"\x1benum_dispatched_with_prefix\x18\x04 \x01(\bR\x18enumDispatchedWithPrefix:H\n" +
+	"\x11embed_with_prefix\x18\x02 \x01(\bR\x0fembedWithPrefix:H\n" +
 	"\x04file\x12\x1c.google.protobuf.FileOptions\x18\xe0\xd4\x03 \x01(\v2\x14.goplain.FileOptionsR\x04file:T\n" +
 	"\amessage\x12\x1f.google.protobuf.MessageOptions\x18\xe0\xd4\x03 \x01(\v2\x17.goplain.MessageOptionsR\amessage:L\n" +
 	"\x05field\x12\x1d.google.protobuf.FieldOptions\x18\xe0\xd4\x03 \x01(\v2\x15.goplain.FieldOptionsR\x05field:L\n" +
@@ -718,10 +666,11 @@ var file_goplain_proto_goTypes = []any{
 	(typepb.Field_Kind)(0),              // 7: google.protobuf.Field.Kind
 	(typepb.Field_Cardinality)(0),       // 8: google.protobuf.Field.Cardinality
 	(*typepb.Field)(nil),                // 9: google.protobuf.Field
-	(*descriptorpb.FileOptions)(nil),    // 10: google.protobuf.FileOptions
-	(*descriptorpb.MessageOptions)(nil), // 11: google.protobuf.MessageOptions
-	(*descriptorpb.FieldOptions)(nil),   // 12: google.protobuf.FieldOptions
-	(*descriptorpb.OneofOptions)(nil),   // 13: google.protobuf.OneofOptions
+	(*typepb.Type)(nil),                 // 10: google.protobuf.Type
+	(*descriptorpb.FileOptions)(nil),    // 11: google.protobuf.FileOptions
+	(*descriptorpb.MessageOptions)(nil), // 12: google.protobuf.MessageOptions
+	(*descriptorpb.FieldOptions)(nil),   // 13: google.protobuf.FieldOptions
+	(*descriptorpb.OneofOptions)(nil),   // 14: google.protobuf.OneofOptions
 }
 var file_goplain_proto_depIdxs = []int32{
 	7,  // 0: goplain.OverrideSelector.field_kind:type_name -> google.protobuf.Field.Kind
@@ -730,20 +679,21 @@ var file_goplain_proto_depIdxs = []int32{
 	0,  // 3: goplain.TypeOverride.target_go_type:type_name -> goplain.GoIdent
 	9,  // 4: goplain.MessageOptions.virtual_fields:type_name -> google.protobuf.Field
 	2,  // 5: goplain.FileOptions.go_types_overrides:type_name -> goplain.TypeOverride
-	0,  // 6: goplain.FieldOptions.override_type:type_name -> goplain.GoIdent
-	10, // 7: goplain.file:extendee -> google.protobuf.FileOptions
-	11, // 8: goplain.message:extendee -> google.protobuf.MessageOptions
-	12, // 9: goplain.field:extendee -> google.protobuf.FieldOptions
-	13, // 10: goplain.oneof:extendee -> google.protobuf.OneofOptions
-	4,  // 11: goplain.file:type_name -> goplain.FileOptions
-	3,  // 12: goplain.message:type_name -> goplain.MessageOptions
-	5,  // 13: goplain.field:type_name -> goplain.FieldOptions
-	6,  // 14: goplain.oneof:type_name -> goplain.OneofOptions
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	11, // [11:15] is the sub-list for extension type_name
-	7,  // [7:11] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	10, // 6: goplain.FileOptions.virtual_types:type_name -> google.protobuf.Type
+	0,  // 7: goplain.FieldOptions.override_type:type_name -> goplain.GoIdent
+	11, // 8: goplain.file:extendee -> google.protobuf.FileOptions
+	12, // 9: goplain.message:extendee -> google.protobuf.MessageOptions
+	13, // 10: goplain.field:extendee -> google.protobuf.FieldOptions
+	14, // 11: goplain.oneof:extendee -> google.protobuf.OneofOptions
+	4,  // 12: goplain.file:type_name -> goplain.FileOptions
+	3,  // 13: goplain.message:type_name -> goplain.MessageOptions
+	5,  // 14: goplain.field:type_name -> goplain.FieldOptions
+	6,  // 15: goplain.oneof:type_name -> goplain.OneofOptions
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	12, // [12:16] is the sub-list for extension type_name
+	8,  // [8:12] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_goplain_proto_init() }

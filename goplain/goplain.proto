@@ -68,6 +68,7 @@ message MessageOptions {
 
 message FileOptions {
     repeated TypeOverride go_types_overrides = 1;
+    repeated google.protobuf.Type virtual_types = 2;
 }
 
 extend google.protobuf.FileOptions {
@@ -125,21 +126,8 @@ message FieldOptions {
             }
         */
     bool embed = 4;
-    bool embed_with_prefix = 5; // Same as embed but with prefix of parent field name
-
-    /*
-        Enum discriminator values for oneof dispatching.
-        Required for all fields inside a oneof.
-
-        Example values:
-            "test.CustomUserFieldEnum.SOME_ENUM_ADDRESS"
-            ".test.CustomUserFieldEnum.SOME_ENUM_STREET"
-    */
-    repeated string with_enums = 6;
-
-    // If set, enum fields will be represented as string in plain model.
+    bool embed_with_prefix = 5;
     bool enum_as_string = 7;
-    // If set, enum fields will be represented as int32 in plain model.
     bool enum_as_int = 8;
 }
 
@@ -176,37 +164,6 @@ message OneofOptions {
     */
     bool embed = 1;
     bool embed_with_prefix = 2;
-    /*
-        Enum dispatching options.
-        If set to true, the oneof field will be dispatched as an enum.
-
-        Example:
-            message User {
-                oneof address {
-                    option (goplain.oneof).enum_dispatched = true;
-                    Address address = 2;
-                    string street = 3;
-                }
-            }
-
-        Becomes:
-            message UserPlain {
-                enum AddressType {
-                    ADDRESS_TYPE_UNSPECIFIED = 0;
-                    ADDRESS_TYPE_ADDRESS = 1;
-                    ADDRESS_TYPE_STREET = 2;
-                }
-                // without prefix:
-                AddressType address_type = 2;
-                Address address = 3;
-                // or with prefix:
-                AddressType address_address_type = 4;
-            }
-    */
-    bool enum_dispatched = 3;
-    bool enum_dispatched_with_prefix = 4; // Same as enum_dispatched but with prefix of oneof field name
-    // Enum dispatching with custom discriminators is configured per-field
-    // via (goplain.field).with_enums.
 }
 
 extend google.protobuf.OneofOptions {

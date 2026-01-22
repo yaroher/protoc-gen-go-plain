@@ -7,8 +7,8 @@ compile-proto-ref:
 build: compile-proto-ref
 	go build -o $(CURDIR)/bin/protoc-gen-go-plain ./
 
-.PHONY: build-test-protoc
-build-test-protoc: build
+.PHONY: build-test
+build-test: build
 	rm -f $(CURDIR)/bin/protolog.txt
 	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
 		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
@@ -17,30 +17,13 @@ build-test-protoc: build
 		--go-plain_out=$(CURDIR) \
 		--go-plain_opt=paths=source_relative,json_jx=true \
 		--proto_path=$(CURDIR) \
-		$(CURDIR)/tests/integrations/full/test.proto
+		$(CURDIR)/test/test.proto
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt
-
-INTEGRATION_PROTO_DIR=$(CURDIR)/tests/integrations
-INTEGRATION_PROTO_FILES=$(shell find "$(INTEGRATION_PROTO_DIR)" -type f -name '*.proto')
-.PHONY: build-test
-build-test: build
-	rm -f $(CURDIR)/bin/protolog.txt
-	@for f in $(INTEGRATION_PROTO_FILES); do \
-		LOG_APPEND=1 LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
-			--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
-			--go_out=$(CURDIR) \
-			--go_opt=paths=source_relative \
-			--go-plain_out=$(CURDIR) \
-			--go-plain_opt=paths=source_relative,json_jx=true \
-			--proto_path=$(CURDIR) \
-			$$f; \
-	done
-	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
-	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
-	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt
-	go clean -testcache && go test ./...
+	#sed -i 's/,/\n/'  $(CURDIR)/bin/protolog.txt
+	#sed -i 's/{/\n{\n/g; s/}/\n}/g'  $(CURDIR)/bin/protolog.txt
+	sed -i 's/[[:space:]]\+/ /g'  $(CURDIR)/bin/protolog.txt
 
 branch=main
 .PHONY: revision
