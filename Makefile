@@ -33,6 +33,14 @@ build-test: build
 	#sed -i 's/{/\n{\n/g; s/}/\n}/g'  $(CURDIR)/bin/protolog.txt
 	sed -i 's/[[:space:]]\+/ /g'  $(CURDIR)/bin/protolog.txt
 
+.PHONY: run-test
+run-test:
+	go clean -testcache && go test -v ./...
+
+.PHONY: run-bench
+run-bench:
+	go clean -testcache && go test -bench=. -v ./...
+
 branch=main
 .PHONY: revision
 revision: # Создание тега

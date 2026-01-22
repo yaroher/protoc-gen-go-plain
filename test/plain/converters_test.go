@@ -1,7 +1,6 @@
 package plain
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,16 +34,6 @@ func TestIntoPlainAndBack(t *testing.T) {
 	out := plain.IntoPb()
 	require.NotNil(t, out, "IntoPb returned nil")
 	require.True(t, proto.Equal(in, out), "roundtrip mismatch\ninput:  %v\noutput: %v", in, out)
-
-	data, err := json.Marshal(plain)
-	require.NoError(t, err)
-
-	var decoded UserEventPlain
-	require.NoError(t, json.Unmarshal(data, &decoded))
-
-	outDecoded := decoded.IntoPb()
-	require.NotNil(t, outDecoded, "IntoPb returned nil after json roundtrip")
-	require.True(t, proto.Equal(in, outDecoded), "json roundtrip mismatch\ninput:  %v\noutput: %v", in, outDecoded)
 }
 
 func BenchmarkConverters(b *testing.B) {

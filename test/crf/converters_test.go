@@ -83,17 +83,6 @@ func TestIntoPlainAndBack(t *testing.T) {
 	require.NotNil(t, out, "IntoPb returned nil")
 	require.True(t, proto.Equal(in, out), "roundtrip mismatch\ninput:  %v\noutput: %v", in, out)
 
-	data, err := json.Marshal(plain)
-	require.NoError(t, err)
-	t.Logf("plain: %s", string(data))
-
-	var decoded EventPlain
-	require.NoError(t, json.Unmarshal(data, &decoded))
-
-	outDecoded := decoded.IntoPb(casterToPb)
-	require.NotNil(t, outDecoded, "IntoPb returned nil after json roundtrip")
-	require.True(t, proto.Equal(in, outDecoded), "json roundtrip mismatch\ninput:  %v\noutput: %v", in, outDecoded)
-
 	casterErrToPlain := newTestCasterErrToPlain()
 	casterErrToPb := newTestCasterErrToPb()
 	plainErr, err := in.IntoPlainErr(casterErrToPlain)

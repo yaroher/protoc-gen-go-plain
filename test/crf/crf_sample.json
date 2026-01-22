@@ -1,0 +1,14 @@
+{
+  "pathCRF": "data/file_rename/file/path",
+  "eventVirtualType": "",
+  "process": {
+    "file": {
+      "path": "/proc4"
+    }
+  },
+  "parentEventId": "parent4",
+  "eventId": 4,
+  "someEventStringPayload": "00000000-0000-0000-0000-000000000000",
+  "nonPlatformEventPath": "/tmp/f",
+  "path": "/tmp/e"
+}

@@ -141,12 +141,6 @@ func (x *UserEventPlain) IntoPb() *UserEvent {
 		return nil
 	}
 	out := &UserEvent{}
-	if x.ContactEmail != nil {
-		if out.User == nil {
-			out.User = &User{}
-		}
-		out.User.Contact = &User_Email{Email: *x.ContactEmail}
-	}
 	if x.ContactPhone != nil {
 		if out.User == nil {
 			out.User = &User{}
@@ -172,6 +166,12 @@ func (x *UserEventPlain) IntoPb() *UserEvent {
 		out.User = &User{}
 	}
 	out.User.Name = x.Name
+	if x.ContactEmail != nil {
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Email{Email: *x.ContactEmail}
+	}
 	return out
 }
 
@@ -181,12 +181,6 @@ func (x *UserEvent) IntoPlain() *UserEventPlain {
 	}
 	out := &UserEventPlain{}
 	if x.User != nil {
-		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
-			_valContactEmail := _oneofEmail1.Email
-			out.ContactEmail = &_valContactEmail
-		}
-	}
-	if x.User != nil {
 		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
 			_valContactPhone := _oneofPhone1.Phone
 			out.ContactPhone = &_valContactPhone
@@ -206,6 +200,12 @@ func (x *UserEvent) IntoPlain() *UserEventPlain {
 	if x.User != nil {
 		out.Name = x.User.Name
 	}
+	if x.User != nil {
+		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
+			_valContactEmail := _oneofEmail1.Email
+			out.ContactEmail = &_valContactEmail
+		}
+	}
 	return out
 }
 
@@ -214,12 +214,6 @@ func (x *UserEventPlain) IntoPbErr() (*UserEvent, error) {
 		return nil, nil
 	}
 	out := &UserEvent{}
-	if x.ContactEmail != nil {
-		if out.User == nil {
-			out.User = &User{}
-		}
-		out.User.Contact = &User_Email{Email: *x.ContactEmail}
-	}
 	if x.ContactPhone != nil {
 		if out.User == nil {
 			out.User = &User{}
@@ -245,6 +239,12 @@ func (x *UserEventPlain) IntoPbErr() (*UserEvent, error) {
 		out.User = &User{}
 	}
 	out.User.Name = x.Name
+	if x.ContactEmail != nil {
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Email{Email: *x.ContactEmail}
+	}
 	return out, nil
 }
 
@@ -253,12 +253,6 @@ func (x *UserEvent) IntoPlainErr() (*UserEventPlain, error) {
 		return nil, nil
 	}
 	out := &UserEventPlain{}
-	if x.User != nil {
-		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
-			_valContactEmail := _oneofEmail1.Email
-			out.ContactEmail = &_valContactEmail
-		}
-	}
 	if x.User != nil {
 		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
 			_valContactPhone := _oneofPhone1.Phone
@@ -278,6 +272,12 @@ func (x *UserEvent) IntoPlainErr() (*UserEventPlain, error) {
 	out.EventType = x.EventType
 	if x.User != nil {
 		out.Name = x.User.Name
+	}
+	if x.User != nil {
+		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
+			_valContactEmail := _oneofEmail1.Email
+			out.ContactEmail = &_valContactEmail
+		}
 	}
 	return out, nil
 }

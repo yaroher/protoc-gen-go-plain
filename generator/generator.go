@@ -676,6 +676,11 @@ func (g *Generator) Generate() error {
 	if err := g.Render(oneoffs); err != nil {
 		return err
 	}
+	if g.Settings.JSONJX {
+		if err := g.RenderJXJSON(oneoffs); err != nil {
+			return err
+		}
+	}
 	if err := g.RenderConverters(oneoffs); err != nil {
 		return err
 	}
