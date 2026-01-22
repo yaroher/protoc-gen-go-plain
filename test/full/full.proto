@@ -22,8 +22,43 @@ message Extra {
 
 message StringAlias {
   option (goplain.message).type_alias = true;
-  option (goplain.message).type_alias_field = "value";
   string value = 1;
+}
+
+message Int32Alias {
+  option (goplain.message).type_alias = true;
+  int32 value = 1;
+}
+
+message Int64Alias {
+  option (goplain.message).type_alias = true;
+  int64 value = 1;
+}
+
+message BoolAlias {
+  option (goplain.message).type_alias = true;
+  bool value = 1;
+}
+
+message BytesAlias {
+  option (goplain.message).type_alias = true;
+  bytes value = 1;
+}
+
+message FloatAlias {
+  option (goplain.message).type_alias = true;
+  float value = 1;
+}
+
+message DoubleAlias {
+  option (goplain.message).type_alias = true;
+  double value = 1;
+}
+
+message CustomNameAlias {
+  option (goplain.message).type_alias = true;
+  option (goplain.message).type_alias_field = "data";
+  string data = 1;
 }
 
 message Complex {
@@ -58,6 +93,13 @@ message Complex {
   string custom_id = 17 [(goplain.field).override_type = {name: "UUID", import_path: "github.com/google/uuid"}];
   StringAlias alias_id = 18;
   repeated StringAlias alias_list = 19;
+  Int32Alias int32_alias = 20;
+  optional Int64Alias int64_alias = 21;
+  repeated BoolAlias bool_alias_list = 22;
+  BytesAlias bytes_alias = 23;
+  FloatAlias float_alias = 24;
+  DoubleAlias double_alias = 25;
+  CustomNameAlias custom_name_alias = 26;
 }
 
 enum Status {

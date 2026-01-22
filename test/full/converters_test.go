@@ -41,18 +41,25 @@ func newTestCasterToPlain() cast.Caster[string, uuid.UUID] {
 func TestIntoPlainAndBack(t *testing.T) {
 	note := "note"
 	in := &Complex{
-		Base:      &Base{Source: "api"},
-		Extra:     &Extra{Id: "extra-id", Tag: "tag"},
-		Name:      "complex",
-		Labels:    []string{"a", "b"},
-		Note:      &note,
-		Counters:  map[string]int32{"a": 1, "b": 2},
-		CreatedAt: timestamppb.New(time.Unix(10, 0)),
-		Comment:   wrapperspb.String("comment"),
-		Contact:   &Complex_Email{Email: "a@example.com"},
-		CustomId:  "11111111-1111-1111-1111-111111111111",
-		AliasId:   &StringAlias{Value: "alias"},
-		AliasList: []*StringAlias{{Value: "a1"}, {Value: "a2"}},
+		Base:            &Base{Source: "api"},
+		Extra:           &Extra{Id: "extra-id", Tag: "tag"},
+		Name:            "complex",
+		Labels:          []string{"a", "b"},
+		Note:            &note,
+		Counters:        map[string]int32{"a": 1, "b": 2},
+		CreatedAt:       timestamppb.New(time.Unix(10, 0)),
+		Comment:         wrapperspb.String("comment"),
+		Contact:         &Complex_Email{Email: "a@example.com"},
+		CustomId:        "11111111-1111-1111-1111-111111111111",
+		AliasId:         &StringAlias{Value: "alias"},
+		AliasList:       []*StringAlias{{Value: "a1"}, {Value: "a2"}},
+		Int32Alias:      &Int32Alias{Value: 42},
+		Int64Alias:      &Int64Alias{Value: 100},
+		BoolAliasList:   []*BoolAlias{{Value: true}, {Value: false}},
+		BytesAlias:      &BytesAlias{Value: []byte("bytes")},
+		FloatAlias:      &FloatAlias{Value: 3.14},
+		DoubleAlias:     &DoubleAlias{Value: 2.71},
+		CustomNameAlias: &CustomNameAlias{Data: "custom"},
 	}
 
 	plain := in.IntoPlain(newTestCasterToPlain())
@@ -76,6 +83,13 @@ func TestIntoPlainAndBack(t *testing.T) {
 	require.Equal(t, "alias", plain.AliasId)
 	require.Equal(t, []string{"a1", "a2"}, plain.AliasList)
 	require.Equal(t, uuid.MustParse("11111111-1111-1111-1111-111111111111"), plain.CustomId)
+	require.Equal(t, int32(42), plain.Int32Alias)
+	require.Equal(t, int64(100), plain.Int64Alias)
+	require.Equal(t, []bool{true, false}, plain.BoolAliasList)
+	require.Equal(t, []byte("bytes"), plain.BytesAlias)
+	require.Equal(t, float32(3.14), plain.FloatAlias)
+	require.Equal(t, float64(2.71), plain.DoubleAlias)
+	require.Equal(t, "custom", plain.CustomNameAlias)
 
 	out := plain.IntoPb(newTestCasterToPb())
 	require.NotNil(t, out)

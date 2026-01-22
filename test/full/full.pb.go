@@ -221,6 +221,314 @@ func (x *StringAlias) GetValue() string {
 	return ""
 }
 
+type Int32Alias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         int32                  `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Int32Alias) Reset() {
+	*x = Int32Alias{}
+	mi := &file_test_full_full_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Int32Alias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Int32Alias) ProtoMessage() {}
+
+func (x *Int32Alias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Int32Alias.ProtoReflect.Descriptor instead.
+func (*Int32Alias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Int32Alias) GetValue() int32 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type Int64Alias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         int64                  `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Int64Alias) Reset() {
+	*x = Int64Alias{}
+	mi := &file_test_full_full_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Int64Alias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Int64Alias) ProtoMessage() {}
+
+func (x *Int64Alias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Int64Alias.ProtoReflect.Descriptor instead.
+func (*Int64Alias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Int64Alias) GetValue() int64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type BoolAlias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         bool                   `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BoolAlias) Reset() {
+	*x = BoolAlias{}
+	mi := &file_test_full_full_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BoolAlias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BoolAlias) ProtoMessage() {}
+
+func (x *BoolAlias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BoolAlias.ProtoReflect.Descriptor instead.
+func (*BoolAlias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *BoolAlias) GetValue() bool {
+	if x != nil {
+		return x.Value
+	}
+	return false
+}
+
+type BytesAlias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         []byte                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BytesAlias) Reset() {
+	*x = BytesAlias{}
+	mi := &file_test_full_full_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BytesAlias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BytesAlias) ProtoMessage() {}
+
+func (x *BytesAlias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BytesAlias.ProtoReflect.Descriptor instead.
+func (*BytesAlias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *BytesAlias) GetValue() []byte {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+type FloatAlias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         float32                `protobuf:"fixed32,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FloatAlias) Reset() {
+	*x = FloatAlias{}
+	mi := &file_test_full_full_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FloatAlias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FloatAlias) ProtoMessage() {}
+
+func (x *FloatAlias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FloatAlias.ProtoReflect.Descriptor instead.
+func (*FloatAlias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FloatAlias) GetValue() float32 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type DoubleAlias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         float64                `protobuf:"fixed64,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DoubleAlias) Reset() {
+	*x = DoubleAlias{}
+	mi := &file_test_full_full_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DoubleAlias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DoubleAlias) ProtoMessage() {}
+
+func (x *DoubleAlias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DoubleAlias.ProtoReflect.Descriptor instead.
+func (*DoubleAlias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DoubleAlias) GetValue() float64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type CustomNameAlias struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          string                 `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CustomNameAlias) Reset() {
+	*x = CustomNameAlias{}
+	mi := &file_test_full_full_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CustomNameAlias) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CustomNameAlias) ProtoMessage() {}
+
+func (x *CustomNameAlias) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_full_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CustomNameAlias.ProtoReflect.Descriptor instead.
+func (*CustomNameAlias) Descriptor() ([]byte, []int) {
+	return file_test_full_full_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CustomNameAlias) GetData() string {
+	if x != nil {
+		return x.Data
+	}
+	return ""
+}
+
 type Complex struct {
 	state     protoimpl.MessageState  `protogen:"open.v1"`
 	Base      *Base                   `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
@@ -239,19 +547,26 @@ type Complex struct {
 	//
 	//	*Complex_Email
 	//	*Complex_Phone
-	Contact       isComplex_Contact `protobuf_oneof:"contact"`
-	Status        Status            `protobuf:"varint,15,opt,name=status,proto3,enum=testfull.Status" json:"status,omitempty"`
-	StatusList    []Status          `protobuf:"varint,16,rep,packed,name=status_list,json=statusList,proto3,enum=testfull.Status" json:"status_list,omitempty"`
-	CustomId      string            `protobuf:"bytes,17,opt,name=custom_id,json=customId,proto3" json:"custom_id,omitempty"`
-	AliasId       *StringAlias      `protobuf:"bytes,18,opt,name=alias_id,json=aliasId,proto3" json:"alias_id,omitempty"`
-	AliasList     []*StringAlias    `protobuf:"bytes,19,rep,name=alias_list,json=aliasList,proto3" json:"alias_list,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Contact         isComplex_Contact `protobuf_oneof:"contact"`
+	Status          Status            `protobuf:"varint,15,opt,name=status,proto3,enum=testfull.Status" json:"status,omitempty"`
+	StatusList      []Status          `protobuf:"varint,16,rep,packed,name=status_list,json=statusList,proto3,enum=testfull.Status" json:"status_list,omitempty"`
+	CustomId        string            `protobuf:"bytes,17,opt,name=custom_id,json=customId,proto3" json:"custom_id,omitempty"`
+	AliasId         *StringAlias      `protobuf:"bytes,18,opt,name=alias_id,json=aliasId,proto3" json:"alias_id,omitempty"`
+	AliasList       []*StringAlias    `protobuf:"bytes,19,rep,name=alias_list,json=aliasList,proto3" json:"alias_list,omitempty"`
+	Int32Alias      *Int32Alias       `protobuf:"bytes,20,opt,name=int32_alias,json=int32Alias,proto3" json:"int32_alias,omitempty"`
+	Int64Alias      *Int64Alias       `protobuf:"bytes,21,opt,name=int64_alias,json=int64Alias,proto3,oneof" json:"int64_alias,omitempty"`
+	BoolAliasList   []*BoolAlias      `protobuf:"bytes,22,rep,name=bool_alias_list,json=boolAliasList,proto3" json:"bool_alias_list,omitempty"`
+	BytesAlias      *BytesAlias       `protobuf:"bytes,23,opt,name=bytes_alias,json=bytesAlias,proto3" json:"bytes_alias,omitempty"`
+	FloatAlias      *FloatAlias       `protobuf:"bytes,24,opt,name=float_alias,json=floatAlias,proto3" json:"float_alias,omitempty"`
+	DoubleAlias     *DoubleAlias      `protobuf:"bytes,25,opt,name=double_alias,json=doubleAlias,proto3" json:"double_alias,omitempty"`
+	CustomNameAlias *CustomNameAlias  `protobuf:"bytes,26,opt,name=custom_name_alias,json=customNameAlias,proto3" json:"custom_name_alias,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Complex) Reset() {
 	*x = Complex{}
-	mi := &file_test_full_full_proto_msgTypes[3]
+	mi := &file_test_full_full_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -263,7 +578,7 @@ func (x *Complex) String() string {
 func (*Complex) ProtoMessage() {}
 
 func (x *Complex) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_full_proto_msgTypes[3]
+	mi := &file_test_full_full_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -276,7 +591,7 @@ func (x *Complex) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Complex.ProtoReflect.Descriptor instead.
 func (*Complex) Descriptor() ([]byte, []int) {
-	return file_test_full_full_proto_rawDescGZIP(), []int{3}
+	return file_test_full_full_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Complex) GetBase() *Base {
@@ -423,6 +738,55 @@ func (x *Complex) GetAliasList() []*StringAlias {
 	return nil
 }
 
+func (x *Complex) GetInt32Alias() *Int32Alias {
+	if x != nil {
+		return x.Int32Alias
+	}
+	return nil
+}
+
+func (x *Complex) GetInt64Alias() *Int64Alias {
+	if x != nil {
+		return x.Int64Alias
+	}
+	return nil
+}
+
+func (x *Complex) GetBoolAliasList() []*BoolAlias {
+	if x != nil {
+		return x.BoolAliasList
+	}
+	return nil
+}
+
+func (x *Complex) GetBytesAlias() *BytesAlias {
+	if x != nil {
+		return x.BytesAlias
+	}
+	return nil
+}
+
+func (x *Complex) GetFloatAlias() *FloatAlias {
+	if x != nil {
+		return x.FloatAlias
+	}
+	return nil
+}
+
+func (x *Complex) GetDoubleAlias() *DoubleAlias {
+	if x != nil {
+		return x.DoubleAlias
+	}
+	return nil
+}
+
+func (x *Complex) GetCustomNameAlias() *CustomNameAlias {
+	if x != nil {
+		return x.CustomNameAlias
+	}
+	return nil
+}
+
 type isComplex_Contact interface {
 	isComplex_Contact()
 }
@@ -449,9 +813,28 @@ const file_test_full_full_proto_rawDesc = "" +
 	"\x06source\x18\x02 \x01(\tR\x06source:\x06\x82\xa6\x1d\x02\b\x01\"1\n" +
 	"\x05Extra\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
-	"\x03tag\x18\x02 \x01(\tR\x03tag:\x06\x82\xa6\x1d\x02\b\x01\"2\n" +
+	"\x03tag\x18\x02 \x01(\tR\x03tag:\x06\x82\xa6\x1d\x02\b\x01\"+\n" +
 	"\vStringAlias\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value:\r\x82\xa6\x1d\t\x10\x01\x1a\x05value\"\xc9\a\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"*\n" +
+	"\n" +
+	"Int32Alias\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\x05R\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"*\n" +
+	"\n" +
+	"Int64Alias\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\x03R\x05value:\x06\x82\xa6\x1d\x02\x10\x01\")\n" +
+	"\tBoolAlias\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\bR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"*\n" +
+	"\n" +
+	"BytesAlias\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\fR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"*\n" +
+	"\n" +
+	"FloatAlias\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\x02R\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"+\n" +
+	"\vDoubleAlias\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\x01R\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"3\n" +
+	"\x0fCustomNameAlias\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\tR\x04data:\f\x82\xa6\x1d\b\x10\x01\x1a\x04data\"\xf8\n" +
+	"\n" +
 	"\aComplex\x12*\n" +
 	"\x04base\x18\x01 \x01(\v2\x0e.testfull.BaseB\x06\x82\xa6\x1d\x02 \x01R\x04base\x12-\n" +
 	"\x05extra\x18\x02 \x01(\v2\x0f.testfull.ExtraB\x06\x82\xa6\x1d\x02 \x01R\x05extra\x12\x12\n" +
@@ -477,7 +860,18 @@ const file_test_full_full_proto_rawDesc = "" +
 	"\x04UUID\x12\x16github.com/google/uuidR\bcustomId\x120\n" +
 	"\balias_id\x18\x12 \x01(\v2\x15.testfull.StringAliasR\aaliasId\x124\n" +
 	"\n" +
-	"alias_list\x18\x13 \x03(\v2\x15.testfull.StringAliasR\taliasList\x1a;\n" +
+	"alias_list\x18\x13 \x03(\v2\x15.testfull.StringAliasR\taliasList\x125\n" +
+	"\vint32_alias\x18\x14 \x01(\v2\x14.testfull.Int32AliasR\n" +
+	"int32Alias\x12:\n" +
+	"\vint64_alias\x18\x15 \x01(\v2\x14.testfull.Int64AliasH\x03R\n" +
+	"int64Alias\x88\x01\x01\x12;\n" +
+	"\x0fbool_alias_list\x18\x16 \x03(\v2\x13.testfull.BoolAliasR\rboolAliasList\x125\n" +
+	"\vbytes_alias\x18\x17 \x01(\v2\x14.testfull.BytesAliasR\n" +
+	"bytesAlias\x125\n" +
+	"\vfloat_alias\x18\x18 \x01(\v2\x14.testfull.FloatAliasR\n" +
+	"floatAlias\x128\n" +
+	"\fdouble_alias\x18\x19 \x01(\v2\x15.testfull.DoubleAliasR\vdoubleAlias\x12E\n" +
+	"\x11custom_name_alias\x18\x1a \x01(\v2\x19.testfull.CustomNameAliasR\x0fcustomNameAlias\x1a;\n" +
 	"\rCountersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a7\n" +
@@ -486,7 +880,8 @@ const file_test_full_full_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01:\x18\x82\xa6\x1d\x14\b\x01\"\x10\b\t\"\fvirtual_noteB\x11\n" +
 	"\acontact\x12\x06\x82\xb5\x18\x02\x10\x01B\a\n" +
 	"\x05_noteB\v\n" +
-	"\t_archived*H\n" +
+	"\t_archivedB\x0e\n" +
+	"\f_int64_alias*H\n" +
 	"\x06Status\x12\x16\n" +
 	"\x12STATUS_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rSTATUS_ACTIVE\x10\x01\x12\x13\n" +
@@ -505,34 +900,48 @@ func file_test_full_full_proto_rawDescGZIP() []byte {
 }
 
 var file_test_full_full_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_test_full_full_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_test_full_full_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_test_full_full_proto_goTypes = []any{
 	(Status)(0),                    // 0: testfull.Status
 	(*Base)(nil),                   // 1: testfull.Base
 	(*Extra)(nil),                  // 2: testfull.Extra
 	(*StringAlias)(nil),            // 3: testfull.StringAlias
-	(*Complex)(nil),                // 4: testfull.Complex
-	nil,                            // 5: testfull.Complex.CountersEntry
-	nil,                            // 6: testfull.Complex.MetaEntry
-	(*timestamppb.Timestamp)(nil),  // 7: google.protobuf.Timestamp
-	(*wrapperspb.StringValue)(nil), // 8: google.protobuf.StringValue
+	(*Int32Alias)(nil),             // 4: testfull.Int32Alias
+	(*Int64Alias)(nil),             // 5: testfull.Int64Alias
+	(*BoolAlias)(nil),              // 6: testfull.BoolAlias
+	(*BytesAlias)(nil),             // 7: testfull.BytesAlias
+	(*FloatAlias)(nil),             // 8: testfull.FloatAlias
+	(*DoubleAlias)(nil),            // 9: testfull.DoubleAlias
+	(*CustomNameAlias)(nil),        // 10: testfull.CustomNameAlias
+	(*Complex)(nil),                // 11: testfull.Complex
+	nil,                            // 12: testfull.Complex.CountersEntry
+	nil,                            // 13: testfull.Complex.MetaEntry
+	(*timestamppb.Timestamp)(nil),  // 14: google.protobuf.Timestamp
+	(*wrapperspb.StringValue)(nil), // 15: google.protobuf.StringValue
 }
 var file_test_full_full_proto_depIdxs = []int32{
 	1,  // 0: testfull.Complex.base:type_name -> testfull.Base
 	2,  // 1: testfull.Complex.extra:type_name -> testfull.Extra
-	5,  // 2: testfull.Complex.counters:type_name -> testfull.Complex.CountersEntry
-	6,  // 3: testfull.Complex.meta:type_name -> testfull.Complex.MetaEntry
-	7,  // 4: testfull.Complex.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 5: testfull.Complex.comment:type_name -> google.protobuf.StringValue
+	12, // 2: testfull.Complex.counters:type_name -> testfull.Complex.CountersEntry
+	13, // 3: testfull.Complex.meta:type_name -> testfull.Complex.MetaEntry
+	14, // 4: testfull.Complex.created_at:type_name -> google.protobuf.Timestamp
+	15, // 5: testfull.Complex.comment:type_name -> google.protobuf.StringValue
 	0,  // 6: testfull.Complex.status:type_name -> testfull.Status
 	0,  // 7: testfull.Complex.status_list:type_name -> testfull.Status
 	3,  // 8: testfull.Complex.alias_id:type_name -> testfull.StringAlias
 	3,  // 9: testfull.Complex.alias_list:type_name -> testfull.StringAlias
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	4,  // 10: testfull.Complex.int32_alias:type_name -> testfull.Int32Alias
+	5,  // 11: testfull.Complex.int64_alias:type_name -> testfull.Int64Alias
+	6,  // 12: testfull.Complex.bool_alias_list:type_name -> testfull.BoolAlias
+	7,  // 13: testfull.Complex.bytes_alias:type_name -> testfull.BytesAlias
+	8,  // 14: testfull.Complex.float_alias:type_name -> testfull.FloatAlias
+	9,  // 15: testfull.Complex.double_alias:type_name -> testfull.DoubleAlias
+	10, // 16: testfull.Complex.custom_name_alias:type_name -> testfull.CustomNameAlias
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_test_full_full_proto_init() }
@@ -540,7 +949,7 @@ func file_test_full_full_proto_init() {
 	if File_test_full_full_proto != nil {
 		return
 	}
-	file_test_full_full_proto_msgTypes[3].OneofWrappers = []any{
+	file_test_full_full_proto_msgTypes[10].OneofWrappers = []any{
 		(*Complex_Email)(nil),
 		(*Complex_Phone)(nil),
 	}
@@ -550,7 +959,7 @@ func file_test_full_full_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_full_full_proto_rawDesc), len(file_test_full_full_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

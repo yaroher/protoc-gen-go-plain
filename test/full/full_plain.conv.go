@@ -72,12 +72,8 @@ func (x *ComplexPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, stri
 		return nil
 	}
 	out := &Complex{}
-	out.Raw = x.Raw
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
-	}
-	if x.Comment != nil {
-		out.Comment = x.Comment
 	}
 	if x.ContactEmail != nil {
 		out.Contact = &Complex_Email{Email: *x.ContactEmail}
@@ -89,6 +85,54 @@ func (x *ComplexPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, stri
 		}
 		out.AliasList = vals
 	}
+	out.Int64Alias = &Int64Alias{Value: x.Int64Alias}
+	// skip invalid path for VirtualNote
+	if len(x.Labels) > 0 {
+		out.Labels = x.Labels
+	}
+	out.AliasId = &StringAlias{Value: x.AliasId}
+	if len(x.BoolAliasList) > 0 {
+		vals := make([]*BoolAlias, len(x.BoolAliasList))
+		for i, v := range x.BoolAliasList {
+			vals[i] = &BoolAlias{Value: v}
+		}
+		out.BoolAliasList = vals
+	}
+	out.CustomNameAlias = &CustomNameAlias{Data: x.CustomNameAlias}
+	out.Name = x.Name
+	out.Raw = x.Raw
+	if x.Comment != nil {
+		out.Comment = x.Comment
+	}
+	out.Status = Status(x.Status)
+	if casterUuidUuidToString == nil {
+		panic("missing caster: casterUuidUuidToString")
+	}
+	val := casterUuidUuidToString.Cast(x.CustomId)
+	out.CustomId = val
+	out.Int32Alias = &Int32Alias{Value: x.Int32Alias}
+	out.BytesAlias = &BytesAlias{Value: x.BytesAlias}
+	if out.Base == nil {
+		out.Base = &Base{}
+	}
+	out.Base.Source = x.Source
+	out.Counters = x.Counters
+	out.Meta = x.Meta
+	if x.CreatedAt != nil {
+		out.CreatedAt = x.CreatedAt
+	}
+	if x.ContactPhone != nil {
+		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
+	}
+	if len(x.StatusList) > 0 {
+		_valStatusListSlice := make([]Status, len(x.StatusList))
+		for i, el := range x.StatusList {
+			_valStatusListSlice[i] = Status(el)
+		}
+		out.StatusList = _valStatusListSlice
+	}
+	out.FloatAlias = &FloatAlias{Value: x.FloatAlias}
+	out.DoubleAlias = &DoubleAlias{Value: x.DoubleAlias}
 	if x.IdCRF != "" {
 		_crfPath := strings.Join(parseCRFPath(x.IdCRF), "/")
 		switch _crfPath {
@@ -120,44 +164,13 @@ func (x *ComplexPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, stri
 		out.Extra = &Extra{}
 	}
 	out.Extra.Tag = x.Tag
-	if x.CreatedAt != nil {
-		out.CreatedAt = x.CreatedAt
-	}
-	if out.Base == nil {
-		out.Base = &Base{}
-	}
-	out.Base.Source = x.Source
 	if x.Note != nil {
 		_valNote := *x.Note
 		out.Note = &_valNote
 	}
-	out.Meta = x.Meta
-	if x.ContactPhone != nil {
-		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
-	}
-	if len(x.StatusList) > 0 {
-		_valStatusListSlice := make([]Status, len(x.StatusList))
-		for i, el := range x.StatusList {
-			_valStatusListSlice[i] = Status(el)
-		}
-		out.StatusList = _valStatusListSlice
-	}
-	if casterUuidUuidToString == nil {
-		panic("missing caster: casterUuidUuidToString")
-	}
-	val := casterUuidUuidToString.Cast(x.CustomId)
-	out.CustomId = val
-	out.AliasId = &StringAlias{Value: x.AliasId}
-	out.Name = x.Name
 	if x.Archived != nil {
 		_valArchived := *x.Archived
 		out.Archived = &_valArchived
-	}
-	out.Counters = x.Counters
-	out.Status = Status(x.Status)
-	// skip invalid path for VirtualNote
-	if len(x.Labels) > 0 {
-		out.Labels = x.Labels
 	}
 	return out
 }
@@ -167,12 +180,8 @@ func (x *Complex) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID
 		return nil
 	}
 	out := &ComplexPlain{}
-	out.Raw = x.Raw
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
-	}
-	if x.Comment != nil {
-		out.Comment = x.Comment
 	}
 	if _oneofEmail0, ok := x.Contact.(*Complex_Email); ok {
 		_valContactEmail := _oneofEmail0.Email
@@ -187,6 +196,83 @@ func (x *Complex) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID
 			vals = append(vals, v.Value)
 		}
 		out.AliasList = vals
+	}
+	if x.Int64Alias != nil {
+		val := x.Int64Alias.Value
+		out.Int64Alias = val
+	}
+	// skip invalid path for VirtualNote
+	if len(x.Labels) > 0 {
+		out.Labels = x.Labels
+	}
+	if x.AliasId != nil {
+		val := x.AliasId.Value
+		out.AliasId = val
+	}
+	if len(x.BoolAliasList) > 0 {
+		vals := make([]bool, 0, len(x.BoolAliasList))
+		for _, v := range x.BoolAliasList {
+			if v == nil {
+				continue
+			}
+			vals = append(vals, v.Value)
+		}
+		out.BoolAliasList = vals
+	}
+	if x.CustomNameAlias != nil {
+		val := x.CustomNameAlias.Data
+		out.CustomNameAlias = val
+	}
+	out.Name = x.Name
+	out.Raw = x.Raw
+	if x.Comment != nil {
+		out.Comment = x.Comment
+	}
+	out.Status = int32(x.Status)
+	if x.CustomId != "" {
+		if casterStringToUuidUuid == nil {
+			panic("missing caster: casterStringToUuidUuid")
+		}
+		out.CustomId = casterStringToUuidUuid.Cast(x.CustomId)
+	}
+	if x.Int32Alias != nil {
+		val := x.Int32Alias.Value
+		out.Int32Alias = val
+	}
+	if x.BytesAlias != nil {
+		val := x.BytesAlias.Value
+		out.BytesAlias = val
+	}
+	if x.Base != nil {
+		out.Source = x.Base.Source
+	}
+	if len(x.Counters) > 0 {
+		out.Counters = x.Counters
+	}
+	if len(x.Meta) > 0 {
+		out.Meta = x.Meta
+	}
+	if x.CreatedAt != nil {
+		out.CreatedAt = x.CreatedAt
+	}
+	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
+		_valContactPhone := _oneofPhone0.Phone
+		out.ContactPhone = &_valContactPhone
+	}
+	if len(x.StatusList) > 0 {
+		_valStatusListSlice := make([]int32, len(x.StatusList))
+		for i, el := range x.StatusList {
+			_valStatusListSlice[i] = int32(el)
+		}
+		out.StatusList = _valStatusListSlice
+	}
+	if x.FloatAlias != nil {
+		val := x.FloatAlias.Value
+		out.FloatAlias = val
+	}
+	if x.DoubleAlias != nil {
+		val := x.DoubleAlias.Value
+		out.DoubleAlias = val
 	}
 	// CRF paths
 	if x.Base != nil {
@@ -207,52 +293,13 @@ func (x *Complex) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID
 	if x.Extra != nil {
 		out.Tag = x.Extra.Tag
 	}
-	if x.CreatedAt != nil {
-		out.CreatedAt = x.CreatedAt
-	}
-	if x.Base != nil {
-		out.Source = x.Base.Source
-	}
 	if x.Note != nil {
 		_valNote := *x.Note
 		out.Note = &_valNote
 	}
-	if len(x.Meta) > 0 {
-		out.Meta = x.Meta
-	}
-	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
-		_valContactPhone := _oneofPhone0.Phone
-		out.ContactPhone = &_valContactPhone
-	}
-	if len(x.StatusList) > 0 {
-		_valStatusListSlice := make([]int32, len(x.StatusList))
-		for i, el := range x.StatusList {
-			_valStatusListSlice[i] = int32(el)
-		}
-		out.StatusList = _valStatusListSlice
-	}
-	if x.CustomId != "" {
-		if casterStringToUuidUuid == nil {
-			panic("missing caster: casterStringToUuidUuid")
-		}
-		out.CustomId = casterStringToUuidUuid.Cast(x.CustomId)
-	}
-	if x.AliasId != nil {
-		val := x.AliasId.Value
-		out.AliasId = val
-	}
-	out.Name = x.Name
 	if x.Archived != nil {
 		_valArchived := *x.Archived
 		out.Archived = &_valArchived
-	}
-	if len(x.Counters) > 0 {
-		out.Counters = x.Counters
-	}
-	out.Status = int32(x.Status)
-	// skip invalid path for VirtualNote
-	if len(x.Labels) > 0 {
-		out.Labels = x.Labels
 	}
 	return out
 }
@@ -262,12 +309,8 @@ func (x *ComplexPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID
 		return nil, nil
 	}
 	out := &Complex{}
-	out.Raw = x.Raw
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
-	}
-	if x.Comment != nil {
-		out.Comment = x.Comment
 	}
 	if x.ContactEmail != nil {
 		out.Contact = &Complex_Email{Email: *x.ContactEmail}
@@ -279,6 +322,57 @@ func (x *ComplexPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID
 		}
 		out.AliasList = vals
 	}
+	out.Int64Alias = &Int64Alias{Value: x.Int64Alias}
+	// skip invalid path for VirtualNote
+	if len(x.Labels) > 0 {
+		out.Labels = x.Labels
+	}
+	out.AliasId = &StringAlias{Value: x.AliasId}
+	if len(x.BoolAliasList) > 0 {
+		vals := make([]*BoolAlias, len(x.BoolAliasList))
+		for i, v := range x.BoolAliasList {
+			vals[i] = &BoolAlias{Value: v}
+		}
+		out.BoolAliasList = vals
+	}
+	out.CustomNameAlias = &CustomNameAlias{Data: x.CustomNameAlias}
+	out.Name = x.Name
+	out.Raw = x.Raw
+	if x.Comment != nil {
+		out.Comment = x.Comment
+	}
+	out.Status = Status(x.Status)
+	if casterUuidUuidToString == nil {
+		return nil, fmt.Errorf("missing caster: casterUuidUuidToString")
+	}
+	val, err := casterUuidUuidToString.CastErr(x.CustomId)
+	if err != nil {
+		return nil, err
+	}
+	out.CustomId = val
+	out.Int32Alias = &Int32Alias{Value: x.Int32Alias}
+	out.BytesAlias = &BytesAlias{Value: x.BytesAlias}
+	if out.Base == nil {
+		out.Base = &Base{}
+	}
+	out.Base.Source = x.Source
+	out.Counters = x.Counters
+	out.Meta = x.Meta
+	if x.CreatedAt != nil {
+		out.CreatedAt = x.CreatedAt
+	}
+	if x.ContactPhone != nil {
+		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
+	}
+	if len(x.StatusList) > 0 {
+		_valStatusListSlice := make([]Status, len(x.StatusList))
+		for i, el := range x.StatusList {
+			_valStatusListSlice[i] = Status(el)
+		}
+		out.StatusList = _valStatusListSlice
+	}
+	out.FloatAlias = &FloatAlias{Value: x.FloatAlias}
+	out.DoubleAlias = &DoubleAlias{Value: x.DoubleAlias}
 	if x.IdCRF != "" {
 		_crfPath := strings.Join(parseCRFPath(x.IdCRF), "/")
 		switch _crfPath {
@@ -310,47 +404,13 @@ func (x *ComplexPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID
 		out.Extra = &Extra{}
 	}
 	out.Extra.Tag = x.Tag
-	if x.CreatedAt != nil {
-		out.CreatedAt = x.CreatedAt
-	}
-	if out.Base == nil {
-		out.Base = &Base{}
-	}
-	out.Base.Source = x.Source
 	if x.Note != nil {
 		_valNote := *x.Note
 		out.Note = &_valNote
 	}
-	out.Meta = x.Meta
-	if x.ContactPhone != nil {
-		out.Contact = &Complex_Phone{Phone: *x.ContactPhone}
-	}
-	if len(x.StatusList) > 0 {
-		_valStatusListSlice := make([]Status, len(x.StatusList))
-		for i, el := range x.StatusList {
-			_valStatusListSlice[i] = Status(el)
-		}
-		out.StatusList = _valStatusListSlice
-	}
-	if casterUuidUuidToString == nil {
-		return nil, fmt.Errorf("missing caster: casterUuidUuidToString")
-	}
-	val, err := casterUuidUuidToString.CastErr(x.CustomId)
-	if err != nil {
-		return nil, err
-	}
-	out.CustomId = val
-	out.AliasId = &StringAlias{Value: x.AliasId}
-	out.Name = x.Name
 	if x.Archived != nil {
 		_valArchived := *x.Archived
 		out.Archived = &_valArchived
-	}
-	out.Counters = x.Counters
-	out.Status = Status(x.Status)
-	// skip invalid path for VirtualNote
-	if len(x.Labels) > 0 {
-		out.Labels = x.Labels
 	}
 	return out, nil
 }
@@ -360,12 +420,8 @@ func (x *Complex) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uui
 		return nil, nil
 	}
 	out := &ComplexPlain{}
-	out.Raw = x.Raw
 	if len(x.RawList) > 0 {
 		out.RawList = x.RawList
-	}
-	if x.Comment != nil {
-		out.Comment = x.Comment
 	}
 	if _oneofEmail0, ok := x.Contact.(*Complex_Email); ok {
 		_valContactEmail := _oneofEmail0.Email
@@ -381,49 +437,38 @@ func (x *Complex) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uui
 		}
 		out.AliasList = vals
 	}
-	// CRF paths
-	if x.Base != nil {
-		if x.Base.Id != "" {
-			_valId := x.Base.Id
-			out.Id = &_valId
-			out.IdCRF = "base/id"
+	if x.Int64Alias != nil {
+		val := x.Int64Alias.Value
+		out.Int64Alias = val
+	}
+	// skip invalid path for VirtualNote
+	if len(x.Labels) > 0 {
+		out.Labels = x.Labels
+	}
+	if x.AliasId != nil {
+		val := x.AliasId.Value
+		out.AliasId = val
+	}
+	if len(x.BoolAliasList) > 0 {
+		vals := make([]bool, 0, len(x.BoolAliasList))
+		for _, v := range x.BoolAliasList {
+			if v == nil {
+				continue
+			}
+			vals = append(vals, v.Value)
 		}
+		out.BoolAliasList = vals
 	}
-	if x.Extra != nil {
-		if x.Extra.Id != "" {
-			_valId := x.Extra.Id
-			out.Id = &_valId
-			out.IdCRF = "extra/id"
-		}
+	if x.CustomNameAlias != nil {
+		val := x.CustomNameAlias.Data
+		out.CustomNameAlias = val
 	}
-	// skip invalid path for IdCRF
-	if x.Extra != nil {
-		out.Tag = x.Extra.Tag
+	out.Name = x.Name
+	out.Raw = x.Raw
+	if x.Comment != nil {
+		out.Comment = x.Comment
 	}
-	if x.CreatedAt != nil {
-		out.CreatedAt = x.CreatedAt
-	}
-	if x.Base != nil {
-		out.Source = x.Base.Source
-	}
-	if x.Note != nil {
-		_valNote := *x.Note
-		out.Note = &_valNote
-	}
-	if len(x.Meta) > 0 {
-		out.Meta = x.Meta
-	}
-	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
-		_valContactPhone := _oneofPhone0.Phone
-		out.ContactPhone = &_valContactPhone
-	}
-	if len(x.StatusList) > 0 {
-		_valStatusListSlice := make([]int32, len(x.StatusList))
-		for i, el := range x.StatusList {
-			_valStatusListSlice[i] = int32(el)
-		}
-		out.StatusList = _valStatusListSlice
-	}
+	out.Status = int32(x.Status)
 	if x.CustomId != "" {
 		if casterStringToUuidUuid == nil {
 			return nil, fmt.Errorf("missing caster: casterStringToUuidUuid")
@@ -434,22 +479,71 @@ func (x *Complex) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uui
 		}
 		out.CustomId = val
 	}
-	if x.AliasId != nil {
-		val := x.AliasId.Value
-		out.AliasId = val
+	if x.Int32Alias != nil {
+		val := x.Int32Alias.Value
+		out.Int32Alias = val
 	}
-	out.Name = x.Name
-	if x.Archived != nil {
-		_valArchived := *x.Archived
-		out.Archived = &_valArchived
+	if x.BytesAlias != nil {
+		val := x.BytesAlias.Value
+		out.BytesAlias = val
+	}
+	if x.Base != nil {
+		out.Source = x.Base.Source
 	}
 	if len(x.Counters) > 0 {
 		out.Counters = x.Counters
 	}
-	out.Status = int32(x.Status)
-	// skip invalid path for VirtualNote
-	if len(x.Labels) > 0 {
-		out.Labels = x.Labels
+	if len(x.Meta) > 0 {
+		out.Meta = x.Meta
+	}
+	if x.CreatedAt != nil {
+		out.CreatedAt = x.CreatedAt
+	}
+	if _oneofPhone0, ok := x.Contact.(*Complex_Phone); ok {
+		_valContactPhone := _oneofPhone0.Phone
+		out.ContactPhone = &_valContactPhone
+	}
+	if len(x.StatusList) > 0 {
+		_valStatusListSlice := make([]int32, len(x.StatusList))
+		for i, el := range x.StatusList {
+			_valStatusListSlice[i] = int32(el)
+		}
+		out.StatusList = _valStatusListSlice
+	}
+	if x.FloatAlias != nil {
+		val := x.FloatAlias.Value
+		out.FloatAlias = val
+	}
+	if x.DoubleAlias != nil {
+		val := x.DoubleAlias.Value
+		out.DoubleAlias = val
+	}
+	// CRF paths
+	if x.Base != nil {
+		if x.Base.Id != "" {
+			_valId := x.Base.Id
+			out.Id = &_valId
+			out.IdCRF = "base/id"
+		}
+	}
+	if x.Extra != nil {
+		if x.Extra.Id != "" {
+			_valId := x.Extra.Id
+			out.Id = &_valId
+			out.IdCRF = "extra/id"
+		}
+	}
+	// skip invalid path for IdCRF
+	if x.Extra != nil {
+		out.Tag = x.Extra.Tag
+	}
+	if x.Note != nil {
+		_valNote := *x.Note
+		out.Note = &_valNote
+	}
+	if x.Archived != nil {
+		_valArchived := *x.Archived
+		out.Archived = &_valArchived
 	}
 	return out, nil
 }

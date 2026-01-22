@@ -11,24 +11,24 @@ type VirtualTypePlain struct {
 }
 
 type EventPlain struct {
+	EventId                     int32         `json:"eventId"`
+	SomeEventStringPayload      uuid.UUID     `json:"someEventStringPayload"`
+	NonPlatformEventCustomEvent *string       `json:"nonPlatformEventCustomEvent,omitempty"`
+	NonPlatformEventPath        string        `json:"nonPlatformEventPath"`
+	PathCRF                     string        `json:"pathCRF"`
 	ParentEventId               string        `json:"parentEventId"`
 	EventVirtualType            string        `json:"eventVirtualType"`
-	EventId                     int32         `json:"eventId"`
 	Process                     *ProcessPlain `json:"process,omitempty"`
 	Path                        *string       `json:"path,omitempty"`
-	PathCRF                     string        `json:"pathCRF"`
 	OtherEvent                  *string       `json:"otherEvent,omitempty"`
-	NonPlatformEventCustomEvent *string       `json:"nonPlatformEventCustomEvent,omitempty"`
-	SomeEventStringPayload      uuid.UUID     `json:"someEventStringPayload"`
-	NonPlatformEventPath        string        `json:"nonPlatformEventPath"`
 }
 
 type EventDataPlain struct {
+	NonPlatformEventCustomEvent *string                    `json:"nonPlatformEventCustomEvent,omitempty"`
+	NonPlatformEventPath        string                     `json:"nonPlatformEventPath"`
 	Path                        *string                    `json:"path,omitempty"`
 	PathCRF                     string                     `json:"pathCRF"`
 	OtherEvent                  *string                    `json:"otherEvent,omitempty"`
-	NonPlatformEventCustomEvent *string                    `json:"nonPlatformEventCustomEvent,omitempty"`
-	NonPlatformEventPath        string                     `json:"nonPlatformEventPath"`
 	NoRemovedOneof              isEventData_NoRemovedOneof `json:"noRemovedOneof"`
 }
 

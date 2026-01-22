@@ -150,6 +150,7 @@ func (g *Generator) Collect() []*TypePbIR {
 				if fieldName == "" {
 					fieldName = "value"
 				}
+				found := false
 				for _, f := range message.Fields {
 					if string(f.Desc.Name()) != fieldName {
 						continue
@@ -160,7 +161,14 @@ func (g *Generator) Collect() []*TypePbIR {
 						kind:        typepb.Field_Kind(f.Desc.Kind()),
 						pbTypeName:  message.GoIdent.GoName,
 					}
+					found = true
 					break
+				}
+				if !found {
+					logger.Error("type_alias field not found",
+						zap.String("message", string(message.Desc.FullName())),
+						zap.String("field_name", fieldName),
+					)
 				}
 			}
 			for cnt, vf := range msgGen.GetVirtualFields() {

@@ -14,28 +14,35 @@ type BasePlain struct {
 }
 
 type ComplexPlain struct {
-	Raw          []byte                  `json:"raw"`
-	RawList      [][]byte                `json:"rawList,omitempty"`
-	Comment      *wrapperspb.StringValue `json:"comment,omitempty"`
-	ContactEmail *string                 `json:"contactEmail,omitempty"`
-	AliasList    []string                `json:"aliasList,omitempty"`
-	Id           *string                 `json:"id,omitempty"`
-	IdCRF        string                  `json:"idCRF"`
-	Tag          string                  `json:"tag"`
-	CreatedAt    *timestamppb.Timestamp  `json:"createdAt,omitempty"`
-	Source       string                  `json:"source"`
-	Note         *string                 `json:"note,omitempty"`
-	Meta         map[string]string       `json:"meta,omitempty"`
-	ContactPhone *string                 `json:"contactPhone,omitempty"`
-	StatusList   []int32                 `json:"statusList,omitempty"`
-	CustomId     uuid.UUID               `json:"customId"`
-	AliasId      string                  `json:"aliasId"`
-	Name         string                  `json:"name"`
-	Archived     *bool                   `json:"archived,omitempty"`
-	Counters     map[string]int32        `json:"counters,omitempty"`
-	Status       int32                   `json:"status"`
-	VirtualNote  string                  `json:"virtualNote"`
-	Labels       []string                `json:"labels,omitempty"`
+	RawList         [][]byte                `json:"rawList,omitempty"`
+	ContactEmail    *string                 `json:"contactEmail,omitempty"`
+	AliasList       []string                `json:"aliasList,omitempty"`
+	Int64Alias      int64                   `json:"int64Alias"`
+	VirtualNote     string                  `json:"virtualNote"`
+	Labels          []string                `json:"labels,omitempty"`
+	AliasId         string                  `json:"aliasId"`
+	BoolAliasList   []bool                  `json:"boolAliasList,omitempty"`
+	CustomNameAlias string                  `json:"customNameAlias"`
+	Name            string                  `json:"name"`
+	Raw             []byte                  `json:"raw"`
+	Comment         *wrapperspb.StringValue `json:"comment,omitempty"`
+	Status          int32                   `json:"status"`
+	CustomId        uuid.UUID               `json:"customId"`
+	Int32Alias      int32                   `json:"int32Alias"`
+	BytesAlias      []byte                  `json:"bytesAlias"`
+	Source          string                  `json:"source"`
+	Counters        map[string]int32        `json:"counters,omitempty"`
+	Meta            map[string]string       `json:"meta,omitempty"`
+	CreatedAt       *timestamppb.Timestamp  `json:"createdAt,omitempty"`
+	ContactPhone    *string                 `json:"contactPhone,omitempty"`
+	StatusList      []int32                 `json:"statusList,omitempty"`
+	FloatAlias      float32                 `json:"floatAlias"`
+	DoubleAlias     float64                 `json:"doubleAlias"`
+	Id              *string                 `json:"id,omitempty"`
+	IdCRF           string                  `json:"idCRF"`
+	Tag             string                  `json:"tag"`
+	Note            *string                 `json:"note,omitempty"`
+	Archived        *bool                   `json:"archived,omitempty"`
 }
 
 type ExtraPlain struct {

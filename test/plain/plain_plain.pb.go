@@ -16,10 +16,10 @@ type UserPlain struct {
 }
 
 type UserEventPlain struct {
-	Id           string  `json:"id"`
 	Source       string  `json:"source"`
 	Name         string  `json:"name"`
 	ContactEmail *string `json:"contactEmail,omitempty"`
 	ContactPhone *string `json:"contactPhone,omitempty"`
 	EventType    string  `json:"eventType"`
+	Id           string  `json:"id"`
 }

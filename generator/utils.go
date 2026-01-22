@@ -138,6 +138,12 @@ func mapScalarGoType(kind typepb.Field_Kind) string {
 		return "int64"
 	case typepb.Field_TYPE_UINT64, typepb.Field_TYPE_FIXED64:
 		return "uint64"
+	case typepb.Field_TYPE_FLOAT:
+		return "float32"
+	case typepb.Field_TYPE_DOUBLE:
+		return "float64"
+	case typepb.Field_TYPE_BYTES:
+		return "[]byte"
 	case typepb.Field_TYPE_ENUM:
 		return "int32"
 	default:

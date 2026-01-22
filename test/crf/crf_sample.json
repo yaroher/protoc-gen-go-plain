@@ -1,14 +1,14 @@
 {
+  "eventId": 4,
+  "someEventStringPayload": "00000000-0000-0000-0000-000000000000",
+  "nonPlatformEventPath": "/tmp/f",
+  "pathCRF": "data/file_rename/file/path",
   "parentEventId": "parent4",
   "eventVirtualType": "",
-  "eventId": 4,
   "process": {
     "file": {
       "path": "/proc4"
     }
   },
-  "path": "/tmp/e",
-  "pathCRF": "data/file_rename/file/path",
-  "someEventStringPayload": "00000000-0000-0000-0000-000000000000",
-  "nonPlatformEventPath": "/tmp/f"
+  "path": "/tmp/e"
 }

@@ -79,10 +79,6 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("ComplexPlain")
 	}
-	if e.FieldStart("raw") {
-		return nil, jxEncodeError("raw")
-	}
-	e.Base64(x.Raw)
 	if len(x.RawList) > 0 {
 		if e.FieldStart("rawList") {
 			return nil, jxEncodeError("rawList")
@@ -95,20 +91,6 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 		}
 		if e.ArrEnd() {
 			return nil, jxEncodeError("RawList")
-		}
-	}
-	if x.Comment != nil {
-		if e.FieldStart("comment") {
-			return nil, jxEncodeError("comment")
-		}
-		if x.Comment == nil {
-			e.Null()
-		} else {
-			raw, err := protojson.Marshal(x.Comment)
-			if err != nil {
-				return nil, jxEncodeError("Comment")
-			}
-			e.Raw(raw)
 		}
 	}
 	if x.ContactEmail != nil {
@@ -135,24 +117,116 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 			return nil, jxEncodeError("AliasList")
 		}
 	}
-	if x.Id != nil {
-		if e.FieldStart("id") {
-			return nil, jxEncodeError("id")
+	if e.FieldStart("int64Alias") {
+		return nil, jxEncodeError("int64Alias")
+	}
+	e.Int64(x.Int64Alias)
+	if e.FieldStart("virtualNote") {
+		return nil, jxEncodeError("virtualNote")
+	}
+	e.Str(x.VirtualNote)
+	if len(x.Labels) > 0 {
+		if e.FieldStart("labels") {
+			return nil, jxEncodeError("labels")
 		}
-		if x.Id == nil {
+		if e.ArrStart() {
+			return nil, jxEncodeError("Labels")
+		}
+		for _, el := range x.Labels {
+			e.Str(el)
+		}
+		if e.ArrEnd() {
+			return nil, jxEncodeError("Labels")
+		}
+	}
+	if e.FieldStart("aliasId") {
+		return nil, jxEncodeError("aliasId")
+	}
+	e.Str(x.AliasId)
+	if len(x.BoolAliasList) > 0 {
+		if e.FieldStart("boolAliasList") {
+			return nil, jxEncodeError("boolAliasList")
+		}
+		if e.ArrStart() {
+			return nil, jxEncodeError("BoolAliasList")
+		}
+		for _, el := range x.BoolAliasList {
+			e.Bool(el)
+		}
+		if e.ArrEnd() {
+			return nil, jxEncodeError("BoolAliasList")
+		}
+	}
+	if e.FieldStart("customNameAlias") {
+		return nil, jxEncodeError("customNameAlias")
+	}
+	e.Str(x.CustomNameAlias)
+	if e.FieldStart("name") {
+		return nil, jxEncodeError("name")
+	}
+	e.Str(x.Name)
+	if e.FieldStart("raw") {
+		return nil, jxEncodeError("raw")
+	}
+	e.Base64(x.Raw)
+	if x.Comment != nil {
+		if e.FieldStart("comment") {
+			return nil, jxEncodeError("comment")
+		}
+		if x.Comment == nil {
 			e.Null()
 		} else {
-			e.Str(*x.Id)
+			raw, err := protojson.Marshal(x.Comment)
+			if err != nil {
+				return nil, jxEncodeError("Comment")
+			}
+			e.Raw(raw)
 		}
 	}
-	if e.FieldStart("idCRF") {
-		return nil, jxEncodeError("idCRF")
+	if e.FieldStart("status") {
+		return nil, jxEncodeError("status")
 	}
-	e.Str(x.IdCRF)
-	if e.FieldStart("tag") {
-		return nil, jxEncodeError("tag")
+	e.Int32(x.Status)
+	if e.FieldStart("customId") {
+		return nil, jxEncodeError("customId")
 	}
-	e.Str(x.Tag)
+	raw, err := json.Marshal(x.CustomId)
+	if err != nil {
+		return nil, jxEncodeError("customId")
+	}
+	e.Raw(raw)
+	if e.FieldStart("int32Alias") {
+		return nil, jxEncodeError("int32Alias")
+	}
+	e.Int32(x.Int32Alias)
+	if e.FieldStart("bytesAlias") {
+		return nil, jxEncodeError("bytesAlias")
+	}
+	e.Base64(x.BytesAlias)
+	if e.FieldStart("source") {
+		return nil, jxEncodeError("source")
+	}
+	e.Str(x.Source)
+	if len(x.Counters) > 0 {
+		if e.FieldStart("counters") {
+			return nil, jxEncodeError("counters")
+		}
+		raw, err := json.Marshal(x.Counters)
+		if err != nil {
+			return nil, jxEncodeError("counters")
+		}
+		e.Raw(raw)
+	}
+	if len(x.Meta) > 0 {
+		if e.FieldStart("meta") {
+			return nil, jxEncodeError("meta")
+		}
+		raw, err := json.Marshal(x.Meta)
+		if err != nil {
+			return nil, jxEncodeError("meta")
+		}
+		e.Raw(raw)
+	}
 	if x.CreatedAt != nil {
 		if e.FieldStart("createdAt") {
 			return nil, jxEncodeError("createdAt")
@@ -166,30 +240,6 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 			}
 			e.Raw(raw)
 		}
-	}
-	if e.FieldStart("source") {
-		return nil, jxEncodeError("source")
-	}
-	e.Str(x.Source)
-	if x.Note != nil {
-		if e.FieldStart("note") {
-			return nil, jxEncodeError("note")
-		}
-		if x.Note == nil {
-			e.Null()
-		} else {
-			e.Str(*x.Note)
-		}
-	}
-	if len(x.Meta) > 0 {
-		if e.FieldStart("meta") {
-			return nil, jxEncodeError("meta")
-		}
-		raw, err := json.Marshal(x.Meta)
-		if err != nil {
-			return nil, jxEncodeError("meta")
-		}
-		e.Raw(raw)
 	}
 	if x.ContactPhone != nil {
 		if e.FieldStart("contactPhone") {
@@ -215,22 +265,42 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 			return nil, jxEncodeError("StatusList")
 		}
 	}
-	if e.FieldStart("customId") {
-		return nil, jxEncodeError("customId")
+	if e.FieldStart("floatAlias") {
+		return nil, jxEncodeError("floatAlias")
 	}
-	raw, err := json.Marshal(x.CustomId)
-	if err != nil {
-		return nil, jxEncodeError("customId")
+	e.Float32(x.FloatAlias)
+	if e.FieldStart("doubleAlias") {
+		return nil, jxEncodeError("doubleAlias")
 	}
-	e.Raw(raw)
-	if e.FieldStart("aliasId") {
-		return nil, jxEncodeError("aliasId")
+	e.Float64(x.DoubleAlias)
+	if x.Id != nil {
+		if e.FieldStart("id") {
+			return nil, jxEncodeError("id")
+		}
+		if x.Id == nil {
+			e.Null()
+		} else {
+			e.Str(*x.Id)
+		}
 	}
-	e.Str(x.AliasId)
-	if e.FieldStart("name") {
-		return nil, jxEncodeError("name")
+	if e.FieldStart("idCRF") {
+		return nil, jxEncodeError("idCRF")
 	}
-	e.Str(x.Name)
+	e.Str(x.IdCRF)
+	if e.FieldStart("tag") {
+		return nil, jxEncodeError("tag")
+	}
+	e.Str(x.Tag)
+	if x.Note != nil {
+		if e.FieldStart("note") {
+			return nil, jxEncodeError("note")
+		}
+		if x.Note == nil {
+			e.Null()
+		} else {
+			e.Str(*x.Note)
+		}
+	}
 	if x.Archived != nil {
 		if e.FieldStart("archived") {
 			return nil, jxEncodeError("archived")
@@ -239,38 +309,6 @@ func (x *ComplexPlain) MarshalJSON() ([]byte, error) {
 			e.Null()
 		} else {
 			e.Bool(*x.Archived)
-		}
-	}
-	if len(x.Counters) > 0 {
-		if e.FieldStart("counters") {
-			return nil, jxEncodeError("counters")
-		}
-		raw, err := json.Marshal(x.Counters)
-		if err != nil {
-			return nil, jxEncodeError("counters")
-		}
-		e.Raw(raw)
-	}
-	if e.FieldStart("status") {
-		return nil, jxEncodeError("status")
-	}
-	e.Int32(x.Status)
-	if e.FieldStart("virtualNote") {
-		return nil, jxEncodeError("virtualNote")
-	}
-	e.Str(x.VirtualNote)
-	if len(x.Labels) > 0 {
-		if e.FieldStart("labels") {
-			return nil, jxEncodeError("labels")
-		}
-		if e.ArrStart() {
-			return nil, jxEncodeError("Labels")
-		}
-		for _, el := range x.Labels {
-			e.Str(el)
-		}
-		if e.ArrEnd() {
-			return nil, jxEncodeError("Labels")
 		}
 	}
 	if e.ObjEnd() {
@@ -287,13 +325,6 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "raw":
-			val, err := (*jx.Decoder).Base64(d)
-			if err != nil {
-				return jxDecodeError("Raw", err)
-			}
-			x.Raw = val
-			return nil
 		case "rawList":
 			var outVal [][]byte
 			if err := d.Arr(func(d *jx.Decoder) error {
@@ -307,24 +338,6 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("RawList", err)
 			}
 			x.RawList = outVal
-			return nil
-		case "comment":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("Comment", err)
-				}
-				x.Comment = nil
-				return nil
-			}
-			raw, err := d.Raw()
-			if err != nil {
-				return jxDecodeError("Comment", err)
-			}
-			outVal := &wrapperspb.StringValue{}
-			if err := protojson.Unmarshal(raw, outVal); err != nil {
-				return jxDecodeError("Comment", err)
-			}
-			x.Comment = outVal
 			return nil
 		case "contactEmail":
 			if d.Next() == jx.Null {
@@ -354,33 +367,154 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.AliasList = outVal
 			return nil
-		case "id":
+		case "int64Alias":
+			val, err := (*jx.Decoder).Int64(d)
+			if err != nil {
+				return jxDecodeError("Int64Alias", err)
+			}
+			x.Int64Alias = val
+			return nil
+		case "virtualNote":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("VirtualNote", err)
+			}
+			x.VirtualNote = val
+			return nil
+		case "labels":
+			var outVal []string
+			if err := d.Arr(func(d *jx.Decoder) error {
+				val, err := (*jx.Decoder).Str(d)
+				if err != nil {
+					return err
+				}
+				outVal = append(outVal, val)
+				return nil
+			}); err != nil {
+				return jxDecodeError("Labels", err)
+			}
+			x.Labels = outVal
+			return nil
+		case "aliasId":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("AliasId", err)
+			}
+			x.AliasId = val
+			return nil
+		case "boolAliasList":
+			var outVal []bool
+			if err := d.Arr(func(d *jx.Decoder) error {
+				val, err := (*jx.Decoder).Bool(d)
+				if err != nil {
+					return err
+				}
+				outVal = append(outVal, val)
+				return nil
+			}); err != nil {
+				return jxDecodeError("BoolAliasList", err)
+			}
+			x.BoolAliasList = outVal
+			return nil
+		case "customNameAlias":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("CustomNameAlias", err)
+			}
+			x.CustomNameAlias = val
+			return nil
+		case "name":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Name", err)
+			}
+			x.Name = val
+			return nil
+		case "raw":
+			val, err := (*jx.Decoder).Base64(d)
+			if err != nil {
+				return jxDecodeError("Raw", err)
+			}
+			x.Raw = val
+			return nil
+		case "comment":
 			if d.Next() == jx.Null {
 				if err := d.Null(); err != nil {
-					return jxDecodeError("Id", err)
+					return jxDecodeError("Comment", err)
 				}
-				x.Id = nil
+				x.Comment = nil
 				return nil
 			}
-			val, err := (*jx.Decoder).Str(d)
+			raw, err := d.Raw()
 			if err != nil {
-				return jxDecodeError("Id", err)
+				return jxDecodeError("Comment", err)
 			}
-			x.Id = &val
+			outVal := &wrapperspb.StringValue{}
+			if err := protojson.Unmarshal(raw, outVal); err != nil {
+				return jxDecodeError("Comment", err)
+			}
+			x.Comment = outVal
 			return nil
-		case "idCRF":
-			val, err := (*jx.Decoder).Str(d)
+		case "status":
+			val, err := (*jx.Decoder).Int32(d)
 			if err != nil {
-				return jxDecodeError("IdCRF", err)
+				return jxDecodeError("Status", err)
 			}
-			x.IdCRF = val
+			x.Status = val
 			return nil
-		case "tag":
+		case "customId":
+			raw, err := d.Raw()
+			if err != nil {
+				return jxDecodeError("CustomId", err)
+			}
+			var outVal uuid.UUID
+			if err := json.Unmarshal(raw, &outVal); err != nil {
+				return jxDecodeError("CustomId", err)
+			}
+			x.CustomId = outVal
+			return nil
+		case "int32Alias":
+			val, err := (*jx.Decoder).Int32(d)
+			if err != nil {
+				return jxDecodeError("Int32Alias", err)
+			}
+			x.Int32Alias = val
+			return nil
+		case "bytesAlias":
+			val, err := (*jx.Decoder).Base64(d)
+			if err != nil {
+				return jxDecodeError("BytesAlias", err)
+			}
+			x.BytesAlias = val
+			return nil
+		case "source":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
-				return jxDecodeError("Tag", err)
+				return jxDecodeError("Source", err)
 			}
-			x.Tag = val
+			x.Source = val
+			return nil
+		case "counters":
+			raw, err := d.Raw()
+			if err != nil {
+				return jxDecodeError("Counters", err)
+			}
+			var outVal map[string]int32
+			if err := json.Unmarshal(raw, &outVal); err != nil {
+				return jxDecodeError("Counters", err)
+			}
+			x.Counters = outVal
+			return nil
+		case "meta":
+			raw, err := d.Raw()
+			if err != nil {
+				return jxDecodeError("Meta", err)
+			}
+			var outVal map[string]string
+			if err := json.Unmarshal(raw, &outVal); err != nil {
+				return jxDecodeError("Meta", err)
+			}
+			x.Meta = outVal
 			return nil
 		case "createdAt":
 			if d.Next() == jx.Null {
@@ -399,38 +533,6 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("CreatedAt", err)
 			}
 			x.CreatedAt = outVal
-			return nil
-		case "source":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Source", err)
-			}
-			x.Source = val
-			return nil
-		case "note":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("Note", err)
-				}
-				x.Note = nil
-				return nil
-			}
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Note", err)
-			}
-			x.Note = &val
-			return nil
-		case "meta":
-			raw, err := d.Raw()
-			if err != nil {
-				return jxDecodeError("Meta", err)
-			}
-			var outVal map[string]string
-			if err := json.Unmarshal(raw, &outVal); err != nil {
-				return jxDecodeError("Meta", err)
-			}
-			x.Meta = outVal
 			return nil
 		case "contactPhone":
 			if d.Next() == jx.Null {
@@ -460,30 +562,61 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.StatusList = outVal
 			return nil
-		case "customId":
-			raw, err := d.Raw()
+		case "floatAlias":
+			val, err := (*jx.Decoder).Float32(d)
 			if err != nil {
-				return jxDecodeError("CustomId", err)
+				return jxDecodeError("FloatAlias", err)
 			}
-			var outVal uuid.UUID
-			if err := json.Unmarshal(raw, &outVal); err != nil {
-				return jxDecodeError("CustomId", err)
-			}
-			x.CustomId = outVal
+			x.FloatAlias = val
 			return nil
-		case "aliasId":
+		case "doubleAlias":
+			val, err := (*jx.Decoder).Float64(d)
+			if err != nil {
+				return jxDecodeError("DoubleAlias", err)
+			}
+			x.DoubleAlias = val
+			return nil
+		case "id":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("Id", err)
+				}
+				x.Id = nil
+				return nil
+			}
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
-				return jxDecodeError("AliasId", err)
+				return jxDecodeError("Id", err)
 			}
-			x.AliasId = val
+			x.Id = &val
 			return nil
-		case "name":
+		case "idCRF":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
-				return jxDecodeError("Name", err)
+				return jxDecodeError("IdCRF", err)
 			}
-			x.Name = val
+			x.IdCRF = val
+			return nil
+		case "tag":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Tag", err)
+			}
+			x.Tag = val
+			return nil
+		case "note":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("Note", err)
+				}
+				x.Note = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Note", err)
+			}
+			x.Note = &val
 			return nil
 		case "archived":
 			if d.Next() == jx.Null {
@@ -498,45 +631,6 @@ func (x *ComplexPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("Archived", err)
 			}
 			x.Archived = &val
-			return nil
-		case "counters":
-			raw, err := d.Raw()
-			if err != nil {
-				return jxDecodeError("Counters", err)
-			}
-			var outVal map[string]int32
-			if err := json.Unmarshal(raw, &outVal); err != nil {
-				return jxDecodeError("Counters", err)
-			}
-			x.Counters = outVal
-			return nil
-		case "status":
-			val, err := (*jx.Decoder).Int32(d)
-			if err != nil {
-				return jxDecodeError("Status", err)
-			}
-			x.Status = val
-			return nil
-		case "virtualNote":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("VirtualNote", err)
-			}
-			x.VirtualNote = val
-			return nil
-		case "labels":
-			var outVal []string
-			if err := d.Arr(func(d *jx.Decoder) error {
-				val, err := (*jx.Decoder).Str(d)
-				if err != nil {
-					return err
-				}
-				outVal = append(outVal, val)
-				return nil
-			}); err != nil {
-				return jxDecodeError("Labels", err)
-			}
-			x.Labels = outVal
 			return nil
 		default:
 			return d.Skip()
