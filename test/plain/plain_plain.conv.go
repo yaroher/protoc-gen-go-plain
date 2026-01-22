@@ -2,19 +2,15 @@
 
 package plain
 
-import (
-	"github.com/yaroher/protoc-gen-go-plain/into"
-)
+import ()
 
 func (x *BaseInfoPlain) IntoPb() *BaseInfo {
 	if x == nil {
 		return nil
 	}
 	out := &BaseInfo{}
-	_pathId := []string{"id"}
-	into.SetString(out, _pathId, x.Id)
-	_pathSource := []string{"source"}
-	into.SetString(out, _pathSource, x.Source)
+	out.Id = x.Id
+	out.Source = x.Source
 	return out
 }
 
@@ -23,14 +19,8 @@ func (x *BaseInfo) IntoPlain() *BaseInfoPlain {
 		return nil
 	}
 	out := &BaseInfoPlain{}
-	_pathId := []string{"id"}
-	if v, ok := into.GetString(x, _pathId); ok {
-		out.Id = v
-	}
-	_pathSource := []string{"source"}
-	if v, ok := into.GetString(x, _pathSource); ok {
-		out.Source = v
-	}
+	out.Id = x.Id
+	out.Source = x.Source
 	return out
 }
 
@@ -39,10 +29,8 @@ func (x *BaseInfoPlain) IntoPbErr() (*BaseInfo, error) {
 		return nil, nil
 	}
 	out := &BaseInfo{}
-	_pathId := []string{"id"}
-	into.SetString(out, _pathId, x.Id)
-	_pathSource := []string{"source"}
-	into.SetString(out, _pathSource, x.Source)
+	out.Id = x.Id
+	out.Source = x.Source
 	return out, nil
 }
 
@@ -51,14 +39,8 @@ func (x *BaseInfo) IntoPlainErr() (*BaseInfoPlain, error) {
 		return nil, nil
 	}
 	out := &BaseInfoPlain{}
-	_pathId := []string{"id"}
-	if v, ok := into.GetString(x, _pathId); ok {
-		out.Id = v
-	}
-	_pathSource := []string{"source"}
-	if v, ok := into.GetString(x, _pathSource); ok {
-		out.Source = v
-	}
+	out.Id = x.Id
+	out.Source = x.Source
 	return out, nil
 }
 
@@ -67,20 +49,21 @@ func (x *UserPlain) IntoPb() *User {
 		return nil
 	}
 	out := &User{}
-	_pathId := []string{"base", "id"}
-	into.SetString(out, _pathId, x.Id)
-	_pathSource := []string{"base", "source"}
-	into.SetString(out, _pathSource, x.Source)
-	_pathName := []string{"name"}
-	into.SetString(out, _pathName, x.Name)
-	_pathContactEmail := []string{"email"}
+	out.Name = x.Name
 	if x.ContactEmail != nil {
-		into.SetString(out, _pathContactEmail, *x.ContactEmail)
+		out.Contact = &User_Email{Email: *x.ContactEmail}
 	}
-	_pathContactPhone := []string{"phone"}
 	if x.ContactPhone != nil {
-		into.SetString(out, _pathContactPhone, *x.ContactPhone)
+		out.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
+	out.Base.Id = x.Id
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
+	out.Base.Source = x.Source
 	return out
 }
 
@@ -89,25 +72,20 @@ func (x *User) IntoPlain() *UserPlain {
 		return nil
 	}
 	out := &UserPlain{}
-	_pathId := []string{"base", "id"}
-	if v, ok := into.GetString(x, _pathId); ok {
-		out.Id = v
+	out.Name = x.Name
+	if _oneofEmail0, ok := x.Contact.(*User_Email); ok {
+		_valContactEmail := _oneofEmail0.Email
+		out.ContactEmail = &_valContactEmail
 	}
-	_pathSource := []string{"base", "source"}
-	if v, ok := into.GetString(x, _pathSource); ok {
-		out.Source = v
+	if _oneofPhone0, ok := x.Contact.(*User_Phone); ok {
+		_valContactPhone := _oneofPhone0.Phone
+		out.ContactPhone = &_valContactPhone
 	}
-	_pathName := []string{"name"}
-	if v, ok := into.GetString(x, _pathName); ok {
-		out.Name = v
+	if x.Base != nil {
+		out.Id = x.Base.Id
 	}
-	_pathContactEmail := []string{"email"}
-	if v, ok := into.GetString(x, _pathContactEmail); ok {
-		out.ContactEmail = &v
-	}
-	_pathContactPhone := []string{"phone"}
-	if v, ok := into.GetString(x, _pathContactPhone); ok {
-		out.ContactPhone = &v
+	if x.Base != nil {
+		out.Source = x.Base.Source
 	}
 	return out
 }
@@ -117,20 +95,21 @@ func (x *UserPlain) IntoPbErr() (*User, error) {
 		return nil, nil
 	}
 	out := &User{}
-	_pathId := []string{"base", "id"}
-	into.SetString(out, _pathId, x.Id)
-	_pathSource := []string{"base", "source"}
-	into.SetString(out, _pathSource, x.Source)
-	_pathName := []string{"name"}
-	into.SetString(out, _pathName, x.Name)
-	_pathContactEmail := []string{"email"}
+	out.Name = x.Name
 	if x.ContactEmail != nil {
-		into.SetString(out, _pathContactEmail, *x.ContactEmail)
+		out.Contact = &User_Email{Email: *x.ContactEmail}
 	}
-	_pathContactPhone := []string{"phone"}
 	if x.ContactPhone != nil {
-		into.SetString(out, _pathContactPhone, *x.ContactPhone)
+		out.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
+	out.Base.Id = x.Id
+	if out.Base == nil {
+		out.Base = &BaseInfo{}
+	}
+	out.Base.Source = x.Source
 	return out, nil
 }
 
@@ -139,25 +118,20 @@ func (x *User) IntoPlainErr() (*UserPlain, error) {
 		return nil, nil
 	}
 	out := &UserPlain{}
-	_pathId := []string{"base", "id"}
-	if v, ok := into.GetString(x, _pathId); ok {
-		out.Id = v
+	out.Name = x.Name
+	if _oneofEmail0, ok := x.Contact.(*User_Email); ok {
+		_valContactEmail := _oneofEmail0.Email
+		out.ContactEmail = &_valContactEmail
 	}
-	_pathSource := []string{"base", "source"}
-	if v, ok := into.GetString(x, _pathSource); ok {
-		out.Source = v
+	if _oneofPhone0, ok := x.Contact.(*User_Phone); ok {
+		_valContactPhone := _oneofPhone0.Phone
+		out.ContactPhone = &_valContactPhone
 	}
-	_pathName := []string{"name"}
-	if v, ok := into.GetString(x, _pathName); ok {
-		out.Name = v
+	if x.Base != nil {
+		out.Id = x.Base.Id
 	}
-	_pathContactEmail := []string{"email"}
-	if v, ok := into.GetString(x, _pathContactEmail); ok {
-		out.ContactEmail = &v
-	}
-	_pathContactPhone := []string{"phone"}
-	if v, ok := into.GetString(x, _pathContactPhone); ok {
-		out.ContactPhone = &v
+	if x.Base != nil {
+		out.Source = x.Base.Source
 	}
 	return out, nil
 }
@@ -167,22 +141,37 @@ func (x *UserEventPlain) IntoPb() *UserEvent {
 		return nil
 	}
 	out := &UserEvent{}
-	_pathSource := []string{"user", "base", "source"}
-	into.SetString(out, _pathSource, x.Source)
-	_pathName := []string{"user", "name"}
-	into.SetString(out, _pathName, x.Name)
-	_pathContactEmail := []string{"user", "email"}
 	if x.ContactEmail != nil {
-		into.SetString(out, _pathContactEmail, *x.ContactEmail)
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Email{Email: *x.ContactEmail}
 	}
-	_pathContactPhone := []string{"user", "phone"}
 	if x.ContactPhone != nil {
-		into.SetString(out, _pathContactPhone, *x.ContactPhone)
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
-	_pathEventType := []string{"event_type"}
-	into.SetString(out, _pathEventType, x.EventType)
-	_pathId := []string{"user", "base", "id"}
-	into.SetString(out, _pathId, x.Id)
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
+	out.User.Base.Id = x.Id
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
+	out.User.Base.Source = x.Source
+	out.EventType = x.EventType
+	if out.User == nil {
+		out.User = &User{}
+	}
+	out.User.Name = x.Name
 	return out
 }
 
@@ -191,29 +180,31 @@ func (x *UserEvent) IntoPlain() *UserEventPlain {
 		return nil
 	}
 	out := &UserEventPlain{}
-	_pathSource := []string{"user", "base", "source"}
-	if v, ok := into.GetString(x, _pathSource); ok {
-		out.Source = v
+	if x.User != nil {
+		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
+			_valContactEmail := _oneofEmail1.Email
+			out.ContactEmail = &_valContactEmail
+		}
 	}
-	_pathName := []string{"user", "name"}
-	if v, ok := into.GetString(x, _pathName); ok {
-		out.Name = v
+	if x.User != nil {
+		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
+			_valContactPhone := _oneofPhone1.Phone
+			out.ContactPhone = &_valContactPhone
+		}
 	}
-	_pathContactEmail := []string{"user", "email"}
-	if v, ok := into.GetString(x, _pathContactEmail); ok {
-		out.ContactEmail = &v
+	if x.User != nil {
+		if x.User.Base != nil {
+			out.Id = x.User.Base.Id
+		}
 	}
-	_pathContactPhone := []string{"user", "phone"}
-	if v, ok := into.GetString(x, _pathContactPhone); ok {
-		out.ContactPhone = &v
+	if x.User != nil {
+		if x.User.Base != nil {
+			out.Source = x.User.Base.Source
+		}
 	}
-	_pathEventType := []string{"event_type"}
-	if v, ok := into.GetString(x, _pathEventType); ok {
-		out.EventType = v
-	}
-	_pathId := []string{"user", "base", "id"}
-	if v, ok := into.GetString(x, _pathId); ok {
-		out.Id = v
+	out.EventType = x.EventType
+	if x.User != nil {
+		out.Name = x.User.Name
 	}
 	return out
 }
@@ -223,22 +214,37 @@ func (x *UserEventPlain) IntoPbErr() (*UserEvent, error) {
 		return nil, nil
 	}
 	out := &UserEvent{}
-	_pathSource := []string{"user", "base", "source"}
-	into.SetString(out, _pathSource, x.Source)
-	_pathName := []string{"user", "name"}
-	into.SetString(out, _pathName, x.Name)
-	_pathContactEmail := []string{"user", "email"}
 	if x.ContactEmail != nil {
-		into.SetString(out, _pathContactEmail, *x.ContactEmail)
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Email{Email: *x.ContactEmail}
 	}
-	_pathContactPhone := []string{"user", "phone"}
 	if x.ContactPhone != nil {
-		into.SetString(out, _pathContactPhone, *x.ContactPhone)
+		if out.User == nil {
+			out.User = &User{}
+		}
+		out.User.Contact = &User_Phone{Phone: *x.ContactPhone}
 	}
-	_pathEventType := []string{"event_type"}
-	into.SetString(out, _pathEventType, x.EventType)
-	_pathId := []string{"user", "base", "id"}
-	into.SetString(out, _pathId, x.Id)
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
+	out.User.Base.Id = x.Id
+	if out.User == nil {
+		out.User = &User{}
+	}
+	if out.User.Base == nil {
+		out.User.Base = &BaseInfo{}
+	}
+	out.User.Base.Source = x.Source
+	out.EventType = x.EventType
+	if out.User == nil {
+		out.User = &User{}
+	}
+	out.User.Name = x.Name
 	return out, nil
 }
 
@@ -247,29 +253,31 @@ func (x *UserEvent) IntoPlainErr() (*UserEventPlain, error) {
 		return nil, nil
 	}
 	out := &UserEventPlain{}
-	_pathSource := []string{"user", "base", "source"}
-	if v, ok := into.GetString(x, _pathSource); ok {
-		out.Source = v
+	if x.User != nil {
+		if _oneofEmail1, ok := x.User.Contact.(*User_Email); ok {
+			_valContactEmail := _oneofEmail1.Email
+			out.ContactEmail = &_valContactEmail
+		}
 	}
-	_pathName := []string{"user", "name"}
-	if v, ok := into.GetString(x, _pathName); ok {
-		out.Name = v
+	if x.User != nil {
+		if _oneofPhone1, ok := x.User.Contact.(*User_Phone); ok {
+			_valContactPhone := _oneofPhone1.Phone
+			out.ContactPhone = &_valContactPhone
+		}
 	}
-	_pathContactEmail := []string{"user", "email"}
-	if v, ok := into.GetString(x, _pathContactEmail); ok {
-		out.ContactEmail = &v
+	if x.User != nil {
+		if x.User.Base != nil {
+			out.Id = x.User.Base.Id
+		}
 	}
-	_pathContactPhone := []string{"user", "phone"}
-	if v, ok := into.GetString(x, _pathContactPhone); ok {
-		out.ContactPhone = &v
+	if x.User != nil {
+		if x.User.Base != nil {
+			out.Source = x.User.Base.Source
+		}
 	}
-	_pathEventType := []string{"event_type"}
-	if v, ok := into.GetString(x, _pathEventType); ok {
-		out.EventType = v
-	}
-	_pathId := []string{"user", "base", "id"}
-	if v, ok := into.GetString(x, _pathId); ok {
-		out.Id = v
+	out.EventType = x.EventType
+	if x.User != nil {
+		out.Name = x.User.Name
 	}
 	return out, nil
 }

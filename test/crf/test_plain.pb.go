@@ -11,16 +11,16 @@ type VirtualTypePlain struct {
 }
 
 type EventPlain struct {
-	Path                        *string       `json:"path,omitempty"`
-	ParentEventId               string        `json:"parentEventId"`
 	EventId                     int32         `json:"eventId"`
+	SomeEventStringPayload      uuid.UUID     `json:"someEventStringPayload"`
 	Process                     *ProcessPlain `json:"process,omitempty"`
+	Path                        *string       `json:"path,omitempty"`
 	PathCRF                     string        `json:"pathCRF"`
-	OtherEvent                  *string       `json:"otherEvent,omitempty"`
 	NonPlatformEventCustomEvent *string       `json:"nonPlatformEventCustomEvent,omitempty"`
 	NonPlatformEventPath        string        `json:"nonPlatformEventPath"`
 	EventVirtualType            string        `json:"eventVirtualType"`
-	SomeEventStringPayload      uuid.UUID     `json:"someEventStringPayload"`
+	OtherEvent                  *string       `json:"otherEvent,omitempty"`
+	ParentEventId               string        `json:"parentEventId"`
 }
 
 type EventDataPlain struct {

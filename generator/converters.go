@@ -7,6 +7,9 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/yaroher/protoc-gen-go-plain/generator/empath"
+	"github.com/yaroher/protoc-gen-go-plain/generator/marker"
+	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/typepb"
 )
 
@@ -31,9 +34,7 @@ func (g *Generator) RenderConverters(typeIRs []*TypePbIR) error {
 		out.P()
 		out.P("package ", ir.File.GoPackageName)
 		out.P()
-		imports := map[string]struct{}{
-			"github.com/yaroher/protoc-gen-go-plain/into": {},
-		}
+		imports := map[string]struct{}{}
 		if g.hasCrfFields(ir) {
 			imports["strings"] = struct{}{}
 		}
@@ -60,6 +61,27 @@ func (g *Generator) RenderConverters(typeIRs []*TypePbIR) error {
 		}
 		out.P(")")
 		out.P()
+
+		if g.hasCrfFields(ir) {
+			out.P("func parseCRFPath(s string) []string {")
+			out.P("\tif s == \"\" {")
+			out.P("\t\treturn nil")
+			out.P("\t}")
+			out.P("\tparts := strings.Split(s, \"/\")")
+			out.P("\tresult := make([]string, 0, len(parts))")
+			out.P("\tfor _, p := range parts {")
+			out.P("\t\tif p == \"\" {")
+			out.P("\t\t\tcontinue")
+			out.P("\t\t}")
+			out.P("\t\tif idx := strings.Index(p, \"?\"); idx >= 0 {")
+			out.P("\t\t\tp = p[:idx]")
+			out.P("\t\t}")
+			out.P("\t\tresult = append(result, p)")
+			out.P("\t}")
+			out.P("\treturn result")
+			out.P("}")
+			out.P()
+		}
 
 		for _, name := range msgNames {
 			msg := ir.Messages[name]
@@ -96,50 +118,37 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 			continue
 		}
 		fieldName := g.fieldGoName(field)
+		segments, ok := g.pbPathSegments(out, ir, msg, path)
+		if !ok {
+			out.P("\t// skip invalid path for ", fieldName)
+			continue
+		}
 
-		pathVar := g.pathVarName(field)
-		out.P("\t", pathVar, " := []string{", quoteSlice(path), "}")
-		crfGo := ""
-		if hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker) {
-			crfGo = goFieldNameFromPlain(g.plainName(field) + "CRF")
+		isCrf := hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker)
+		if isCrf {
+			crfGo := goFieldNameFromPlain(g.plainName(field) + "CRF")
+			basePath := strings.Join(path, "/")
+			paths := g.expandCrfPaths(g.crfPaths(field), basePath)
 			out.P("\tif x.", crfGo, " != \"\" {")
-			out.P("\t\t", pathVar, " = into.ParseCRFPath(x.", crfGo, ")")
+			out.P("\t\t_crfPath := strings.Join(parseCRFPath(x.", crfGo, "), \"/\")")
+			out.P("\t\tswitch _crfPath {")
+			for _, crfPath := range paths {
+				crfParts := strings.Split(crfPath, "/")
+				crfSegments, ok := g.pbPathSegments(out, ir, msg, crfParts)
+				if !ok {
+					continue
+				}
+				out.P("\t\tcase ", fmt.Sprintf("%q", crfPath), ":")
+				g.renderFieldIntoPb(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t\t\t")
+			}
+			out.P("\t\t}")
+			out.P("\t} else {")
+			g.renderFieldIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t\t")
 			out.P("\t}")
+			continue
 		}
 
-		if g.hasOverride(field) {
-			g.renderOverrideIntoPb(out, ir, msg, field, fieldName, pathVar, casterTypes)
-		} else {
-			switch field.Kind {
-			case typepb.Field_TYPE_MESSAGE:
-				out.P("\tif x.", fieldName, " != nil {")
-				childArgs := g.childCasterArgs(ir, field, messageCasterTypes, true)
-				out.P("\t\tinto.SetMessage(out, ", pathVar, ", x.", fieldName, ".IntoPb(", childArgs, "))")
-				out.P("\t}")
-			case typepb.Field_TYPE_STRING:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetString", pathVar)
-			case typepb.Field_TYPE_BOOL:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetBool", pathVar)
-			case typepb.Field_TYPE_INT32, typepb.Field_TYPE_SINT32, typepb.Field_TYPE_SFIXED32:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetInt32", pathVar)
-			case typepb.Field_TYPE_UINT32, typepb.Field_TYPE_FIXED32:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetUint32", pathVar)
-			case typepb.Field_TYPE_INT64, typepb.Field_TYPE_SINT64, typepb.Field_TYPE_SFIXED64:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetInt64", pathVar)
-			case typepb.Field_TYPE_UINT64, typepb.Field_TYPE_FIXED64:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetUint64", pathVar)
-			case typepb.Field_TYPE_FLOAT:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetFloat32", pathVar)
-			case typepb.Field_TYPE_DOUBLE:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetFloat64", pathVar)
-			case typepb.Field_TYPE_BYTES:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetBytes", pathVar)
-			case typepb.Field_TYPE_ENUM:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetEnum", pathVar)
-			default:
-				// skip unsupported types for now
-			}
-		}
+		g.renderFieldIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t")
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -167,55 +176,29 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 			continue
 		}
 		fieldName := g.fieldGoName(field)
-
-		pathVar := g.pathVarName(field)
-		out.P("\t", pathVar, " := []string{", quoteSlice(path), "}")
-
-		if g.hasOverride(field) {
-			g.renderOverrideIntoPlain(out, ir, msg, field, fieldName, pathVar, casterTypes)
-		} else {
-			switch field.Kind {
-			case typepb.Field_TYPE_MESSAGE:
-				out.P("\tif v, ok := into.GetMessage(x, ", pathVar, "); ok {")
-				pbType := g.resolvePbTypeName(ir, field.TypeUrl)
-				if pbType == "" {
-					out.P("\t\t// skip virtual types in converters")
-					out.P("\t\t_ = v")
-					out.P("\t}")
-					break
-				}
-				out.P("\t\tif mv, ok := v.(*", pbType, "); ok {")
-				childArgs := g.childCasterArgs(ir, field, messageCasterTypes, false)
-				out.P("\t\t\tout.", fieldName, " = mv.IntoPlain(", childArgs, ")")
-				out.P("\t\t}")
-				if hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker) {
-					out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-				}
-				out.P("\t}")
-			case typepb.Field_TYPE_STRING:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetString", pathVar)
-			case typepb.Field_TYPE_BOOL:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetBool", pathVar)
-			case typepb.Field_TYPE_INT32, typepb.Field_TYPE_SINT32, typepb.Field_TYPE_SFIXED32:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetInt32", pathVar)
-			case typepb.Field_TYPE_UINT32, typepb.Field_TYPE_FIXED32:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetUint32", pathVar)
-			case typepb.Field_TYPE_INT64, typepb.Field_TYPE_SINT64, typepb.Field_TYPE_SFIXED64:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetInt64", pathVar)
-			case typepb.Field_TYPE_UINT64, typepb.Field_TYPE_FIXED64:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetUint64", pathVar)
-			case typepb.Field_TYPE_FLOAT:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetFloat32", pathVar)
-			case typepb.Field_TYPE_DOUBLE:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetFloat64", pathVar)
-			case typepb.Field_TYPE_BYTES:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetBytes", pathVar)
-			case typepb.Field_TYPE_ENUM:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetEnum", pathVar)
-			default:
-				// skip unsupported types for now
-			}
+		segments, ok := g.pbPathSegments(out, ir, msg, path)
+		if !ok {
+			out.P("\t// skip invalid path for ", fieldName)
+			continue
 		}
+		pathString := strings.Join(path, "/")
+		isCrf := hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker)
+		if isCrf {
+			paths := g.expandCrfPaths(g.crfPaths(field), pathString)
+			for i, crfPath := range paths {
+				crfParts := strings.Split(crfPath, "/")
+				crfSegments, ok := g.pbPathSegments(out, ir, msg, crfParts)
+				if !ok {
+					continue
+				}
+				if i == 0 {
+					out.P("\t// CRF paths")
+				}
+				g.renderFieldIntoPlain(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t", crfPath, true)
+			}
+			continue
+		}
+		g.renderFieldIntoPlain(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", pathString, false)
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -241,54 +224,35 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 			continue
 		}
 		fieldName := g.fieldGoName(field)
-
-		pathVar := g.pathVarName(field)
-		out.P("\t", pathVar, " := []string{", quoteSlice(path), "}")
-		crfGo := ""
-		if hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker) {
-			crfGo = goFieldNameFromPlain(g.plainName(field) + "CRF")
+		segments, ok := g.pbPathSegments(out, ir, msg, path)
+		if !ok {
+			out.P("\t// skip invalid path for ", fieldName)
+			continue
+		}
+		isCrf := hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker)
+		if isCrf {
+			crfGo := goFieldNameFromPlain(g.plainName(field) + "CRF")
+			basePath := strings.Join(path, "/")
+			paths := g.expandCrfPaths(g.crfPaths(field), basePath)
 			out.P("\tif x.", crfGo, " != \"\" {")
-			out.P("\t\t", pathVar, " = into.ParseCRFPath(x.", crfGo, ")")
-			out.P("\t}")
-		}
-
-		if g.hasOverride(field) {
-			g.renderOverrideIntoPbErr(out, ir, msg, field, fieldName, pathVar, casterTypes)
-		} else {
-			switch field.Kind {
-			case typepb.Field_TYPE_MESSAGE:
-				out.P("\tif x.", fieldName, " != nil {")
-				childArgs := g.childCasterArgs(ir, field, messageCasterTypes, true)
-				out.P("\t\tmv, err := x.", fieldName, ".IntoPbErr(", childArgs, ")")
-				out.P("\t\tif err != nil {")
-				out.P("\t\t\treturn nil, err")
-				out.P("\t\t}")
-				out.P("\t\tinto.SetMessage(out, ", pathVar, ", mv)")
-				out.P("\t}")
-			case typepb.Field_TYPE_STRING:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetString", pathVar)
-			case typepb.Field_TYPE_BOOL:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetBool", pathVar)
-			case typepb.Field_TYPE_INT32, typepb.Field_TYPE_SINT32, typepb.Field_TYPE_SFIXED32:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetInt32", pathVar)
-			case typepb.Field_TYPE_UINT32, typepb.Field_TYPE_FIXED32:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetUint32", pathVar)
-			case typepb.Field_TYPE_INT64, typepb.Field_TYPE_SINT64, typepb.Field_TYPE_SFIXED64:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetInt64", pathVar)
-			case typepb.Field_TYPE_UINT64, typepb.Field_TYPE_FIXED64:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetUint64", pathVar)
-			case typepb.Field_TYPE_FLOAT:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetFloat32", pathVar)
-			case typepb.Field_TYPE_DOUBLE:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetFloat64", pathVar)
-			case typepb.Field_TYPE_BYTES:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetBytes", pathVar)
-			case typepb.Field_TYPE_ENUM:
-				g.renderScalarIntoPb(out, field, fieldName, "into.SetEnum", pathVar)
-			default:
-				// skip unsupported types for now
+			out.P("\t\t_crfPath := strings.Join(parseCRFPath(x.", crfGo, "), \"/\")")
+			out.P("\t\tswitch _crfPath {")
+			for _, crfPath := range paths {
+				crfParts := strings.Split(crfPath, "/")
+				crfSegments, ok := g.pbPathSegments(out, ir, msg, crfParts)
+				if !ok {
+					continue
+				}
+				out.P("\t\tcase ", fmt.Sprintf("%q", crfPath), ":")
+				g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t\t\t")
 			}
+			out.P("\t\t}")
+			out.P("\t} else {")
+			g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t\t")
+			out.P("\t}")
+			continue
 		}
+		g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t")
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -314,59 +278,29 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 			continue
 		}
 		fieldName := g.fieldGoName(field)
-
-		pathVar := g.pathVarName(field)
-		out.P("\t", pathVar, " := []string{", quoteSlice(path), "}")
-
-		if g.hasOverride(field) {
-			g.renderOverrideIntoPlainErr(out, ir, msg, field, fieldName, pathVar, casterTypes)
-		} else {
-			switch field.Kind {
-			case typepb.Field_TYPE_MESSAGE:
-				out.P("\tif v, ok := into.GetMessage(x, ", pathVar, "); ok {")
-				pbType := g.resolvePbTypeName(ir, field.TypeUrl)
-				if pbType == "" {
-					out.P("\t\t// skip virtual types in converters")
-					out.P("\t\t_ = v")
-					out.P("\t}")
-					break
-				}
-				out.P("\t\tif mv, ok := v.(*", pbType, "); ok {")
-				childArgs := g.childCasterArgs(ir, field, messageCasterTypes, false)
-				out.P("\t\t\tplainVal, err := mv.IntoPlainErr(", childArgs, ")")
-				out.P("\t\t\tif err != nil {")
-				out.P("\t\t\t\treturn nil, err")
-				out.P("\t\t\t}")
-				out.P("\t\t\tout.", fieldName, " = plainVal")
-				out.P("\t\t}")
-				if hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker) {
-					out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-				}
-				out.P("\t}")
-			case typepb.Field_TYPE_STRING:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetString", pathVar)
-			case typepb.Field_TYPE_BOOL:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetBool", pathVar)
-			case typepb.Field_TYPE_INT32, typepb.Field_TYPE_SINT32, typepb.Field_TYPE_SFIXED32:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetInt32", pathVar)
-			case typepb.Field_TYPE_UINT32, typepb.Field_TYPE_FIXED32:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetUint32", pathVar)
-			case typepb.Field_TYPE_INT64, typepb.Field_TYPE_SINT64, typepb.Field_TYPE_SFIXED64:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetInt64", pathVar)
-			case typepb.Field_TYPE_UINT64, typepb.Field_TYPE_FIXED64:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetUint64", pathVar)
-			case typepb.Field_TYPE_FLOAT:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetFloat32", pathVar)
-			case typepb.Field_TYPE_DOUBLE:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetFloat64", pathVar)
-			case typepb.Field_TYPE_BYTES:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetBytes", pathVar)
-			case typepb.Field_TYPE_ENUM:
-				g.renderScalarIntoPlain(out, field, fieldName, "into.GetEnum", pathVar)
-			default:
-				// skip unsupported types for now
-			}
+		segments, ok := g.pbPathSegments(out, ir, msg, path)
+		if !ok {
+			out.P("\t// skip invalid path for ", fieldName)
+			continue
 		}
+		pathString := strings.Join(path, "/")
+		isCrf := hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker)
+		if isCrf {
+			paths := g.expandCrfPaths(g.crfPaths(field), pathString)
+			for i, crfPath := range paths {
+				crfParts := strings.Split(crfPath, "/")
+				crfSegments, ok := g.pbPathSegments(out, ir, msg, crfParts)
+				if !ok {
+					continue
+				}
+				if i == 0 {
+					out.P("\t// CRF paths")
+				}
+				g.renderFieldIntoPlainErr(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t", crfPath, true)
+			}
+			continue
+		}
+		g.renderFieldIntoPlainErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", pathString, false)
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -377,48 +311,363 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 	out.P("}")
 }
 
-func (g *Generator) renderScalarIntoPb(out typeWriter, field *typepb.Field, fieldName, fn string, pathVar string) {
-	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-		out.P("\tif len(x.", fieldName, ") > 0 {")
-		out.P("\t\t", fn, "List(out, ", pathVar, ", x.", fieldName, ")")
-		out.P("\t}")
+func (g *Generator) renderAssignScalarAtLeaf(out typeWriter, field *typepb.Field, leaf pbPathSegment, access, valueExpr, indent string) {
+	if leaf.isOneof && field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+		out.P(indent, "// repeated oneof scalar is not supported")
 		return
 	}
-
-	if g.isPointerField(field) {
-		out.P("\tif x.", fieldName, " != nil {")
-		out.P("\t\t", fn, "(out, ", pathVar, ", *x.", fieldName, ")")
-		out.P("\t}")
+	enumType := g.enumGoType(out, leaf)
+	if enumType != "" {
+		valueExpr = enumType + "(" + valueExpr + ")"
+	}
+	if leaf.isOneof {
+		out.P(indent, access, ".", leaf.oneofGoName, " = &", leaf.oneofWrapperGo, "{", leaf.goName, ": ", valueExpr, "}")
 		return
 	}
-
-	out.P("\t", fn, "(out, ", pathVar, ", x.", fieldName, ")")
+	if isPointerScalarField(leaf.field) {
+		valVar := g.valueVarName(field)
+		out.P(indent, valVar, " := ", valueExpr)
+		out.P(indent, access, ".", leaf.goName, " = &", valVar)
+		return
+	}
+	out.P(indent, access, ".", leaf.goName, " = ", valueExpr)
 }
 
-func (g *Generator) renderScalarIntoPlain(out typeWriter, field *typepb.Field, fieldName, fn string, pathVar string) {
+func (g *Generator) renderAssignMessageAtLeaf(out typeWriter, leaf pbPathSegment, access, valueExpr, indent string) {
+	if leaf.isOneof {
+		out.P(indent, access, ".", leaf.oneofGoName, " = &", leaf.oneofWrapperGo, "{", leaf.goName, ": ", valueExpr, "}")
+		return
+	}
+	out.P(indent, access, ".", leaf.goName, " = ", valueExpr)
+}
+
+func (g *Generator) renderScalarIntoPb(out typeWriter, field *typepb.Field, fieldName string, segments []pbPathSegment, indent string) {
+	if len(segments) == 0 {
+		return
+	}
+	leaf := segments[len(segments)-1]
 	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-		out.P("\tif v, ok := ", fn, "List(x, ", pathVar, "); ok {")
-		out.P("\t\tout.", fieldName, " = v")
-		out.P("\t}")
+		out.P(indent, "if len(x.", fieldName, ") > 0 {")
+		inner := indent + "\t"
+		access, ok := g.renderEnsurePath(out, "out", segments, inner)
+		if !ok {
+			out.P(inner, "// skip invalid path")
+			out.P(indent, "}")
+			return
+		}
+		enumType := g.enumGoType(out, leaf)
+		if enumType != "" {
+			valVar := g.valueVarName(field) + "Slice"
+			out.P(inner, valVar, " := make([]", enumType, ", len(x.", fieldName, "))")
+			out.P(inner, "for i, el := range x.", fieldName, " {")
+			out.P(inner, "\t", valVar, "[i] = ", enumType, "(el)")
+			out.P(inner, "}")
+			out.P(inner, access, ".", leaf.goName, " = ", valVar)
+		} else {
+			out.P(inner, access, ".", leaf.goName, " = x.", fieldName)
+		}
+		out.P(indent, "}")
 		return
 	}
 
 	if g.isPointerField(field) {
-		out.P("\tif v, ok := ", fn, "(x, ", pathVar, "); ok {")
-		out.P("\t\tout.", fieldName, " = &v")
-		if hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker) {
-			out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
+		out.P(indent, "if x.", fieldName, " != nil {")
+		inner := indent + "\t"
+		access, ok := g.renderEnsurePath(out, "out", segments, inner)
+		if !ok {
+			out.P(inner, "// skip invalid path")
+			out.P(indent, "}")
+			return
 		}
-		out.P("\t}")
+		valueExpr := "*x." + fieldName
+		g.renderAssignScalarAtLeaf(out, field, leaf, access, valueExpr, inner)
+		out.P(indent, "}")
 		return
 	}
 
-	out.P("\tif v, ok := ", fn, "(x, ", pathVar, "); ok {")
-	out.P("\t\tout.", fieldName, " = v")
-	if hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker) {
-		out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
+	access, ok := g.renderEnsurePath(out, "out", segments, indent)
+	if !ok {
+		out.P(indent, "// skip invalid path")
+		return
 	}
-	out.P("\t}")
+	valueExpr := "x." + fieldName
+	g.renderAssignScalarAtLeaf(out, field, leaf, access, valueExpr, indent)
+}
+
+func (g *Generator) renderScalarIntoPlain(out typeWriter, field *typepb.Field, fieldName string, segments []pbPathSegment, indent, pathString string, setCrf bool) {
+	if len(segments) == 0 {
+		return
+	}
+	leaf := segments[len(segments)-1]
+	leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+	if !ok {
+		out.P(indent, "// skip invalid path")
+		return
+	}
+	enumType := g.enumGoType(out, leaf)
+
+	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+		out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+		innerIndent += "\t"
+		if enumType != "" {
+			valVar := g.valueVarName(field) + "Slice"
+			out.P(innerIndent, valVar, " := make([]int32, len(", leafAccess, "))")
+			out.P(innerIndent, "for i, el := range ", leafAccess, " {")
+			out.P(innerIndent, "\t", valVar, "[i] = int32(el)")
+			out.P(innerIndent, "}")
+			out.P(innerIndent, "out.", fieldName, " = ", valVar)
+		} else {
+			out.P(innerIndent, "out.", fieldName, " = ", leafAccess)
+		}
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+		}
+		innerIndent = strings.TrimSuffix(innerIndent, "\t")
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+		return
+	}
+
+	valueExpr := leafAccess
+	if enumType != "" {
+		valueExpr = "int32(" + valueExpr + ")"
+	}
+
+	if leaf.isOneof {
+		if field.Kind == typepb.Field_TYPE_MESSAGE {
+			out.P(innerIndent, "if ", valueExpr, " != nil {")
+			innerIndent += "\t"
+		}
+		if g.isPointerField(field) {
+			valVar := g.valueVarName(field)
+			out.P(innerIndent, valVar, " := ", valueExpr)
+			out.P(innerIndent, "out.", fieldName, " = &", valVar)
+		} else {
+			out.P(innerIndent, "out.", fieldName, " = ", valueExpr)
+		}
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+		}
+		if field.Kind == typepb.Field_TYPE_MESSAGE {
+			innerIndent = strings.TrimSuffix(innerIndent, "\t")
+			out.P(innerIndent, "}")
+		}
+		closeGuards(out, innerIndent, closers)
+		return
+	}
+
+	if isPointerScalarField(leaf.field) {
+		out.P(innerIndent, "if ", valueExpr, " != nil {")
+		innerIndent += "\t"
+		valVar := g.valueVarName(field)
+		out.P(innerIndent, valVar, " := *", valueExpr)
+		out.P(innerIndent, "out.", fieldName, " = &", valVar)
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+		}
+		innerIndent = strings.TrimSuffix(innerIndent, "\t")
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+		return
+	}
+
+	needPresence := g.isPointerField(field) || setCrf
+	cond := ""
+	if needPresence {
+		cond = g.scalarPresenceExpr(valueExpr, field.Kind, enumType != "")
+	}
+	if cond != "" {
+		out.P(innerIndent, "if ", cond, " {")
+		innerIndent += "\t"
+	}
+	if g.isPointerField(field) {
+		valVar := g.valueVarName(field)
+		out.P(innerIndent, valVar, " := ", valueExpr)
+		out.P(innerIndent, "out.", fieldName, " = &", valVar)
+	} else {
+		out.P(innerIndent, "out.", fieldName, " = ", valueExpr)
+	}
+	if setCrf {
+		out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+	}
+	if cond != "" {
+		innerIndent = strings.TrimSuffix(innerIndent, "\t")
+		out.P(innerIndent, "}")
+	}
+	closeGuards(out, innerIndent, closers)
+}
+
+func (g *Generator) renderFieldIntoPb(
+	out typeWriter,
+	ir *TypePbIR,
+	msg *typepb.Type,
+	field *typepb.Field,
+	fieldName string,
+	segments []pbPathSegment,
+	casterTypes casterTypes,
+	messageCasterTypes map[string]casterTypes,
+	indent string,
+) {
+	_ = msg
+	if g.hasOverride(field) {
+		g.renderOverrideIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, indent)
+		return
+	}
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "// repeated message is not supported")
+			return
+		}
+		out.P(indent, "if x.", fieldName, " != nil {")
+		inner := indent + "\t"
+		access, ok := g.renderEnsurePath(out, "out", segments, inner)
+		if !ok {
+			out.P(inner, "// skip invalid path")
+			out.P(indent, "}")
+			return
+		}
+		childArgs := g.childCasterArgs(ir, field, messageCasterTypes, true)
+		valueExpr := "x." + fieldName + ".IntoPb(" + childArgs + ")"
+		g.renderAssignMessageAtLeaf(out, segments[len(segments)-1], access, valueExpr, inner)
+		out.P(indent, "}")
+	default:
+		g.renderScalarIntoPb(out, field, fieldName, segments, indent)
+	}
+}
+
+func (g *Generator) renderFieldIntoPbErr(
+	out typeWriter,
+	ir *TypePbIR,
+	msg *typepb.Type,
+	field *typepb.Field,
+	fieldName string,
+	segments []pbPathSegment,
+	casterTypes casterTypes,
+	messageCasterTypes map[string]casterTypes,
+	indent string,
+) {
+	_ = msg
+	if g.hasOverride(field) {
+		g.renderOverrideIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, indent)
+		return
+	}
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "// repeated message is not supported")
+			return
+		}
+		out.P(indent, "if x.", fieldName, " != nil {")
+		inner := indent + "\t"
+		access, ok := g.renderEnsurePath(out, "out", segments, inner)
+		if !ok {
+			out.P(inner, "// skip invalid path")
+			out.P(indent, "}")
+			return
+		}
+		childArgs := g.childCasterArgs(ir, field, messageCasterTypes, true)
+		out.P(inner, "mv, err := x.", fieldName, ".IntoPbErr(", childArgs, ")")
+		out.P(inner, "if err != nil {")
+		out.P(inner, "\treturn nil, err")
+		out.P(inner, "}")
+		g.renderAssignMessageAtLeaf(out, segments[len(segments)-1], access, "mv", inner)
+		out.P(indent, "}")
+	default:
+		g.renderScalarIntoPb(out, field, fieldName, segments, indent)
+	}
+}
+
+func (g *Generator) renderFieldIntoPlain(
+	out typeWriter,
+	ir *TypePbIR,
+	msg *typepb.Type,
+	field *typepb.Field,
+	fieldName string,
+	segments []pbPathSegment,
+	casterTypes casterTypes,
+	messageCasterTypes map[string]casterTypes,
+	indent string,
+	pathString string,
+	setCrf bool,
+) {
+	_ = msg
+	if g.hasOverride(field) {
+		g.renderOverrideIntoPlain(out, ir, msg, field, fieldName, segments, casterTypes, indent, pathString, setCrf)
+		return
+	}
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "// repeated message is not supported")
+			return
+		}
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
+			return
+		}
+		out.P(innerIndent, "if ", leafAccess, " != nil {")
+		innerIndent += "\t"
+		childArgs := g.childCasterArgs(ir, field, messageCasterTypes, false)
+		out.P(innerIndent, "out.", fieldName, " = ", leafAccess, ".IntoPlain(", childArgs, ")")
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+		}
+		innerIndent = strings.TrimSuffix(innerIndent, "\t")
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+	default:
+		g.renderScalarIntoPlain(out, field, fieldName, segments, indent, pathString, setCrf)
+	}
+}
+
+func (g *Generator) renderFieldIntoPlainErr(
+	out typeWriter,
+	ir *TypePbIR,
+	msg *typepb.Type,
+	field *typepb.Field,
+	fieldName string,
+	segments []pbPathSegment,
+	casterTypes casterTypes,
+	messageCasterTypes map[string]casterTypes,
+	indent string,
+	pathString string,
+	setCrf bool,
+) {
+	_ = msg
+	if g.hasOverride(field) {
+		g.renderOverrideIntoPlainErr(out, ir, msg, field, fieldName, segments, casterTypes, indent, pathString, setCrf)
+		return
+	}
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "// repeated message is not supported")
+			return
+		}
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
+			return
+		}
+		out.P(innerIndent, "if ", leafAccess, " != nil {")
+		innerIndent += "\t"
+		childArgs := g.childCasterArgs(ir, field, messageCasterTypes, false)
+		out.P(innerIndent, "plainVal, err := ", leafAccess, ".IntoPlainErr(", childArgs, ")")
+		out.P(innerIndent, "if err != nil {")
+		out.P(innerIndent, "\treturn nil, err")
+		out.P(innerIndent, "}")
+		out.P(innerIndent, "out.", fieldName, " = plainVal")
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+		}
+		innerIndent = strings.TrimSuffix(innerIndent, "\t")
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
+	default:
+		g.renderScalarIntoPlain(out, field, fieldName, segments, indent, pathString, setCrf)
+	}
 }
 
 func (g *Generator) isPointerField(field *typepb.Field) bool {
@@ -515,6 +764,280 @@ func (g *Generator) hasCrfFields(ir *TypePbIR) bool {
 		}
 	}
 	return false
+}
+
+type pbPathSegment struct {
+	protoName      string
+	goName         string
+	messageGoType  string
+	isOneof        bool
+	oneofGoName    string
+	oneofWrapperGo string
+	field          *protogen.Field
+}
+
+func (g *Generator) qualifyGoIdent(out typeWriter, ident protogen.GoIdent) string {
+	type qualifier interface {
+		QualifiedGoIdent(protogen.GoIdent) string
+	}
+	if q, ok := out.(qualifier); ok {
+		return q.QualifiedGoIdent(ident)
+	}
+	return ident.GoName
+}
+
+func (g *Generator) findPbMessage(ir *TypePbIR, fullName string) *protogen.Message {
+	if ir == nil || ir.File == nil {
+		return nil
+	}
+	target := getShortName(fullName)
+	for _, m := range ir.File.Messages {
+		if string(m.Desc.Name()) == target {
+			return m
+		}
+	}
+	return nil
+}
+
+func (g *Generator) findPbField(msg *protogen.Message, protoName string) *protogen.Field {
+	if msg == nil {
+		return nil
+	}
+	for _, f := range msg.Fields {
+		if string(f.Desc.Name()) == protoName {
+			return f
+		}
+	}
+	return nil
+}
+
+func (g *Generator) oneofWrapperType(parentQualified, fieldGoName string) string {
+	if idx := strings.LastIndex(parentQualified, "."); idx >= 0 {
+		pkg := parentQualified[:idx]
+		parent := parentQualified[idx+1:]
+		return pkg + "." + parent + "_" + fieldGoName
+	}
+	return parentQualified + "_" + fieldGoName
+}
+
+func (g *Generator) pbPathSegments(out typeWriter, ir *TypePbIR, msg *typepb.Type, path []string) ([]pbPathSegment, bool) {
+	if len(path) == 0 {
+		return nil, false
+	}
+	pbMsg := g.findPbMessage(ir, msg.Name)
+	if pbMsg == nil {
+		return nil, false
+	}
+	current := pbMsg
+	currentQualified := g.qualifyGoIdent(out, current.GoIdent)
+	segments := make([]pbPathSegment, 0, len(path))
+	for i, name := range path {
+		field := g.findPbField(current, name)
+		if field == nil {
+			return nil, false
+		}
+		seg := pbPathSegment{
+			protoName: name,
+			goName:    field.GoName,
+			field:     field,
+		}
+		if field.Desc.Kind() == protoreflect.MessageKind && field.Message != nil {
+			seg.messageGoType = g.qualifyGoIdent(out, field.Message.GoIdent)
+		}
+		if field.Oneof != nil {
+			seg.isOneof = true
+			seg.oneofGoName = field.Oneof.GoName
+			seg.oneofWrapperGo = g.oneofWrapperType(currentQualified, field.GoName)
+		}
+		segments = append(segments, seg)
+		if i < len(path)-1 {
+			if field.Desc.Kind() != protoreflect.MessageKind || field.Message == nil {
+				return nil, false
+			}
+			current = field.Message
+			currentQualified = g.qualifyGoIdent(out, current.GoIdent)
+		}
+	}
+	return segments, true
+}
+
+func (g *Generator) oneofVarName(seg pbPathSegment, idx int) string {
+	return fmt.Sprintf("_oneof%s%d", strcase.ToCamel(seg.goName), idx)
+}
+
+func (g *Generator) valueVarName(field *typepb.Field) string {
+	return "_val" + strcase.ToCamel(g.plainName(field))
+}
+
+func isPointerScalarField(field *protogen.Field) bool {
+	if field == nil {
+		return false
+	}
+	if field.Desc.Cardinality() == protoreflect.Repeated {
+		return false
+	}
+	if field.Oneof != nil {
+		return false
+	}
+	if field.Desc.Kind() == protoreflect.MessageKind {
+		return false
+	}
+	return field.Desc.HasPresence()
+}
+
+func (g *Generator) renderEnsurePath(out typeWriter, base string, segments []pbPathSegment, indent string) (string, bool) {
+	access := base
+	for i := 0; i < len(segments)-1; i++ {
+		seg := segments[i]
+		if seg.isOneof {
+			if seg.messageGoType == "" {
+				return "", false
+			}
+			varName := g.oneofVarName(seg, i)
+			out.P(indent, "var ", varName, " *", seg.messageGoType)
+			out.P(indent, "if v, ok := ", access, ".", seg.oneofGoName, ".(*", seg.oneofWrapperGo, "); ok {")
+			out.P(indent, "\t", varName, " = v.", seg.goName)
+			out.P(indent, "}")
+			out.P(indent, "if ", varName, " == nil {")
+			out.P(indent, "\t", varName, " = &", seg.messageGoType, "{}")
+			out.P(indent, "\t", access, ".", seg.oneofGoName, " = &", seg.oneofWrapperGo, "{", seg.goName, ": ", varName, "}")
+			out.P(indent, "}")
+			access = varName
+			continue
+		}
+		if seg.messageGoType == "" {
+			return "", false
+		}
+		accessField := access + "." + seg.goName
+		out.P(indent, "if ", accessField, " == nil {")
+		out.P(indent, "\t", accessField, " = &", seg.messageGoType, "{}")
+		out.P(indent, "}")
+		access = accessField
+	}
+	return access, true
+}
+
+func (g *Generator) renderPathAccessForGet(out typeWriter, base string, segments []pbPathSegment, indent string) (string, string, int, bool) {
+	access := base
+	closers := 0
+	for i, seg := range segments {
+		if seg.isOneof {
+			varName := g.oneofVarName(seg, i)
+			out.P(indent, "if ", varName, ", ok := ", access, ".", seg.oneofGoName, ".(*", seg.oneofWrapperGo, "); ok {")
+			indent += "\t"
+			closers++
+			access = varName + "." + seg.goName
+			if i < len(segments)-1 {
+				out.P(indent, "if ", access, " != nil {")
+				indent += "\t"
+				closers++
+			}
+			continue
+		}
+		if i < len(segments)-1 {
+			access = access + "." + seg.goName
+			out.P(indent, "if ", access, " != nil {")
+			indent += "\t"
+			closers++
+			continue
+		}
+		access = access + "." + seg.goName
+	}
+	return access, indent, closers, true
+}
+
+func (g *Generator) scalarPresenceExpr(expr string, kind typepb.Field_Kind, isEnum bool) string {
+	if isEnum {
+		return expr + " != 0"
+	}
+	switch kind {
+	case typepb.Field_TYPE_STRING:
+		return expr + " != \"\""
+	case typepb.Field_TYPE_BOOL:
+		return expr
+	case typepb.Field_TYPE_BYTES:
+		return "len(" + expr + ") > 0"
+	case typepb.Field_TYPE_FLOAT, typepb.Field_TYPE_DOUBLE:
+		return expr + " != 0"
+	case typepb.Field_TYPE_INT32, typepb.Field_TYPE_SINT32, typepb.Field_TYPE_SFIXED32:
+		return expr + " != 0"
+	case typepb.Field_TYPE_UINT32, typepb.Field_TYPE_FIXED32:
+		return expr + " != 0"
+	case typepb.Field_TYPE_INT64, typepb.Field_TYPE_SINT64, typepb.Field_TYPE_SFIXED64:
+		return expr + " != 0"
+	case typepb.Field_TYPE_UINT64, typepb.Field_TYPE_FIXED64:
+		return expr + " != 0"
+	default:
+		return ""
+	}
+}
+
+func (g *Generator) crfPaths(field *typepb.Field) []string {
+	if field == nil {
+		return nil
+	}
+	raw := marker.Parse(field.TypeUrl).GetMarker(crfPathsMarker)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	paths := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		paths = append(paths, decodeEmpath(part))
+	}
+	return paths
+}
+
+func (g *Generator) enumGoType(out typeWriter, seg pbPathSegment) string {
+	if seg.field == nil || seg.field.Enum == nil {
+		return ""
+	}
+	return g.qualifyGoIdent(out, seg.field.Enum.GoIdent)
+}
+
+func (g *Generator) expandCrfPaths(paths []string, basePath string) []string {
+	seen := make(map[string]struct{})
+	ordered := make([]string, 0, len(paths)+1)
+	appendUnique := func(p string) {
+		if p == "" {
+			return
+		}
+		if _, ok := seen[p]; ok {
+			return
+		}
+		seen[p] = struct{}{}
+		ordered = append(ordered, p)
+	}
+
+	appendUnique(basePath)
+	for _, p := range paths {
+		if p == "" {
+			continue
+		}
+		if basePath != "" && strings.HasSuffix(basePath, p) {
+			prefix := strings.TrimSuffix(basePath, p)
+			prefix = strings.TrimSuffix(prefix, "/")
+			if prefix != "" {
+				appendUnique(prefix + "/" + p)
+			} else {
+				appendUnique(p)
+			}
+		}
+	}
+	for _, p := range paths {
+		appendUnique(p)
+	}
+	return ordered
+}
+
+func closeGuards(out typeWriter, indent string, closers int) {
+	for i := 0; i < closers; i++ {
+		indent = strings.TrimSuffix(indent, "\t")
+		out.P(indent, "}")
+	}
 }
 
 type casterTypes struct {
@@ -866,368 +1389,472 @@ func (g *Generator) scalarListGetter(kind typepb.Field_Kind) string {
 	}
 }
 
-func (g *Generator) renderOverrideIntoPb(out typeWriter, ir *TypePbIR, msg *typepb.Type, field *typepb.Field, fieldName, pathVar string, casterTypes casterTypes) {
+func (g *Generator) renderOverrideIntoPb(out typeWriter, ir *TypePbIR, msg *typepb.Type, field *typepb.Field, fieldName string, segments []pbPathSegment, casterTypes casterTypes, indent string) {
+	_ = msg
 	casterName := g.casterParamName(ir, field, casterTypes, true)
 	if casterName == "" {
-		out.P("\t// missing caster mapping for override")
+		out.P(indent, "// missing caster mapping for override")
 		return
 	}
-	setFn := g.scalarSetter(field.Kind)
-	setListFn := g.scalarListSetter(field.Kind)
-	if field.Kind == typepb.Field_TYPE_MESSAGE {
+	if len(segments) == 0 {
+		out.P(indent, "// skip invalid path")
+		return
+	}
+	leaf := segments[len(segments)-1]
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-			out.P("\t// repeated message with override is not supported")
+			out.P(indent, "// repeated message with override is not supported")
+			return
+		}
+		out.P(indent, "if x.", fieldName, " != nil {")
+		inner := indent + "\t"
+		access, ok := g.renderEnsurePath(out, "out", segments, inner)
+		if !ok {
+			out.P(inner, "// skip invalid path")
+			out.P(indent, "}")
+			return
+		}
+		out.P(inner, "if ", casterName, " == nil {")
+		out.P(inner, "\tpanic(\"missing caster: ", casterName, "\")")
+		out.P(inner, "}")
+		valueExpr := "x." + fieldName
+		if g.isPointerField(field) {
+			valueExpr = "*" + valueExpr
+		}
+		out.P(inner, "pbVal := ", casterName, ".Cast(", valueExpr, ")")
+		out.P(inner, "if pbVal != nil {")
+		g.renderAssignMessageAtLeaf(out, leaf, access, "pbVal", inner+"\t")
+		out.P(inner, "}")
+		out.P(indent, "}")
+		return
+	default:
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			inner := indent + "\t"
+			access, ok := g.renderEnsurePath(out, "out", segments, inner)
+			if !ok {
+				out.P(inner, "// skip invalid path")
+				out.P(indent, "}")
+				return
+			}
+			out.P(inner, "if ", casterName, " == nil {")
+			out.P(inner, "\tpanic(\"missing caster: ", casterName, "\")")
+			out.P(inner, "}")
+			enumType := g.enumGoType(out, leaf)
+			if enumType != "" {
+				valVar := g.valueVarName(field) + "Slice"
+				out.P(inner, valVar, " := make([]", enumType, ", len(x.", fieldName, "))")
+				out.P(inner, "for i, el := range x.", fieldName, " {")
+				out.P(inner, "\t", valVar, "[i] = ", enumType, "(", casterName, ".Cast(el))")
+				out.P(inner, "}")
+				out.P(inner, access, ".", leaf.goName, " = ", valVar)
+			} else {
+				pbElemType, _ := g.overridePbElemType(ir, field)
+				out.P(inner, "vals := make([]", pbElemType, ", len(x.", fieldName, "))")
+				out.P(inner, "for i, el := range x.", fieldName, " {")
+				out.P(inner, "\tvals[i] = ", casterName, ".Cast(el)")
+				out.P(inner, "}")
+				out.P(inner, access, ".", leaf.goName, " = vals")
+			}
+			out.P(indent, "}")
 			return
 		}
 		if g.isPointerField(field) {
-			out.P("\tif x.", fieldName, " != nil {")
-			out.P("\t\tif ", casterName, " == nil {")
-			out.P("\t\t\tpanic(\"missing caster: ", casterName, "\")")
-			out.P("\t\t}")
-			out.P("\t\tpbVal := ", casterName, ".Cast(*x.", fieldName, ")")
-			out.P("\t\tif pbVal != nil {")
-			out.P("\t\t\tinto.SetMessage(out, ", pathVar, ", pbVal)")
-			out.P("\t\t}")
-			out.P("\t}")
+			out.P(indent, "if x.", fieldName, " != nil {")
+			inner := indent + "\t"
+			access, ok := g.renderEnsurePath(out, "out", segments, inner)
+			if !ok {
+				out.P(inner, "// skip invalid path")
+				out.P(indent, "}")
+				return
+			}
+			out.P(inner, "if ", casterName, " == nil {")
+			out.P(inner, "\tpanic(\"missing caster: ", casterName, "\")")
+			out.P(inner, "}")
+			out.P(inner, "val := ", casterName, ".Cast(*x.", fieldName, ")")
+			g.renderAssignScalarAtLeaf(out, field, leaf, access, "val", inner)
+			out.P(indent, "}")
 			return
 		}
-		out.P("\tif ", casterName, " == nil {")
-		out.P("\t\tpanic(\"missing caster: ", casterName, "\")")
-		out.P("\t}")
-		out.P("\tpbVal := ", casterName, ".Cast(x.", fieldName, ")")
-		out.P("\tif pbVal != nil {")
-		out.P("\t\tinto.SetMessage(out, ", pathVar, ", pbVal)")
-		out.P("\t}")
-		return
-	}
-
-	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-		out.P("\tif len(x.", fieldName, ") > 0 {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\tpanic(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		pbElemType, _ := g.overridePbElemType(ir, field)
-		out.P("\t\tvals := make([]", pbElemType, ", len(x.", fieldName, "))")
-		out.P("\t\tfor i, el := range x.", fieldName, " {")
-		out.P("\t\t\tvals[i] = ", casterName, ".Cast(el)")
-		out.P("\t\t}")
-		if setListFn != "" {
-			out.P("\t\t", setListFn, "(out, ", pathVar, ", vals)")
+		access, ok := g.renderEnsurePath(out, "out", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
+			return
 		}
-		out.P("\t}")
-		return
-	}
-
-	if g.isPointerField(field) {
-		out.P("\tif x.", fieldName, " != nil {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\tpanic(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		out.P("\t\tval := ", casterName, ".Cast(*x.", fieldName, ")")
-		if setFn != "" {
-			out.P("\t\t", setFn, "(out, ", pathVar, ", val)")
-		}
-		out.P("\t}")
-		return
-	}
-
-	out.P("\tif ", casterName, " == nil {")
-	out.P("\t\tpanic(\"missing caster: ", casterName, "\")")
-	out.P("\t}")
-	out.P("\tval := ", casterName, ".Cast(x.", fieldName, ")")
-	if setFn != "" {
-		out.P("\t", setFn, "(out, ", pathVar, ", val)")
+		out.P(indent, "if ", casterName, " == nil {")
+		out.P(indent, "\tpanic(\"missing caster: ", casterName, "\")")
+		out.P(indent, "}")
+		out.P(indent, "val := ", casterName, ".Cast(x.", fieldName, ")")
+		g.renderAssignScalarAtLeaf(out, field, leaf, access, "val", indent)
 	}
 }
 
-func (g *Generator) renderOverrideIntoPlain(out typeWriter, ir *TypePbIR, msg *typepb.Type, field *typepb.Field, fieldName, pathVar string, casterTypes casterTypes) {
+func (g *Generator) renderOverrideIntoPlain(
+	out typeWriter,
+	ir *TypePbIR,
+	msg *typepb.Type,
+	field *typepb.Field,
+	fieldName string,
+	segments []pbPathSegment,
+	casterTypes casterTypes,
+	indent string,
+	pathString string,
+	setCrf bool,
+) {
+	_ = msg
 	casterName := g.casterParamName(ir, field, casterTypes, false)
 	if casterName == "" {
-		out.P("\t// missing caster mapping for override")
+		out.P(indent, "// missing caster mapping for override")
 		return
 	}
-	getFn := g.scalarGetter(field.Kind)
-	getListFn := g.scalarListGetter(field.Kind)
-	crf := hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker)
-	override, _ := g.overrideInfo(field)
+	if len(segments) == 0 {
+		out.P(indent, "// skip invalid path")
+		return
+	}
+	leaf := segments[len(segments)-1]
+	enumType := g.enumGoType(out, leaf)
 
-	if field.Kind == typepb.Field_TYPE_MESSAGE {
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-			out.P("\t// repeated message with override is not supported")
+			out.P(indent, "// repeated message with override is not supported")
 			return
 		}
-		out.P("\tif v, ok := into.GetMessage(x, ", pathVar, "); ok {")
-		pbType := g.resolvePbTypeName(ir, field.TypeUrl)
-		if pbType == "" {
-			out.P("\t\t// skip virtual types in converters")
-			out.P("\t\t_ = v")
-			out.P("\t}")
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
 			return
 		}
-		out.P("\t\tif mv, ok := v.(*", pbType, "); ok {")
-		out.P("\t\t\tif ", casterName, " == nil {")
-		out.P("\t\t\t\tpanic(\"missing caster: ", casterName, "\")")
-		out.P("\t\t\t}")
+		out.P(innerIndent, "if ", leafAccess, " != nil {")
+		innerIndent += "\t"
+		out.P(innerIndent, "if ", casterName, " == nil {")
+		out.P(innerIndent, "\tpanic(\"missing caster: ", casterName, "\")")
+		out.P(innerIndent, "}")
 		if g.isPointerField(field) {
-			out.P("\t\t\tval := ", casterName, ".Cast(mv)")
-			out.P("\t\t\tout.", fieldName, " = &val")
+			valVar := g.valueVarName(field)
+			out.P(innerIndent, valVar, " := ", casterName, ".Cast(", leafAccess, ")")
+			out.P(innerIndent, "out.", fieldName, " = &", valVar)
 		} else {
-			out.P("\t\t\tout.", fieldName, " = ", casterName, ".Cast(mv)")
+			out.P(innerIndent, "out.", fieldName, " = ", casterName, ".Cast(", leafAccess, ")")
 		}
-		if crf {
-			out.P("\t\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
 		}
-		out.P("\t\t}")
-		out.P("\t}")
+		innerIndent = strings.TrimSuffix(innerIndent, "\t")
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
 		return
-	}
-
-	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-		if getListFn == "" {
+	default:
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
 			return
 		}
-		out.P("\tif v, ok := ", getListFn, "(x, ", pathVar, "); ok {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\tpanic(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		out.P("\t\tout.", fieldName, " = make([]", override.name, ", len(v))")
-		out.P("\t\tfor i, el := range v {")
-		out.P("\t\t\tout.", fieldName, "[i] = ", casterName, ".Cast(el)")
-		out.P("\t\t}")
-		if crf {
-			out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-		}
-		out.P("\t}")
-		return
-	}
-
-	if g.isPointerField(field) {
-		if getFn == "" {
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			innerIndent += "\t"
+			out.P(innerIndent, "if ", casterName, " == nil {")
+			out.P(innerIndent, "\tpanic(\"missing caster: ", casterName, "\")")
+			out.P(innerIndent, "}")
+			override, _ := g.overrideInfo(field)
+			out.P(innerIndent, "out.", fieldName, " = make([]", override.name, ", len(", leafAccess, "))")
+			out.P(innerIndent, "for i, el := range ", leafAccess, " {")
+			valueExpr := "el"
+			if enumType != "" {
+				valueExpr = "protoreflect.EnumNumber(el)"
+			}
+			out.P(innerIndent, "\tout.", fieldName, "[i] = ", casterName, ".Cast(", valueExpr, ")")
+			out.P(innerIndent, "}")
+			if setCrf {
+				out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+			}
+			innerIndent = strings.TrimSuffix(innerIndent, "\t")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
 			return
 		}
-		out.P("\tif v, ok := ", getFn, "(x, ", pathVar, "); ok {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\tpanic(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		out.P("\t\tval := ", casterName, ".Cast(v)")
-		out.P("\t\tout.", fieldName, " = &val")
-		if crf {
-			out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-		}
-		out.P("\t}")
-		return
-	}
 
-	if getFn == "" {
-		return
+		valueExpr := leafAccess
+		if enumType != "" {
+			valueExpr = "protoreflect.EnumNumber(" + valueExpr + ")"
+		}
+
+		if isPointerScalarField(leaf.field) {
+			out.P(innerIndent, "if ", valueExpr, " != nil {")
+			innerIndent += "\t"
+			valueExpr = "*" + valueExpr
+		} else if !leaf.isOneof {
+			cond := g.scalarPresenceExpr(leafAccess, field.Kind, enumType != "")
+			if cond != "" {
+				out.P(innerIndent, "if ", cond, " {")
+				innerIndent += "\t"
+			}
+		}
+		out.P(innerIndent, "if ", casterName, " == nil {")
+		out.P(innerIndent, "\tpanic(\"missing caster: ", casterName, "\")")
+		out.P(innerIndent, "}")
+		if g.isPointerField(field) {
+			valVar := g.valueVarName(field)
+			out.P(innerIndent, valVar, " := ", casterName, ".Cast(", valueExpr, ")")
+			out.P(innerIndent, "out.", fieldName, " = &", valVar)
+		} else {
+			out.P(innerIndent, "out.", fieldName, " = ", casterName, ".Cast(", valueExpr, ")")
+		}
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+		}
+		if isPointerScalarField(leaf.field) || (!leaf.isOneof && g.scalarPresenceExpr(leafAccess, field.Kind, enumType != "") != "") {
+			innerIndent = strings.TrimSuffix(innerIndent, "\t")
+			out.P(innerIndent, "}")
+		}
+		closeGuards(out, innerIndent, closers)
 	}
-	out.P("\tif v, ok := ", getFn, "(x, ", pathVar, "); ok {")
-	out.P("\t\tif ", casterName, " == nil {")
-	out.P("\t\t\tpanic(\"missing caster: ", casterName, "\")")
-	out.P("\t\t}")
-	out.P("\t\tout.", fieldName, " = ", casterName, ".Cast(v)")
-	if crf {
-		out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-	}
-	out.P("\t}")
 }
 
-func (g *Generator) renderOverrideIntoPbErr(out typeWriter, ir *TypePbIR, msg *typepb.Type, field *typepb.Field, fieldName, pathVar string, casterTypes casterTypes) {
+func (g *Generator) renderOverrideIntoPbErr(out typeWriter, ir *TypePbIR, msg *typepb.Type, field *typepb.Field, fieldName string, segments []pbPathSegment, casterTypes casterTypes, indent string) {
+	_ = msg
 	casterName := g.casterParamName(ir, field, casterTypes, true)
 	if casterName == "" {
-		out.P("\t// missing caster mapping for override")
+		out.P(indent, "// missing caster mapping for override")
 		return
 	}
-	setFn := g.scalarSetter(field.Kind)
-	setListFn := g.scalarListSetter(field.Kind)
-	if field.Kind == typepb.Field_TYPE_MESSAGE {
+	if len(segments) == 0 {
+		out.P(indent, "// skip invalid path")
+		return
+	}
+	leaf := segments[len(segments)-1]
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-			out.P("\t// repeated message with override is not supported")
+			out.P(indent, "// repeated message with override is not supported")
+			return
+		}
+		out.P(indent, "if x.", fieldName, " != nil {")
+		inner := indent + "\t"
+		access, ok := g.renderEnsurePath(out, "out", segments, inner)
+		if !ok {
+			out.P(inner, "// skip invalid path")
+			out.P(indent, "}")
+			return
+		}
+		out.P(inner, "if ", casterName, " == nil {")
+		out.P(inner, "\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
+		out.P(inner, "}")
+		valueExpr := "x." + fieldName
+		if g.isPointerField(field) {
+			valueExpr = "*" + valueExpr
+		}
+		out.P(inner, "pbVal, err := ", casterName, ".CastErr(", valueExpr, ")")
+		out.P(inner, "if err != nil {")
+		out.P(inner, "\treturn nil, err")
+		out.P(inner, "}")
+		out.P(inner, "if pbVal != nil {")
+		g.renderAssignMessageAtLeaf(out, leaf, access, "pbVal", inner+"\t")
+		out.P(inner, "}")
+		out.P(indent, "}")
+		return
+	default:
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			inner := indent + "\t"
+			access, ok := g.renderEnsurePath(out, "out", segments, inner)
+			if !ok {
+				out.P(inner, "// skip invalid path")
+				out.P(indent, "}")
+				return
+			}
+			out.P(inner, "if ", casterName, " == nil {")
+			out.P(inner, "\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
+			out.P(inner, "}")
+			enumType := g.enumGoType(out, leaf)
+			if enumType != "" {
+				valVar := g.valueVarName(field) + "Slice"
+				out.P(inner, valVar, " := make([]", enumType, ", len(x.", fieldName, "))")
+				out.P(inner, "for i, el := range x.", fieldName, " {")
+				out.P(inner, "\tval, err := ", casterName, ".CastErr(el)")
+				out.P(inner, "\tif err != nil {")
+				out.P(inner, "\t\treturn nil, err")
+				out.P(inner, "\t}")
+				out.P(inner, "\t", valVar, "[i] = ", enumType, "(val)")
+				out.P(inner, "}")
+				out.P(inner, access, ".", leaf.goName, " = ", valVar)
+			} else {
+				pbElemType, _ := g.overridePbElemType(ir, field)
+				out.P(inner, "vals := make([]", pbElemType, ", len(x.", fieldName, "))")
+				out.P(inner, "for i, el := range x.", fieldName, " {")
+				out.P(inner, "\tval, err := ", casterName, ".CastErr(el)")
+				out.P(inner, "\tif err != nil {")
+				out.P(inner, "\t\treturn nil, err")
+				out.P(inner, "\t}")
+				out.P(inner, "\tvals[i] = val")
+				out.P(inner, "}")
+				out.P(inner, access, ".", leaf.goName, " = vals")
+			}
+			out.P(indent, "}")
 			return
 		}
 		if g.isPointerField(field) {
-			out.P("\tif x.", fieldName, " != nil {")
-			out.P("\t\tif ", casterName, " == nil {")
-			out.P("\t\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-			out.P("\t\t}")
-			out.P("\t\tpbVal, err := ", casterName, ".CastErr(*x.", fieldName, ")")
-			out.P("\t\tif err != nil {")
-			out.P("\t\t\treturn nil, err")
-			out.P("\t\t}")
-			out.P("\t\tif pbVal != nil {")
-			out.P("\t\t\tinto.SetMessage(out, ", pathVar, ", pbVal)")
-			out.P("\t\t}")
-			out.P("\t}")
+			out.P(indent, "if x.", fieldName, " != nil {")
+			inner := indent + "\t"
+			access, ok := g.renderEnsurePath(out, "out", segments, inner)
+			if !ok {
+				out.P(inner, "// skip invalid path")
+				out.P(indent, "}")
+				return
+			}
+			out.P(inner, "if ", casterName, " == nil {")
+			out.P(inner, "\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
+			out.P(inner, "}")
+			out.P(inner, "val, err := ", casterName, ".CastErr(*x.", fieldName, ")")
+			out.P(inner, "if err != nil {")
+			out.P(inner, "\treturn nil, err")
+			out.P(inner, "}")
+			g.renderAssignScalarAtLeaf(out, field, leaf, access, "val", inner)
+			out.P(indent, "}")
 			return
 		}
-		out.P("\tif ", casterName, " == nil {")
-		out.P("\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-		out.P("\t}")
-		out.P("\tpbVal, err := ", casterName, ".CastErr(x.", fieldName, ")")
-		out.P("\tif err != nil {")
-		out.P("\t\treturn nil, err")
-		out.P("\t}")
-		out.P("\tif pbVal != nil {")
-		out.P("\t\tinto.SetMessage(out, ", pathVar, ", pbVal)")
-		out.P("\t}")
-		return
-	}
-
-	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-		out.P("\tif len(x.", fieldName, ") > 0 {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		pbElemType, _ := g.overridePbElemType(ir, field)
-		out.P("\t\tvals := make([]", pbElemType, ", len(x.", fieldName, "))")
-		out.P("\t\tfor i, el := range x.", fieldName, " {")
-		out.P("\t\t\tval, err := ", casterName, ".CastErr(el)")
-		out.P("\t\t\tif err != nil {")
-		out.P("\t\t\t\treturn nil, err")
-		out.P("\t\t\t}")
-		out.P("\t\t\tvals[i] = val")
-		out.P("\t\t}")
-		if setListFn != "" {
-			out.P("\t\t", setListFn, "(out, ", pathVar, ", vals)")
+		access, ok := g.renderEnsurePath(out, "out", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
+			return
 		}
-		out.P("\t}")
-		return
-	}
-
-	if g.isPointerField(field) {
-		out.P("\tif x.", fieldName, " != nil {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		out.P("\t\tval, err := ", casterName, ".CastErr(*x.", fieldName, ")")
-		out.P("\t\tif err != nil {")
-		out.P("\t\t\treturn nil, err")
-		out.P("\t\t}")
-		if setFn != "" {
-			out.P("\t\t", setFn, "(out, ", pathVar, ", val)")
-		}
-		out.P("\t}")
-		return
-	}
-
-	out.P("\tif ", casterName, " == nil {")
-	out.P("\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-	out.P("\t}")
-	out.P("\tval, err := ", casterName, ".CastErr(x.", fieldName, ")")
-	out.P("\tif err != nil {")
-	out.P("\t\treturn nil, err")
-	out.P("\t}")
-	if setFn != "" {
-		out.P("\t", setFn, "(out, ", pathVar, ", val)")
+		out.P(indent, "if ", casterName, " == nil {")
+		out.P(indent, "\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
+		out.P(indent, "}")
+		out.P(indent, "val, err := ", casterName, ".CastErr(x.", fieldName, ")")
+		out.P(indent, "if err != nil {")
+		out.P(indent, "\treturn nil, err")
+		out.P(indent, "}")
+		g.renderAssignScalarAtLeaf(out, field, leaf, access, "val", indent)
 	}
 }
 
-func (g *Generator) renderOverrideIntoPlainErr(out typeWriter, ir *TypePbIR, msg *typepb.Type, field *typepb.Field, fieldName, pathVar string, casterTypes casterTypes) {
+func (g *Generator) renderOverrideIntoPlainErr(
+	out typeWriter,
+	ir *TypePbIR,
+	msg *typepb.Type,
+	field *typepb.Field,
+	fieldName string,
+	segments []pbPathSegment,
+	casterTypes casterTypes,
+	indent string,
+	pathString string,
+	setCrf bool,
+) {
+	_ = msg
 	casterName := g.casterParamName(ir, field, casterTypes, false)
 	if casterName == "" {
-		out.P("\t// missing caster mapping for override")
+		out.P(indent, "// missing caster mapping for override")
 		return
 	}
-	getFn := g.scalarGetter(field.Kind)
-	getListFn := g.scalarListGetter(field.Kind)
-	crf := hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker)
-	override, _ := g.overrideInfo(field)
+	if len(segments) == 0 {
+		out.P(indent, "// skip invalid path")
+		return
+	}
+	leaf := segments[len(segments)-1]
+	enumType := g.enumGoType(out, leaf)
 
-	if field.Kind == typepb.Field_TYPE_MESSAGE {
+	switch field.Kind {
+	case typepb.Field_TYPE_MESSAGE:
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-			out.P("\t// repeated message with override is not supported")
+			out.P(indent, "// repeated message with override is not supported")
 			return
 		}
-		out.P("\tif v, ok := into.GetMessage(x, ", pathVar, "); ok {")
-		pbType := g.resolvePbTypeName(ir, field.TypeUrl)
-		if pbType == "" {
-			out.P("\t\t// skip virtual types in converters")
-			out.P("\t\t_ = v")
-			out.P("\t}")
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
 			return
 		}
-		out.P("\t\tif mv, ok := v.(*", pbType, "); ok {")
-		out.P("\t\t\tif ", casterName, " == nil {")
-		out.P("\t\t\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-		out.P("\t\t\t}")
+		out.P(innerIndent, "if ", leafAccess, " != nil {")
+		innerIndent += "\t"
+		out.P(innerIndent, "if ", casterName, " == nil {")
+		out.P(innerIndent, "\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
+		out.P(innerIndent, "}")
+		out.P(innerIndent, "val, err := ", casterName, ".CastErr(", leafAccess, ")")
+		out.P(innerIndent, "if err != nil {")
+		out.P(innerIndent, "\treturn nil, err")
+		out.P(innerIndent, "}")
 		if g.isPointerField(field) {
-			out.P("\t\t\tval, err := ", casterName, ".CastErr(mv)")
-			out.P("\t\t\tif err != nil {")
-			out.P("\t\t\t\treturn nil, err")
-			out.P("\t\t\t}")
-			out.P("\t\t\tout.", fieldName, " = &val")
+			out.P(innerIndent, "out.", fieldName, " = &val")
 		} else {
-			out.P("\t\t\tval, err := ", casterName, ".CastErr(mv)")
-			out.P("\t\t\tif err != nil {")
-			out.P("\t\t\t\treturn nil, err")
-			out.P("\t\t\t}")
-			out.P("\t\t\tout.", fieldName, " = val")
+			out.P(innerIndent, "out.", fieldName, " = val")
 		}
-		if crf {
-			out.P("\t\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
 		}
-		out.P("\t\t}")
-		out.P("\t}")
+		innerIndent = strings.TrimSuffix(innerIndent, "\t")
+		out.P(innerIndent, "}")
+		closeGuards(out, innerIndent, closers)
 		return
-	}
-
-	if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-		if getListFn == "" {
+	default:
+		leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
+		if !ok {
+			out.P(indent, "// skip invalid path")
 			return
 		}
-		out.P("\tif v, ok := ", getListFn, "(x, ", pathVar, "); ok {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		out.P("\t\tout.", fieldName, " = make([]", override.name, ", len(v))")
-		out.P("\t\tfor i, el := range v {")
-		out.P("\t\t\tval, err := ", casterName, ".CastErr(el)")
-		out.P("\t\t\tif err != nil {")
-		out.P("\t\t\t\treturn nil, err")
-		out.P("\t\t\t}")
-		out.P("\t\t\tout.", fieldName, "[i] = val")
-		out.P("\t\t}")
-		if crf {
-			out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-		}
-		out.P("\t}")
-		return
-	}
-
-	if g.isPointerField(field) {
-		if getFn == "" {
+		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			innerIndent += "\t"
+			out.P(innerIndent, "if ", casterName, " == nil {")
+			out.P(innerIndent, "\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
+			out.P(innerIndent, "}")
+			override, _ := g.overrideInfo(field)
+			out.P(innerIndent, "out.", fieldName, " = make([]", override.name, ", len(", leafAccess, "))")
+			out.P(innerIndent, "for i, el := range ", leafAccess, " {")
+			valueExpr := "el"
+			if enumType != "" {
+				valueExpr = "protoreflect.EnumNumber(el)"
+			}
+			out.P(innerIndent, "\tval, err := ", casterName, ".CastErr(", valueExpr, ")")
+			out.P(innerIndent, "\tif err != nil {")
+			out.P(innerIndent, "\t\treturn nil, err")
+			out.P(innerIndent, "\t}")
+			out.P(innerIndent, "\tout.", fieldName, "[i] = val")
+			out.P(innerIndent, "}")
+			if setCrf {
+				out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+			}
+			innerIndent = strings.TrimSuffix(innerIndent, "\t")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
 			return
 		}
-		out.P("\tif v, ok := ", getFn, "(x, ", pathVar, "); ok {")
-		out.P("\t\tif ", casterName, " == nil {")
-		out.P("\t\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-		out.P("\t\t}")
-		out.P("\t\tval, err := ", casterName, ".CastErr(v)")
-		out.P("\t\tif err != nil {")
-		out.P("\t\t\treturn nil, err")
-		out.P("\t\t}")
-		out.P("\t\tout.", fieldName, " = &val")
-		if crf {
-			out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-		}
-		out.P("\t}")
-		return
-	}
 
-	if getFn == "" {
-		return
+		valueExpr := leafAccess
+		if enumType != "" {
+			valueExpr = "protoreflect.EnumNumber(" + valueExpr + ")"
+		}
+		if isPointerScalarField(leaf.field) {
+			out.P(innerIndent, "if ", valueExpr, " != nil {")
+			innerIndent += "\t"
+			valueExpr = "*" + valueExpr
+		} else if !leaf.isOneof {
+			cond := g.scalarPresenceExpr(leafAccess, field.Kind, enumType != "")
+			if cond != "" {
+				out.P(innerIndent, "if ", cond, " {")
+				innerIndent += "\t"
+			}
+		}
+		out.P(innerIndent, "if ", casterName, " == nil {")
+		out.P(innerIndent, "\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
+		out.P(innerIndent, "}")
+		out.P(innerIndent, "val, err := ", casterName, ".CastErr(", valueExpr, ")")
+		out.P(innerIndent, "if err != nil {")
+		out.P(innerIndent, "\treturn nil, err")
+		out.P(innerIndent, "}")
+		if g.isPointerField(field) {
+			out.P(innerIndent, "out.", fieldName, " = &val")
+		} else {
+			out.P(innerIndent, "out.", fieldName, " = val")
+		}
+		if setCrf {
+			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
+		}
+		if isPointerScalarField(leaf.field) || (!leaf.isOneof && g.scalarPresenceExpr(leafAccess, field.Kind, enumType != "") != "") {
+			innerIndent = strings.TrimSuffix(innerIndent, "\t")
+			out.P(innerIndent, "}")
+		}
+		closeGuards(out, innerIndent, closers)
 	}
-	out.P("\tif v, ok := ", getFn, "(x, ", pathVar, "); ok {")
-	out.P("\t\tif ", casterName, " == nil {")
-	out.P("\t\t\treturn nil, fmt.Errorf(\"missing caster: ", casterName, "\")")
-	out.P("\t\t}")
-	out.P("\t\tval, err := ", casterName, ".CastErr(v)")
-	out.P("\t\tif err != nil {")
-	out.P("\t\t\treturn nil, err")
-	out.P("\t\t}")
-	out.P("\t\tout.", fieldName, " = val")
-	if crf {
-		out.P("\t\tout.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = strings.Join(", pathVar, ", \"/\")")
-	}
-	out.P("\t}")
 }

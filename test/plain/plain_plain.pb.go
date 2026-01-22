@@ -8,18 +8,18 @@ type BaseInfoPlain struct {
 }
 
 type UserPlain struct {
-	Id           string  `json:"id"`
-	Source       string  `json:"source"`
 	Name         string  `json:"name"`
 	ContactEmail *string `json:"contactEmail,omitempty"`
 	ContactPhone *string `json:"contactPhone,omitempty"`
+	Id           string  `json:"id"`
+	Source       string  `json:"source"`
 }
 
 type UserEventPlain struct {
-	Source       string  `json:"source"`
-	Name         string  `json:"name"`
 	ContactEmail *string `json:"contactEmail,omitempty"`
 	ContactPhone *string `json:"contactPhone,omitempty"`
-	EventType    string  `json:"eventType"`
 	Id           string  `json:"id"`
+	Source       string  `json:"source"`
+	EventType    string  `json:"eventType"`
+	Name         string  `json:"name"`
 }

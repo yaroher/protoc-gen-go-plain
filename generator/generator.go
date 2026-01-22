@@ -247,10 +247,11 @@ const (
 	isOneoffedMarker = "is_oneoff"
 	isMessageMarker  = "is_message"
 	// CRF markers
-	crfMarker    = "crf"        // marks field as CRF (Collision Resolution Field)
-	crfForMarker = "crf_for"    // name of the field this CRF resolves
-	empathMarker = "empath"     // full EmPath for the field origin
-	plainName    = "plain_name" // final plain name for the field
+	crfMarker      = "crf"        // marks field as CRF (Collision Resolution Field)
+	crfForMarker   = "crf_for"    // name of the field this CRF resolves
+	crfPathsMarker = "crf_paths"  // encoded list of collided paths
+	empathMarker   = "empath"     // full EmPath for the field origin
+	plainName      = "plain_name" // final plain name for the field
 )
 
 func (g *Generator) processEmbedOneof(msg *typepb.Type) {
@@ -508,10 +509,30 @@ func (g *Generator) processCollisions(flattened []flattenedField) ([]*typepb.Fie
 		// Use first field as the merged field
 		mergedField := fields[0].field
 
+		paths := make([]string, 0, len(fields))
+		for _, f := range fields {
+			var parts []string
+			for _, segment := range f.emPath {
+				if segment.HasMarker(isOneoffedMarker) {
+					continue
+				}
+				name := getShortName(segment.Value())
+				if name == "" {
+					continue
+				}
+				parts = append(parts, name)
+			}
+			if len(parts) == 0 {
+				continue
+			}
+			paths = append(paths, encodeMarkerValue(strings.Join(parts, "/")))
+		}
+
 		// Mark as having collision and add plain_name
 		mergedField.TypeUrl = marker.Parse(mergedField.TypeUrl).
 			AddMarker(crfMarker, trueVal).
 			AddMarker(plainName, name). // add plain_name for later embed
+			AddMarker(crfPathsMarker, strings.Join(paths, ",")).
 			String()
 
 		result = append(result, mergedField)
