@@ -80,6 +80,11 @@ extract-ir-event:
 run-test-nda:
 	go clean -testcache && go test -v ./test/nda/...
 
+.PHONY: bench-test-nda
+bench-test-nda:
+	go clean -testcache && go test -bench=. -v ./test/nda/...
+
+
 branch=main
 .PHONY: revision
 revision: # Создание тега

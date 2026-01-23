@@ -89,6 +89,12 @@ func (g *Generator) renderMessage(ctx *renderContext, msg *protogen.Message, mes
 	ctx.g.P()
 	g.renderIntoPb(ctx, msg, plainGoName, wrapper)
 	ctx.g.P()
+	if g.Settings.JSONJX {
+		if err := g.renderJSONJX(ctx, plainGoName, wrapper); err != nil {
+			return err
+		}
+		ctx.g.P()
+	}
 
 	return nil
 }
