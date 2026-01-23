@@ -40,6 +40,11 @@ type jxRefs struct {
 	DecodeBytes string
 }
 
+type jxJSONRefs struct {
+	Marshal   string
+	Unmarshal string
+}
+
 func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *TypeWrapper) error {
 	if wrapper == nil {
 		return nil
@@ -47,6 +52,7 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 
 	var infos []*jxFieldInfo
 	useJSON := wrapper.CRF != nil && wrapper.CRF.HasEntries()
+	useProtoJSON := false
 	useStrconv := false
 
 	for _, fw := range wrapper.Fields {
@@ -65,10 +71,10 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 			useStrconv = true
 		}
 		if info.IsMap && info.MapValKind == typepb.Field_TYPE_MESSAGE && !g.isPlainMessage(ctx, info.MapValTypeURL) {
-			useJSON = true
+			useProtoJSON = true
 		}
 		if !info.IsMap && info.Kind == typepb.Field_TYPE_MESSAGE && !g.isPlainMessage(ctx, info.TypeURL) {
-			useJSON = true
+			useProtoJSON = true
 		}
 	}
 
@@ -80,11 +86,19 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 	}
 	fmtErrorf := ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Errorf", GoImportPath: "fmt"})
 
-	var jsonMarshal string
-	var jsonUnmarshal string
+	var jsonRefs *jxJSONRefs
 	if useJSON {
-		jsonMarshal = ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Marshal", GoImportPath: "encoding/json"})
-		jsonUnmarshal = ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "encoding/json"})
+		jsonRefs = &jxJSONRefs{
+			Marshal:   ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Marshal", GoImportPath: "encoding/json"}),
+			Unmarshal: ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "encoding/json"}),
+		}
+	}
+	var protoJSONRefs *jxJSONRefs
+	if useProtoJSON {
+		protoJSONRefs = &jxJSONRefs{
+			Marshal:   ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Marshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"}),
+			Unmarshal: ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"}),
+		}
 	}
 	var strconvRefs *jxStrconvRefs
 	if useStrconv {
@@ -103,7 +117,7 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 	if wrapper.CRF != nil && wrapper.CRF.HasEntries() {
 		ctx.g.P("\tif x.CRF != nil {")
 		ctx.g.P("\t\te.FieldStart(\"crf\")")
-		ctx.g.P("\t\traw, err := ", jsonMarshal, "(x.CRF)")
+		ctx.g.P("\t\traw, err := ", jsonRefs.Marshal, "(x.CRF)")
 		ctx.g.P("\t\tif err != nil {")
 		ctx.g.P("\t\t\treturn err")
 		ctx.g.P("\t\t}")
@@ -111,7 +125,7 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 		ctx.g.P("\t}")
 	}
 	for _, info := range infos {
-		g.renderJXMarshalField(ctx, info, jx.EncoderType, jsonMarshal, strconvRefs)
+		g.renderJXMarshalField(ctx, info, jx.EncoderType, jsonRefs, protoJSONRefs, strconvRefs)
 	}
 	ctx.g.P("\te.ObjEnd()")
 	ctx.g.P("\treturn nil")
@@ -159,7 +173,7 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 		ctx.g.P("\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t}")
 		ctx.g.P("\t\t\t\tcrfVal := new(", crfName, ")")
-		ctx.g.P("\t\t\t\tif err := ", jsonUnmarshal, "(raw, crfVal); err != nil {")
+		ctx.g.P("\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, crfVal); err != nil {")
 		ctx.g.P("\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t}")
 		ctx.g.P("\t\t\t\tx.CRF = crfVal")
@@ -167,12 +181,154 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 		ctx.g.P("\t\t\t}")
 	}
 	for _, info := range infos {
-		g.renderJXUnmarshalField(ctx, info, jx.DecoderType, jsonUnmarshal, strconvRefs, fmtErrorf, jx.Null)
+		g.renderJXUnmarshalField(ctx, info, jx.DecoderType, jsonRefs, protoJSONRefs, strconvRefs, fmtErrorf, jx.Null)
 	}
 	ctx.g.P("\t\tdefault:")
 	ctx.g.P("\t\t\treturn d.Skip()")
 	ctx.g.P("\t\t}")
 	ctx.g.P("\t})")
+	ctx.g.P("}")
+	ctx.g.P()
+
+	return nil
+}
+
+func (g *Generator) renderProtoJSONJX(ctx *renderContext, msg *protogen.Message, plainName string, hasPlain bool) error {
+	if msg == nil || msg.Desc.IsMapEntry() {
+		return nil
+	}
+
+	jx := jxRefs{
+		EncoderType: ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Encoder", GoImportPath: "github.com/go-faster/jx"}),
+		DecoderType: ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Decoder", GoImportPath: "github.com/go-faster/jx"}),
+		Null:        ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Null", GoImportPath: "github.com/go-faster/jx"}),
+	}
+	fmtErrorf := ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Errorf", GoImportPath: "fmt"})
+
+	msgName := msg.GoIdent.GoName
+	if hasPlain {
+		ctx.g.P("func (x *", msgName, ") marshalJX(e *", jx.EncoderType, ") error {")
+		ctx.g.P("\tif x == nil {")
+		ctx.g.P("\t\te.Null()")
+		ctx.g.P("\t\treturn nil")
+		ctx.g.P("\t}")
+		ctx.g.P("\tplain, err := x.IntoPlainErr()")
+		ctx.g.P("\tif err != nil {")
+		ctx.g.P("\t\treturn err")
+		ctx.g.P("\t}")
+		ctx.g.P("\tif plain == nil {")
+		ctx.g.P("\t\te.Null()")
+		ctx.g.P("\t\treturn nil")
+		ctx.g.P("\t}")
+		ctx.g.P("\treturn plain.marshalJX(e)")
+		ctx.g.P("}")
+		ctx.g.P()
+
+		ctx.g.P("func (x *", msgName, ") MarshalJSON() ([]byte, error) {")
+		ctx.g.P("\tif x == nil {")
+		ctx.g.P("\t\treturn []byte(\"null\"), nil")
+		ctx.g.P("\t}")
+		ctx.g.P("\tplain, err := x.IntoPlainErr()")
+		ctx.g.P("\tif err != nil {")
+		ctx.g.P("\t\treturn nil, err")
+		ctx.g.P("\t}")
+		ctx.g.P("\tif plain == nil {")
+		ctx.g.P("\t\treturn []byte(\"null\"), nil")
+		ctx.g.P("\t}")
+		ctx.g.P("\treturn plain.MarshalJSON()")
+		ctx.g.P("}")
+		ctx.g.P()
+
+		ctx.g.P("func (x *", msgName, ") UnmarshalJSON(data []byte) error {")
+		ctx.g.P("\tif x == nil {")
+		ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": UnmarshalJSON on nil pointer\")")
+		ctx.g.P("\t}")
+		ctx.g.P("\tplain := new(", plainName, ")")
+		ctx.g.P("\tif err := plain.UnmarshalJSON(data); err != nil {")
+		ctx.g.P("\t\treturn err")
+		ctx.g.P("\t}")
+		ctx.g.P("\tpb, err := plain.IntoPbErr()")
+		ctx.g.P("\tif err != nil {")
+		ctx.g.P("\t\treturn err")
+		ctx.g.P("\t}")
+		ctx.g.P("\tif pb == nil {")
+		ctx.g.P("\t\treturn nil")
+		ctx.g.P("\t}")
+		ctx.g.P("\t*x = *pb")
+		ctx.g.P("\treturn nil")
+		ctx.g.P("}")
+		ctx.g.P()
+
+		ctx.g.P("func (x *", msgName, ") unmarshalJX(d *", jx.DecoderType, ") error {")
+		ctx.g.P("\tif x == nil {")
+		ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": unmarshalJX on nil pointer\")")
+		ctx.g.P("\t}")
+		ctx.g.P("\tif d.Next() == ", jx.Null, " {")
+		ctx.g.P("\t\treturn d.Null()")
+		ctx.g.P("\t}")
+		ctx.g.P("\tplain := new(", plainName, ")")
+		ctx.g.P("\tif err := plain.unmarshalJX(d); err != nil {")
+		ctx.g.P("\t\treturn err")
+		ctx.g.P("\t}")
+		ctx.g.P("\tpb, err := plain.IntoPbErr()")
+		ctx.g.P("\tif err != nil {")
+		ctx.g.P("\t\treturn err")
+		ctx.g.P("\t}")
+		ctx.g.P("\tif pb == nil {")
+		ctx.g.P("\t\treturn nil")
+		ctx.g.P("\t}")
+		ctx.g.P("\t*x = *pb")
+		ctx.g.P("\treturn nil")
+		ctx.g.P("}")
+		ctx.g.P()
+		return nil
+	}
+
+	protoJSONMarshal := ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Marshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"})
+	protoJSONUnmarshal := ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"})
+
+	ctx.g.P("func (x *", msgName, ") marshalJX(e *", jx.EncoderType, ") error {")
+	ctx.g.P("\tif x == nil {")
+	ctx.g.P("\t\te.Null()")
+	ctx.g.P("\t\treturn nil")
+	ctx.g.P("\t}")
+	ctx.g.P("\traw, err := ", protoJSONMarshal, "(x)")
+	ctx.g.P("\tif err != nil {")
+	ctx.g.P("\t\treturn err")
+	ctx.g.P("\t}")
+	ctx.g.P("\te.Raw(raw)")
+	ctx.g.P("\treturn nil")
+	ctx.g.P("}")
+	ctx.g.P()
+
+	ctx.g.P("func (x *", msgName, ") MarshalJSON() ([]byte, error) {")
+	ctx.g.P("\tif x == nil {")
+	ctx.g.P("\t\treturn []byte(\"null\"), nil")
+	ctx.g.P("\t}")
+	ctx.g.P("\treturn ", protoJSONMarshal, "(x)")
+	ctx.g.P("}")
+	ctx.g.P()
+
+	ctx.g.P("func (x *", msgName, ") UnmarshalJSON(data []byte) error {")
+	ctx.g.P("\tif x == nil {")
+	ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": UnmarshalJSON on nil pointer\")")
+	ctx.g.P("\t}")
+	ctx.g.P("\treturn ", protoJSONUnmarshal, "(data, x)")
+	ctx.g.P("}")
+	ctx.g.P()
+
+	ctx.g.P("func (x *", msgName, ") unmarshalJX(d *", jx.DecoderType, ") error {")
+	ctx.g.P("\tif x == nil {")
+	ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": unmarshalJX on nil pointer\")")
+	ctx.g.P("\t}")
+	ctx.g.P("\tif d.Next() == ", jx.Null, " {")
+	ctx.g.P("\t\treturn d.Null()")
+	ctx.g.P("\t}")
+	ctx.g.P("\traw, err := d.Raw()")
+	ctx.g.P("\tif err != nil {")
+	ctx.g.P("\t\treturn err")
+	ctx.g.P("\t}")
+	ctx.g.P("\treturn ", protoJSONUnmarshal, "(raw, x)")
 	ctx.g.P("}")
 	ctx.g.P()
 
@@ -247,7 +403,7 @@ func (g *Generator) isPlainMessage(ctx *renderContext, typeURL string) bool {
 	return ctx.builder.generatedMessages[full]
 }
 
-func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, jxEncoderType, jsonMarshal string, strconvRefs *jxStrconvRefs) {
+func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, jxEncoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, strconvRefs *jxStrconvRefs) {
 	fieldExpr := "x." + info.GoName
 	if info.IsMap {
 		ctx.g.P("\tif len(", fieldExpr, ") > 0 {")
@@ -264,7 +420,7 @@ func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, 
 			ctx.g.P("\t\t\t\t\tcontinue")
 			ctx.g.P("\t\t\t\t}")
 		}
-		g.renderJXMarshalValue(ctx, info.MapValKind, info.MapValTypeURL, "v", info.MapValType, jxEncoderType, jsonMarshal, "\t\t\t\t", "marshalErr")
+		g.renderJXMarshalValue(ctx, info.MapValKind, info.MapValTypeURL, "v", info.MapValType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
 		ctx.g.P("\t\t\t}")
 		ctx.g.P("\t\t})")
 		ctx.g.P("\t\tif marshalErr != nil {")
@@ -286,15 +442,15 @@ func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, 
 			ctx.g.P("\t\t\t\t\te.Null()")
 			ctx.g.P("\t\t\t\t\tcontinue")
 			ctx.g.P("\t\t\t\t}")
-			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonMarshal, "\t\t\t\t", "marshalErr")
+			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
 		} else if info.Kind == typepb.Field_TYPE_BYTES {
 			ctx.g.P("\t\t\t\tif v == nil {")
 			ctx.g.P("\t\t\t\t\te.Null()")
 			ctx.g.P("\t\t\t\t\tcontinue")
 			ctx.g.P("\t\t\t\t}")
-			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonMarshal, "\t\t\t\t", "marshalErr")
+			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
 		} else {
-			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonMarshal, "\t\t\t\t", "marshalErr")
+			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
 		}
 		ctx.g.P("\t\t\t}")
 		ctx.g.P("\t\t})")
@@ -321,14 +477,14 @@ func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, 
 		valueExpr = "*" + valueExpr
 		valueType = strings.TrimPrefix(valueType, "*")
 	}
-	g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, valueExpr, valueType, jxEncoderType, jsonMarshal, indent, "")
+	g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, valueExpr, valueType, jxEncoderType, jsonRefs, protoJSONRefs, indent, "")
 
 	if cond != "" {
 		ctx.g.P("\t}")
 	}
 }
 
-func (g *Generator) renderJXMarshalValue(ctx *renderContext, kind typepb.Field_Kind, typeURL, valueExpr, valueType, jxEncoderType, jsonMarshal, indent, errVar string) {
+func (g *Generator) renderJXMarshalValue(ctx *renderContext, kind typepb.Field_Kind, typeURL, valueExpr, valueType string, jxEncoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, indent, errVar string) {
 	if kind == typepb.Field_TYPE_MESSAGE {
 		if g.isPlainMessage(ctx, typeURL) {
 			if errVar == "" {
@@ -346,13 +502,29 @@ func (g *Generator) renderJXMarshalValue(ctx *renderContext, kind typepb.Field_K
 			ctx.g.P(indent, "e.Raw(raw)")
 			return
 		}
+		if protoJSONRefs != nil {
+			if errVar == "" {
+				ctx.g.P(indent, "raw, err := ", protoJSONRefs.Marshal, "(", valueExpr, ")")
+				ctx.g.P(indent, "if err != nil {")
+				ctx.g.P(indent, "\treturn err")
+				ctx.g.P(indent, "}")
+			} else {
+				ctx.g.P(indent, "raw, valueErr := ", protoJSONRefs.Marshal, "(", valueExpr, ")")
+				ctx.g.P(indent, "if valueErr != nil {")
+				ctx.g.P(indent, "\t", errVar, " = valueErr")
+				ctx.g.P(indent, "\treturn")
+				ctx.g.P(indent, "}")
+			}
+			ctx.g.P(indent, "e.Raw(raw)")
+			return
+		}
 		if errVar == "" {
-			ctx.g.P(indent, "raw, err := ", jsonMarshal, "(", valueExpr, ")")
+			ctx.g.P(indent, "raw, err := ", jsonRefs.Marshal, "(", valueExpr, ")")
 			ctx.g.P(indent, "if err != nil {")
 			ctx.g.P(indent, "\treturn err")
 			ctx.g.P(indent, "}")
 		} else {
-			ctx.g.P(indent, "raw, valueErr := ", jsonMarshal, "(", valueExpr, ")")
+			ctx.g.P(indent, "raw, valueErr := ", jsonRefs.Marshal, "(", valueExpr, ")")
 			ctx.g.P(indent, "if valueErr != nil {")
 			ctx.g.P(indent, "\t", errVar, " = valueErr")
 			ctx.g.P(indent, "\treturn")
@@ -365,12 +537,12 @@ func (g *Generator) renderJXMarshalValue(ctx *renderContext, kind typepb.Field_K
 	method, baseType := jxMethodAndBaseType(kind)
 	if method == "" {
 		if errVar == "" {
-			ctx.g.P(indent, "raw, err := ", jsonMarshal, "(", valueExpr, ")")
+			ctx.g.P(indent, "raw, err := ", jsonRefs.Marshal, "(", valueExpr, ")")
 			ctx.g.P(indent, "if err != nil {")
 			ctx.g.P(indent, "\treturn err")
 			ctx.g.P(indent, "}")
 		} else {
-			ctx.g.P(indent, "raw, valueErr := ", jsonMarshal, "(", valueExpr, ")")
+			ctx.g.P(indent, "raw, valueErr := ", jsonRefs.Marshal, "(", valueExpr, ")")
 			ctx.g.P(indent, "if valueErr != nil {")
 			ctx.g.P(indent, "\t", errVar, " = valueErr")
 			ctx.g.P(indent, "\treturn")
@@ -412,24 +584,24 @@ func jxMethodAndBaseType(kind typepb.Field_Kind) (string, string) {
 	}
 }
 
-func (g *Generator) renderJXUnmarshalField(ctx *renderContext, info *jxFieldInfo, jxDecoderType, jsonUnmarshal string, strconvRefs *jxStrconvRefs, fmtErrorf, jxNull string) {
+func (g *Generator) renderJXUnmarshalField(ctx *renderContext, info *jxFieldInfo, jxDecoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, strconvRefs *jxStrconvRefs, fmtErrorf, jxNull string) {
 	ctx.g.P("\t\tcase \"", info.Name, "\":")
 	ctx.g.P("\t\t\t{")
 	if info.IsMap {
-		g.renderJXUnmarshalMap(ctx, info, jxDecoderType, jsonUnmarshal, strconvRefs, fmtErrorf, jxNull)
+		g.renderJXUnmarshalMap(ctx, info, jxDecoderType, jsonRefs, protoJSONRefs, strconvRefs, fmtErrorf, jxNull)
 		ctx.g.P("\t\t\t}")
 		return
 	}
 	if info.Cardinality == typepb.Field_CARDINALITY_REPEATED {
-		g.renderJXUnmarshalRepeated(ctx, info, jxDecoderType, jsonUnmarshal, jxNull)
+		g.renderJXUnmarshalRepeated(ctx, info, jxDecoderType, jsonRefs, protoJSONRefs, jxNull)
 		ctx.g.P("\t\t\t}")
 		return
 	}
-	g.renderJXUnmarshalScalar(ctx, info, jxDecoderType, jsonUnmarshal, jxNull)
+	g.renderJXUnmarshalScalar(ctx, info, jxDecoderType, jsonRefs, protoJSONRefs, jxNull)
 	ctx.g.P("\t\t\t}")
 }
 
-func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInfo, jxDecoderType, jsonUnmarshal, jxNull string) {
+func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInfo, jxDecoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, jxNull string) {
 	fieldExpr := "x." + info.GoName
 	goType := info.GoType
 
@@ -453,12 +625,25 @@ func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInf
 				ctx.g.P("\t\t\t\treturn nil")
 				return
 			}
+			if protoJSONRefs != nil {
+				ctx.g.P("\t\t\t\tval := new(", baseType, ")")
+				ctx.g.P("\t\t\t\traw, err := d.Raw()")
+				ctx.g.P("\t\t\t\tif err != nil {")
+				ctx.g.P("\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t}")
+				ctx.g.P("\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, val); err != nil {")
+				ctx.g.P("\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t}")
+				ctx.g.P("\t\t\t\t", fieldExpr, " = val")
+				ctx.g.P("\t\t\t\treturn nil")
+				return
+			}
 			ctx.g.P("\t\t\t\tval := new(", baseType, ")")
 			ctx.g.P("\t\t\t\traw, err := d.Raw()")
 			ctx.g.P("\t\t\t\tif err != nil {")
 			ctx.g.P("\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t}")
-			ctx.g.P("\t\t\t\tif err := ", jsonUnmarshal, "(raw, val); err != nil {")
+			ctx.g.P("\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, val); err != nil {")
 			ctx.g.P("\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t}")
 			ctx.g.P("\t\t\t\t", fieldExpr, " = val")
@@ -486,11 +671,19 @@ func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInf
 			ctx.g.P("\t\t\t\treturn (&", fieldExpr, ").UnmarshalJSON(raw)")
 			return
 		}
+		if protoJSONRefs != nil {
+			ctx.g.P("\t\t\t\traw, err := d.Raw()")
+			ctx.g.P("\t\t\t\tif err != nil {")
+			ctx.g.P("\t\t\t\t\treturn err")
+			ctx.g.P("\t\t\t\t}")
+			ctx.g.P("\t\t\t\treturn ", protoJSONRefs.Unmarshal, "(raw, &", fieldExpr, ")")
+			return
+		}
 		ctx.g.P("\t\t\t\traw, err := d.Raw()")
 		ctx.g.P("\t\t\t\tif err != nil {")
 		ctx.g.P("\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t}")
-		ctx.g.P("\t\t\t\treturn ", jsonUnmarshal, "(raw, &", fieldExpr, ")")
+		ctx.g.P("\t\t\t\treturn ", jsonRefs.Unmarshal, "(raw, &", fieldExpr, ")")
 		return
 	}
 
@@ -507,7 +700,7 @@ func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInf
 	ctx.g.P("\t\t\t\treturn nil")
 }
 
-func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldInfo, jxDecoderType, jsonUnmarshal, jxNull string) {
+func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldInfo, jxDecoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, jxNull string) {
 	fieldExpr := "x." + info.GoName
 	elemType := strings.TrimPrefix(info.GoType, "[]")
 	elemIsPtr := strings.HasPrefix(elemType, "*")
@@ -542,12 +735,26 @@ func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldI
 				ctx.g.P("\t\t\t\t})")
 				return
 			}
+			if protoJSONRefs != nil {
+				ctx.g.P("\t\t\t\t\tval := new(", baseElem, ")")
+				ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
+				ctx.g.P("\t\t\t\t\tif err != nil {")
+				ctx.g.P("\t\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t\t}")
+				ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, val); err != nil {")
+				ctx.g.P("\t\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t\t}")
+				ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
+				ctx.g.P("\t\t\t\t\treturn nil")
+				ctx.g.P("\t\t\t\t})")
+				return
+			}
 			ctx.g.P("\t\t\t\t\tval := new(", baseElem, ")")
 			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 			ctx.g.P("\t\t\t\t\tif err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\tif err := ", jsonUnmarshal, "(raw, val); err != nil {")
+			ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, val); err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t\t}")
 			ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
@@ -589,12 +796,26 @@ func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldI
 			ctx.g.P("\t\t\t\t})")
 			return
 		}
+		if protoJSONRefs != nil {
+			ctx.g.P("\t\t\t\t\tvar val ", elemType)
+			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
+			ctx.g.P("\t\t\t\t\tif err != nil {")
+			ctx.g.P("\t\t\t\t\t\treturn err")
+			ctx.g.P("\t\t\t\t\t}")
+			ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, &val); err != nil {")
+			ctx.g.P("\t\t\t\t\t\treturn err")
+			ctx.g.P("\t\t\t\t\t}")
+			ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
+			ctx.g.P("\t\t\t\t\treturn nil")
+			ctx.g.P("\t\t\t\t})")
+			return
+		}
 		ctx.g.P("\t\t\t\t\tvar val ", elemType)
 		ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 		ctx.g.P("\t\t\t\t\tif err != nil {")
 		ctx.g.P("\t\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t\t}")
-		ctx.g.P("\t\t\t\t\tif err := ", jsonUnmarshal, "(raw, &val); err != nil {")
+		ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, &val); err != nil {")
 		ctx.g.P("\t\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t\t}")
 		ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
@@ -612,7 +833,7 @@ func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldI
 	ctx.g.P("\t\t\t\t})")
 }
 
-func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, jxDecoderType, jsonUnmarshal string, strconvRefs *jxStrconvRefs, fmtErrorf, jxNull string) {
+func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, jxDecoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, strconvRefs *jxStrconvRefs, fmtErrorf, jxNull string) {
 	fieldExpr := "x." + info.GoName
 	valType := info.MapValType
 	valIsPtr := strings.HasPrefix(valType, "*")
@@ -685,12 +906,26 @@ func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, 
 				ctx.g.P("\t\t\t\t})")
 				return
 			}
+			if protoJSONRefs != nil {
+				ctx.g.P("\t\t\t\t\tval := new(", valBase, ")")
+				ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
+				ctx.g.P("\t\t\t\t\tif err != nil {")
+				ctx.g.P("\t\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t\t}")
+				ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, val); err != nil {")
+				ctx.g.P("\t\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t\t}")
+				ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
+				ctx.g.P("\t\t\t\t\treturn nil")
+				ctx.g.P("\t\t\t\t})")
+				return
+			}
 			ctx.g.P("\t\t\t\t\tval := new(", valBase, ")")
 			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 			ctx.g.P("\t\t\t\t\tif err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\tif err := ", jsonUnmarshal, "(raw, val); err != nil {")
+			ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, val); err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t\t}")
 			ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
@@ -732,12 +967,26 @@ func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, 
 			ctx.g.P("\t\t\t\t})")
 			return
 		}
+		if protoJSONRefs != nil {
+			ctx.g.P("\t\t\t\t\tvar val ", valType)
+			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
+			ctx.g.P("\t\t\t\t\tif err != nil {")
+			ctx.g.P("\t\t\t\t\t\treturn err")
+			ctx.g.P("\t\t\t\t\t}")
+			ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, &val); err != nil {")
+			ctx.g.P("\t\t\t\t\t\treturn err")
+			ctx.g.P("\t\t\t\t\t}")
+			ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
+			ctx.g.P("\t\t\t\t\treturn nil")
+			ctx.g.P("\t\t\t\t})")
+			return
+		}
 		ctx.g.P("\t\t\t\t\tvar val ", valType)
 		ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 		ctx.g.P("\t\t\t\t\tif err != nil {")
 		ctx.g.P("\t\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t\t}")
-		ctx.g.P("\t\t\t\t\tif err := ", jsonUnmarshal, "(raw, &val); err != nil {")
+		ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, &val); err != nil {")
 		ctx.g.P("\t\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t\t}")
 		ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")

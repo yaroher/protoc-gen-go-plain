@@ -55,6 +55,12 @@ func (g *Generator) renderMessage(ctx *renderContext, msg *protogen.Message, mes
 	plainGoName := msg.GoIdent.GoName + g.suffix
 	wrapper := messages[ctx.builder.plainFullName(msg.Desc.FullName())]
 	if wrapper == nil {
+		if g.Settings.JSONJX {
+			if err := g.renderProtoJSONJX(ctx, msg, plainGoName, false); err != nil {
+				return err
+			}
+			ctx.g.P()
+		}
 		return nil
 	}
 
@@ -63,6 +69,12 @@ func (g *Generator) renderMessage(ctx *renderContext, msg *protogen.Message, mes
 		ctx.g.P("type ", plainGoName, " = ", aliasGoType)
 		ctx.g.P()
 		g.renderAliasConversions(ctx, msg, plainGoName, alias, aliasGoType)
+		if g.Settings.JSONJX {
+			if err := g.renderProtoJSONJX(ctx, msg, plainGoName, false); err != nil {
+				return err
+			}
+			ctx.g.P()
+		}
 		return nil
 	}
 
@@ -91,6 +103,10 @@ func (g *Generator) renderMessage(ctx *renderContext, msg *protogen.Message, mes
 	ctx.g.P()
 	if g.Settings.JSONJX {
 		if err := g.renderJSONJX(ctx, plainGoName, wrapper); err != nil {
+			return err
+		}
+		ctx.g.P()
+		if err := g.renderProtoJSONJX(ctx, msg, plainGoName, true); err != nil {
 			return err
 		}
 		ctx.g.P()
