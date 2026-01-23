@@ -49,10 +49,14 @@ run-test:
 run-bench:
 	go clean -testcache && go test -bench=. -v ./...
 
+.PHONY: .clean-test-nda
+.clean-test-nda:
+	find ./test/nda/xdr -type f -name "*.go" -delete
+
 NDA_PROTO_DIR=$(CURDIR)/test/nda
 NDA_PROTO_FILES=$(shell find "$(NDA_PROTO_DIR)" -type f -name '*.proto')
 .PHONY: build-test-nda
-build-test-nda: build
+build-test-nda: build .clean-test-nda
 	rm -f $(CURDIR)/bin/protolog.txt
 	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
 		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
@@ -66,10 +70,15 @@ build-test-nda: build
 	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/[[:space:]]\+/ /g'  $(CURDIR)/bin/protolog.txt
+	$(MAKE) extract-ir-event
+
+.PHONY: extract-ir-event
+extract-ir-event:
+	python3 $(CURDIR)/scripts/extract_ir_type.py example.xdr.endpoint.EventPlain $(CURDIR)/bin/json/ir.json > $(CURDIR)/bin/json/example.xdr.endpoint.EventPlain.json
 
 .PHONY: run-test-nda
 run-test-nda:
-	go clean -testcache && go test -v ./test/nda/xdr/endpoint
+	go clean -testcache && go test -v ./test/nda/...
 
 branch=main
 .PHONY: revision
