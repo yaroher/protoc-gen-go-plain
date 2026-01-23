@@ -20,7 +20,7 @@ func (g *Generator) Render(typeIRs []*TypePbIR) error {
 
 		imports := make(map[string]struct{})
 		var body strings.Builder
-		bodyWriter := bufferWriter{b: &body}
+		bodyWriter := &bufferWriter{b: &body}
 
 		msgNames := make([]string, 0, len(ir.Messages))
 		for name := range ir.Messages {
@@ -30,7 +30,7 @@ func (g *Generator) Render(typeIRs []*TypePbIR) error {
 
 		for _, name := range msgNames {
 			msg := ir.Messages[name]
-			g.renderMessage(bodyWriter, ir, msg, imports)
+			g.renderMessage(bodyWriter, ir, msg, imports, typeIRs)
 			bodyWriter.P()
 		}
 
@@ -58,7 +58,7 @@ func (g *Generator) Render(typeIRs []*TypePbIR) error {
 	return nil
 }
 
-func (g *Generator) renderMessage(out typeWriter, ir *TypePbIR, msg *typepb.Type, imports map[string]struct{}) {
+func (g *Generator) renderMessage(out typeWriter, ir *TypePbIR, msg *typepb.Type, imports map[string]struct{}, allIRs []*TypePbIR) {
 	if g.isTypeAliasMessage(msg.Name) {
 		return
 	}
@@ -72,7 +72,7 @@ func (g *Generator) renderMessage(out typeWriter, ir *TypePbIR, msg *typepb.Type
 			continue
 		}
 		fieldName := g.fieldGoName(field)
-		fieldType, tag := g.fieldGoTypeAndTag(ir, msg, field, imports)
+		fieldType, tag := g.fieldGoTypeAndTag(ir, msg, field, imports, allIRs)
 		out.P("\t", fieldName, " ", fieldType, " `json:\"", tag, "\"`")
 	}
 
@@ -109,7 +109,7 @@ func (g *Generator) collectOneofFieldNames(msg *typepb.Type) []oneofField {
 }
 
 func (g *Generator) plainTypeName(fullName string) string {
-	return strcase.ToCamel(getShortName(fullName)) + g.suffix
+	return getShortName(fullName) + g.suffix
 }
 
 func (g *Generator) fieldGoName(field *typepb.Field) string {
@@ -127,13 +127,13 @@ func (g *Generator) plainName(field *typepb.Field) string {
 	return getShortName(field.Name)
 }
 
-func (g *Generator) fieldGoTypeAndTag(ir *TypePbIR, msg *typepb.Type, field *typepb.Field, imports map[string]struct{}) (string, string) {
+func (g *Generator) fieldGoTypeAndTag(ir *TypePbIR, msg *typepb.Type, field *typepb.Field, imports map[string]struct{}, allIRs []*TypePbIR) (string, string) {
 	isRepeated := field.Cardinality == typepb.Field_CARDINALITY_REPEATED
 	isOneof := hasMarker(field.TypeUrl, isOneoffedMarker)
 	isCRF := hasMarker(field.TypeUrl, crfMarker)
 	isCRFField := hasMarker(field.TypeUrl, crfForMarker)
 
-	goType := g.fieldGoType(ir, field, imports)
+	goType := g.fieldGoType(ir, field, imports, allIRs)
 	tag := jsonTagFromPlain(g.plainName(field))
 
 	if isRepeated {
@@ -149,12 +149,12 @@ func (g *Generator) fieldGoTypeAndTag(ir *TypePbIR, msg *typepb.Type, field *typ
 	return goType, tag
 }
 
-func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[string]struct{}) string {
+func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[string]struct{}, allIRs []*TypePbIR) string {
 	isOptional := hasMarker(field.TypeUrl, isOneoffedMarker) ||
 		(hasMarker(field.TypeUrl, crfMarker) && !hasMarker(field.TypeUrl, crfForMarker))
 	if info, ok := mapFieldInfoFor(field); ok {
 		keyType := mapScalarGoType(info.keyKind)
-		valType := g.mapValueGoType(ir, info, imports)
+		valType := g.mapValueGoType(ir, info, imports, allIRs)
 		return "map[" + keyType + "]" + valType
 	}
 	if info, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
@@ -208,7 +208,7 @@ func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[s
 			}
 			return "*" + typeName
 		}
-		typeName := g.resolveMessageType(ir, field.TypeUrl)
+		typeName := g.resolveMessageType(ir, field.TypeUrl, allIRs, imports)
 		if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 			return "[]" + typeName
 		}
@@ -218,7 +218,7 @@ func (g *Generator) fieldGoType(ir *TypePbIR, field *typepb.Field, imports map[s
 	}
 }
 
-func (g *Generator) mapValueGoType(ir *TypePbIR, info mapFieldInfo, imports map[string]struct{}) string {
+func (g *Generator) mapValueGoType(ir *TypePbIR, info mapFieldInfo, imports map[string]struct{}, allIRs []*TypePbIR) string {
 	switch info.valueKind {
 	case typepb.Field_TYPE_MESSAGE:
 		if info.valueType == "" {
@@ -228,21 +228,47 @@ func (g *Generator) mapValueGoType(ir *TypePbIR, info mapFieldInfo, imports map[
 			imports[importPath] = struct{}{}
 			return "*" + typeName
 		}
-		typeName := g.resolveMessageType(ir, info.valueType)
+		typeName := g.resolveMessageType(ir, info.valueType, allIRs, imports)
 		return "*" + typeName
 	default:
 		return mapScalarGoType(info.valueKind)
 	}
 }
 
-func (g *Generator) resolveMessageType(ir *TypePbIR, typeURL string) string {
+func (g *Generator) resolveMessageType(ir *TypePbIR, typeURL string, allIRs []*TypePbIR, imports map[string]struct{}) string {
+	typeName, importPath := g.resolveMessageTypeAndImport(ir, typeURL, allIRs)
+	if importPath != "" && importPath != string(ir.File.GoImportPath) {
+		imports[importPath] = struct{}{}
+	}
+	return typeName
+}
+
+func (g *Generator) resolveMessageTypeAndImport(ir *TypePbIR, typeURL string, allIRs []*TypePbIR) (string, string) {
 	target := empath.Parse(typeURL).Last().Value()
+	// First, try to find in current IR
 	for _, m := range ir.Messages {
 		if empath.Parse(m.Name).Last().Value() == target {
-			return g.plainTypeName(m.Name)
+			return g.plainTypeName(m.Name), ""
 		}
 	}
-	return strcase.ToCamel(getShortName(target)) + g.suffix
+	// If not found, search in all IRs
+	for _, otherIR := range allIRs {
+		if otherIR.File == nil {
+			continue
+		}
+		for _, m := range otherIR.Messages {
+			if empath.Parse(m.Name).Last().Value() == target {
+				// Found in another package
+				if otherIR.File.GoImportPath != ir.File.GoImportPath {
+					// Use package name from the other file as prefix
+					return string(otherIR.File.GoPackageName) + "." + g.plainTypeName(m.Name), string(otherIR.File.GoImportPath)
+				}
+				return g.plainTypeName(m.Name), ""
+			}
+		}
+	}
+	// Fallback: use short name
+	return getShortName(target) + g.suffix, ""
 }
 
 func (g *Generator) wrapRepeated(field *typepb.Field, base string) string {
@@ -280,12 +306,19 @@ type typeWriter interface {
 }
 
 type bufferWriter struct {
-	b *strings.Builder
+	b       *strings.Builder
+	counter int
 }
 
-func (w bufferWriter) P(v ...any) {
+func (w *bufferWriter) P(v ...any) {
 	for _, part := range v {
 		fmt.Fprint(w.b, part)
 	}
 	w.b.WriteByte('\n')
+}
+
+func (w *bufferWriter) getAndIncCounter() int {
+	c := w.counter
+	w.counter++
+	return c
 }

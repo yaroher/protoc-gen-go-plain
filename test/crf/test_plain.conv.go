@@ -32,12 +32,12 @@ func (x *EventPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, string
 		return nil
 	}
 	out := &Event{}
-	out.EventId = x.EventId
-	if casterUuidUuidToString == nil {
-		panic("missing caster: casterUuidUuidToString")
+	if x.OtherEvent != nil {
+		if out.Data == nil {
+			out.Data = &EventData{}
+		}
+		out.Data.PlatformEvent = &EventData_OtherEvent{OtherEvent: *x.OtherEvent}
 	}
-	val := casterUuidUuidToString.Cast(x.SomeEventStringPayload)
-	out.SomeEventStringPayload = val
 	if x.NonPlatformEventCustomEvent != nil {
 		if out.Data == nil {
 			out.Data = &EventData{}
@@ -47,18 +47,17 @@ func (x *EventPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, string
 	if out.Data == nil {
 		out.Data = &EventData{}
 	}
-	var _oneofFile1 *File
+	var _oneofFile1OutDataFile_0 *File
 	if v, ok := out.Data.NonPlatformEvent.(*EventData_File); ok {
-		_oneofFile1 = v.File
+		_oneofFile1OutDataFile_0 = v.File
 	}
-	if _oneofFile1 == nil {
-		_oneofFile1 = &File{}
-		out.Data.NonPlatformEvent = &EventData_File{File: _oneofFile1}
+	if _oneofFile1OutDataFile_0 == nil {
+		_oneofFile1OutDataFile_0 = &File{}
+		out.Data.NonPlatformEvent = &EventData_File{File: _oneofFile1OutDataFile_0}
 	}
-	_oneofFile1.Path = x.NonPlatformEventPath
-	// skip invalid path for PathCRF
+	_oneofFile1OutDataFile_0.Path = x.NonPlatformEventPath
 	out.ParentEventId = x.ParentEventId
-	// skip invalid path for EventVirtualType
+	out.EventId = x.EventId
 	if x.Process != nil {
 		out.Process = x.Process.IntoPb()
 	}
@@ -70,18 +69,18 @@ func (x *EventPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, string
 				if out.Data == nil {
 					out.Data = &EventData{}
 				}
-				var _oneofFileRename1 *FileRename
+				var _oneofFileRename1OutDataFileRename_1 *FileRename
 				if v, ok := out.Data.PlatformEvent.(*EventData_FileRename); ok {
-					_oneofFileRename1 = v.FileRename
+					_oneofFileRename1OutDataFileRename_1 = v.FileRename
 				}
-				if _oneofFileRename1 == nil {
-					_oneofFileRename1 = &FileRename{}
-					out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1}
+				if _oneofFileRename1OutDataFileRename_1 == nil {
+					_oneofFileRename1OutDataFileRename_1 = &FileRename{}
+					out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1OutDataFileRename_1}
 				}
-				if _oneofFileRename1.File == nil {
-					_oneofFileRename1.File = &File{}
+				if _oneofFileRename1OutDataFileRename_1.File == nil {
+					_oneofFileRename1OutDataFileRename_1.File = &File{}
 				}
-				_oneofFileRename1.File.Path = *x.Path
+				_oneofFileRename1OutDataFileRename_1.File.Path = *x.Path
 			}
 		}
 	} else {
@@ -89,26 +88,27 @@ func (x *EventPlain) IntoPb(casterUuidUuidToString cast.Caster[uuid.UUID, string
 			if out.Data == nil {
 				out.Data = &EventData{}
 			}
-			var _oneofFileRename1 *FileRename
+			var _oneofFileRename1OutDataFileRename_2 *FileRename
 			if v, ok := out.Data.PlatformEvent.(*EventData_FileRename); ok {
-				_oneofFileRename1 = v.FileRename
+				_oneofFileRename1OutDataFileRename_2 = v.FileRename
 			}
-			if _oneofFileRename1 == nil {
-				_oneofFileRename1 = &FileRename{}
-				out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1}
+			if _oneofFileRename1OutDataFileRename_2 == nil {
+				_oneofFileRename1OutDataFileRename_2 = &FileRename{}
+				out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1OutDataFileRename_2}
 			}
-			if _oneofFileRename1.File == nil {
-				_oneofFileRename1.File = &File{}
+			if _oneofFileRename1OutDataFileRename_2.File == nil {
+				_oneofFileRename1OutDataFileRename_2.File = &File{}
 			}
-			_oneofFileRename1.File.Path = *x.Path
+			_oneofFileRename1OutDataFileRename_2.File.Path = *x.Path
 		}
 	}
-	if x.OtherEvent != nil {
-		if out.Data == nil {
-			out.Data = &EventData{}
-		}
-		out.Data.PlatformEvent = &EventData_OtherEvent{OtherEvent: *x.OtherEvent}
+	// skip invalid path for PathCRF
+	// skip invalid path for EventVirtualType
+	if casterUuidUuidToString == nil {
+		panic("missing caster: casterUuidUuidToString")
 	}
+	val := casterUuidUuidToString.Cast(x.SomeEventStringPayload)
+	out.SomeEventStringPayload = val
 	return out
 }
 
@@ -117,39 +117,37 @@ func (x *Event) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID])
 		return nil
 	}
 	out := &EventPlain{}
-	out.EventId = x.EventId
-	if x.SomeEventStringPayload != "" {
-		if casterStringToUuidUuid == nil {
-			panic("missing caster: casterStringToUuidUuid")
+	if x.Data != nil {
+		if _oneofOtherEvent1XDataOtherEvent_3, ok := x.Data.PlatformEvent.(*EventData_OtherEvent); ok {
+			_valOtherEvent := _oneofOtherEvent1XDataOtherEvent_3.OtherEvent
+			out.OtherEvent = &_valOtherEvent
 		}
-		out.SomeEventStringPayload = casterStringToUuidUuid.Cast(x.SomeEventStringPayload)
 	}
 	if x.Data != nil {
-		if _oneofCustomEvent1, ok := x.Data.NonPlatformEvent.(*EventData_CustomEvent); ok {
-			_valNonPlatformEventCustomEvent := _oneofCustomEvent1.CustomEvent
+		if _oneofCustomEvent1XDataCustomEvent_4, ok := x.Data.NonPlatformEvent.(*EventData_CustomEvent); ok {
+			_valNonPlatformEventCustomEvent := _oneofCustomEvent1XDataCustomEvent_4.CustomEvent
 			out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
 		}
 	}
 	if x.Data != nil {
-		if _oneofFile1, ok := x.Data.NonPlatformEvent.(*EventData_File); ok {
-			if _oneofFile1.File != nil {
-				out.NonPlatformEventPath = _oneofFile1.File.Path
+		if _oneofFile1XDataFile_5, ok := x.Data.NonPlatformEvent.(*EventData_File); ok {
+			if _oneofFile1XDataFile_5.File != nil {
+				out.NonPlatformEventPath = _oneofFile1XDataFile_5.File.Path
 			}
 		}
 	}
-	// skip invalid path for PathCRF
 	out.ParentEventId = x.ParentEventId
-	// skip invalid path for EventVirtualType
+	out.EventId = x.EventId
 	if x.Process != nil {
 		out.Process = x.Process.IntoPlain()
 	}
 	// CRF paths
 	if x.Data != nil {
-		if _oneofFileRename1, ok := x.Data.PlatformEvent.(*EventData_FileRename); ok {
-			if _oneofFileRename1.FileRename != nil {
-				if _oneofFileRename1.FileRename.File != nil {
-					if _oneofFileRename1.FileRename.File.Path != "" {
-						_valPath := _oneofFileRename1.FileRename.File.Path
+		if _oneofFileRename1XDataFileRename_6, ok := x.Data.PlatformEvent.(*EventData_FileRename); ok {
+			if _oneofFileRename1XDataFileRename_6.FileRename != nil {
+				if _oneofFileRename1XDataFileRename_6.FileRename.File != nil {
+					if _oneofFileRename1XDataFileRename_6.FileRename.File.Path != "" {
+						_valPath := _oneofFileRename1XDataFileRename_6.FileRename.File.Path
 						out.Path = &_valPath
 						out.PathCRF = "data/file_rename/file/path"
 					}
@@ -157,11 +155,13 @@ func (x *Event) IntoPlain(casterStringToUuidUuid cast.Caster[string, uuid.UUID])
 			}
 		}
 	}
-	if x.Data != nil {
-		if _oneofOtherEvent1, ok := x.Data.PlatformEvent.(*EventData_OtherEvent); ok {
-			_valOtherEvent := _oneofOtherEvent1.OtherEvent
-			out.OtherEvent = &_valOtherEvent
+	// skip invalid path for PathCRF
+	// skip invalid path for EventVirtualType
+	if x.SomeEventStringPayload != "" {
+		if casterStringToUuidUuid == nil {
+			panic("missing caster: casterStringToUuidUuid")
 		}
+		out.SomeEventStringPayload = casterStringToUuidUuid.Cast(x.SomeEventStringPayload)
 	}
 	return out
 }
@@ -171,15 +171,12 @@ func (x *EventPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID, 
 		return nil, nil
 	}
 	out := &Event{}
-	out.EventId = x.EventId
-	if casterUuidUuidToString == nil {
-		return nil, fmt.Errorf("missing caster: casterUuidUuidToString")
+	if x.OtherEvent != nil {
+		if out.Data == nil {
+			out.Data = &EventData{}
+		}
+		out.Data.PlatformEvent = &EventData_OtherEvent{OtherEvent: *x.OtherEvent}
 	}
-	val, err := casterUuidUuidToString.CastErr(x.SomeEventStringPayload)
-	if err != nil {
-		return nil, err
-	}
-	out.SomeEventStringPayload = val
 	if x.NonPlatformEventCustomEvent != nil {
 		if out.Data == nil {
 			out.Data = &EventData{}
@@ -189,18 +186,17 @@ func (x *EventPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID, 
 	if out.Data == nil {
 		out.Data = &EventData{}
 	}
-	var _oneofFile1 *File
+	var _oneofFile1OutDataFile_7 *File
 	if v, ok := out.Data.NonPlatformEvent.(*EventData_File); ok {
-		_oneofFile1 = v.File
+		_oneofFile1OutDataFile_7 = v.File
 	}
-	if _oneofFile1 == nil {
-		_oneofFile1 = &File{}
-		out.Data.NonPlatformEvent = &EventData_File{File: _oneofFile1}
+	if _oneofFile1OutDataFile_7 == nil {
+		_oneofFile1OutDataFile_7 = &File{}
+		out.Data.NonPlatformEvent = &EventData_File{File: _oneofFile1OutDataFile_7}
 	}
-	_oneofFile1.Path = x.NonPlatformEventPath
-	// skip invalid path for PathCRF
+	_oneofFile1OutDataFile_7.Path = x.NonPlatformEventPath
 	out.ParentEventId = x.ParentEventId
-	// skip invalid path for EventVirtualType
+	out.EventId = x.EventId
 	if x.Process != nil {
 		mv, err := x.Process.IntoPbErr()
 		if err != nil {
@@ -216,18 +212,18 @@ func (x *EventPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID, 
 				if out.Data == nil {
 					out.Data = &EventData{}
 				}
-				var _oneofFileRename1 *FileRename
+				var _oneofFileRename1OutDataFileRename_8 *FileRename
 				if v, ok := out.Data.PlatformEvent.(*EventData_FileRename); ok {
-					_oneofFileRename1 = v.FileRename
+					_oneofFileRename1OutDataFileRename_8 = v.FileRename
 				}
-				if _oneofFileRename1 == nil {
-					_oneofFileRename1 = &FileRename{}
-					out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1}
+				if _oneofFileRename1OutDataFileRename_8 == nil {
+					_oneofFileRename1OutDataFileRename_8 = &FileRename{}
+					out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1OutDataFileRename_8}
 				}
-				if _oneofFileRename1.File == nil {
-					_oneofFileRename1.File = &File{}
+				if _oneofFileRename1OutDataFileRename_8.File == nil {
+					_oneofFileRename1OutDataFileRename_8.File = &File{}
 				}
-				_oneofFileRename1.File.Path = *x.Path
+				_oneofFileRename1OutDataFileRename_8.File.Path = *x.Path
 			}
 		}
 	} else {
@@ -235,26 +231,30 @@ func (x *EventPlain) IntoPbErr(casterUuidUuidToString cast.CasterErr[uuid.UUID, 
 			if out.Data == nil {
 				out.Data = &EventData{}
 			}
-			var _oneofFileRename1 *FileRename
+			var _oneofFileRename1OutDataFileRename_9 *FileRename
 			if v, ok := out.Data.PlatformEvent.(*EventData_FileRename); ok {
-				_oneofFileRename1 = v.FileRename
+				_oneofFileRename1OutDataFileRename_9 = v.FileRename
 			}
-			if _oneofFileRename1 == nil {
-				_oneofFileRename1 = &FileRename{}
-				out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1}
+			if _oneofFileRename1OutDataFileRename_9 == nil {
+				_oneofFileRename1OutDataFileRename_9 = &FileRename{}
+				out.Data.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename1OutDataFileRename_9}
 			}
-			if _oneofFileRename1.File == nil {
-				_oneofFileRename1.File = &File{}
+			if _oneofFileRename1OutDataFileRename_9.File == nil {
+				_oneofFileRename1OutDataFileRename_9.File = &File{}
 			}
-			_oneofFileRename1.File.Path = *x.Path
+			_oneofFileRename1OutDataFileRename_9.File.Path = *x.Path
 		}
 	}
-	if x.OtherEvent != nil {
-		if out.Data == nil {
-			out.Data = &EventData{}
-		}
-		out.Data.PlatformEvent = &EventData_OtherEvent{OtherEvent: *x.OtherEvent}
+	// skip invalid path for PathCRF
+	// skip invalid path for EventVirtualType
+	if casterUuidUuidToString == nil {
+		return nil, fmt.Errorf("missing caster: casterUuidUuidToString")
 	}
+	val, err := casterUuidUuidToString.CastErr(x.SomeEventStringPayload)
+	if err != nil {
+		return nil, err
+	}
+	out.SomeEventStringPayload = val
 	return out, nil
 }
 
@@ -263,7 +263,50 @@ func (x *Event) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uuid.
 		return nil, nil
 	}
 	out := &EventPlain{}
+	if x.Data != nil {
+		if _oneofOtherEvent1XDataOtherEvent_10, ok := x.Data.PlatformEvent.(*EventData_OtherEvent); ok {
+			_valOtherEvent := _oneofOtherEvent1XDataOtherEvent_10.OtherEvent
+			out.OtherEvent = &_valOtherEvent
+		}
+	}
+	if x.Data != nil {
+		if _oneofCustomEvent1XDataCustomEvent_11, ok := x.Data.NonPlatformEvent.(*EventData_CustomEvent); ok {
+			_valNonPlatformEventCustomEvent := _oneofCustomEvent1XDataCustomEvent_11.CustomEvent
+			out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
+		}
+	}
+	if x.Data != nil {
+		if _oneofFile1XDataFile_12, ok := x.Data.NonPlatformEvent.(*EventData_File); ok {
+			if _oneofFile1XDataFile_12.File != nil {
+				out.NonPlatformEventPath = _oneofFile1XDataFile_12.File.Path
+			}
+		}
+	}
+	out.ParentEventId = x.ParentEventId
 	out.EventId = x.EventId
+	if x.Process != nil {
+		plainVal, err := x.Process.IntoPlainErr()
+		if err != nil {
+			return nil, err
+		}
+		out.Process = plainVal
+	}
+	// CRF paths
+	if x.Data != nil {
+		if _oneofFileRename1XDataFileRename_13, ok := x.Data.PlatformEvent.(*EventData_FileRename); ok {
+			if _oneofFileRename1XDataFileRename_13.FileRename != nil {
+				if _oneofFileRename1XDataFileRename_13.FileRename.File != nil {
+					if _oneofFileRename1XDataFileRename_13.FileRename.File.Path != "" {
+						_valPath := _oneofFileRename1XDataFileRename_13.FileRename.File.Path
+						out.Path = &_valPath
+						out.PathCRF = "data/file_rename/file/path"
+					}
+				}
+			}
+		}
+	}
+	// skip invalid path for PathCRF
+	// skip invalid path for EventVirtualType
 	if x.SomeEventStringPayload != "" {
 		if casterStringToUuidUuid == nil {
 			return nil, fmt.Errorf("missing caster: casterStringToUuidUuid")
@@ -274,49 +317,6 @@ func (x *Event) IntoPlainErr(casterStringToUuidUuid cast.CasterErr[string, uuid.
 		}
 		out.SomeEventStringPayload = val
 	}
-	if x.Data != nil {
-		if _oneofCustomEvent1, ok := x.Data.NonPlatformEvent.(*EventData_CustomEvent); ok {
-			_valNonPlatformEventCustomEvent := _oneofCustomEvent1.CustomEvent
-			out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
-		}
-	}
-	if x.Data != nil {
-		if _oneofFile1, ok := x.Data.NonPlatformEvent.(*EventData_File); ok {
-			if _oneofFile1.File != nil {
-				out.NonPlatformEventPath = _oneofFile1.File.Path
-			}
-		}
-	}
-	// skip invalid path for PathCRF
-	out.ParentEventId = x.ParentEventId
-	// skip invalid path for EventVirtualType
-	if x.Process != nil {
-		plainVal, err := x.Process.IntoPlainErr()
-		if err != nil {
-			return nil, err
-		}
-		out.Process = plainVal
-	}
-	// CRF paths
-	if x.Data != nil {
-		if _oneofFileRename1, ok := x.Data.PlatformEvent.(*EventData_FileRename); ok {
-			if _oneofFileRename1.FileRename != nil {
-				if _oneofFileRename1.FileRename.File != nil {
-					if _oneofFileRename1.FileRename.File.Path != "" {
-						_valPath := _oneofFileRename1.FileRename.File.Path
-						out.Path = &_valPath
-						out.PathCRF = "data/file_rename/file/path"
-					}
-				}
-			}
-		}
-	}
-	if x.Data != nil {
-		if _oneofOtherEvent1, ok := x.Data.PlatformEvent.(*EventData_OtherEvent); ok {
-			_valOtherEvent := _oneofOtherEvent1.OtherEvent
-			out.OtherEvent = &_valOtherEvent
-		}
-	}
 	return out, nil
 }
 
@@ -325,72 +325,72 @@ func (x *EventDataPlain) IntoPb() *EventData {
 		return nil
 	}
 	out := &EventData{}
-	if x.NonPlatformEventCustomEvent != nil {
-		out.NonPlatformEvent = &EventData_CustomEvent{CustomEvent: *x.NonPlatformEventCustomEvent}
-	}
-	var _oneofFile0 *File
-	if v, ok := out.NonPlatformEvent.(*EventData_File); ok {
-		_oneofFile0 = v.File
-	}
-	if _oneofFile0 == nil {
-		_oneofFile0 = &File{}
-		out.NonPlatformEvent = &EventData_File{File: _oneofFile0}
-	}
-	_oneofFile0.Path = x.NonPlatformEventPath
 	if x.PathCRF != "" {
 		_crfPath := strings.Join(parseCRFPath(x.PathCRF), "/")
 		switch _crfPath {
 		case "file_rename/file/path":
 			if x.Path != nil {
-				var _oneofFileRename0 *FileRename
+				var _oneofFileRename0OutFileRename_14 *FileRename
 				if v, ok := out.PlatformEvent.(*EventData_FileRename); ok {
-					_oneofFileRename0 = v.FileRename
+					_oneofFileRename0OutFileRename_14 = v.FileRename
 				}
-				if _oneofFileRename0 == nil {
-					_oneofFileRename0 = &FileRename{}
-					out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0}
+				if _oneofFileRename0OutFileRename_14 == nil {
+					_oneofFileRename0OutFileRename_14 = &FileRename{}
+					out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0OutFileRename_14}
 				}
-				if _oneofFileRename0.File == nil {
-					_oneofFileRename0.File = &File{}
+				if _oneofFileRename0OutFileRename_14.File == nil {
+					_oneofFileRename0OutFileRename_14.File = &File{}
 				}
-				_oneofFileRename0.File.Path = *x.Path
+				_oneofFileRename0OutFileRename_14.File.Path = *x.Path
 			}
 		case "file_create/file/path":
 			if x.Path != nil {
-				var _oneofFileCreate0 *FileCreate
+				var _oneofFileCreate0OutFileCreate_15 *FileCreate
 				if v, ok := out.PlatformEvent.(*EventData_FileCreate); ok {
-					_oneofFileCreate0 = v.FileCreate
+					_oneofFileCreate0OutFileCreate_15 = v.FileCreate
 				}
-				if _oneofFileCreate0 == nil {
-					_oneofFileCreate0 = &FileCreate{}
-					out.PlatformEvent = &EventData_FileCreate{FileCreate: _oneofFileCreate0}
+				if _oneofFileCreate0OutFileCreate_15 == nil {
+					_oneofFileCreate0OutFileCreate_15 = &FileCreate{}
+					out.PlatformEvent = &EventData_FileCreate{FileCreate: _oneofFileCreate0OutFileCreate_15}
 				}
-				if _oneofFileCreate0.File == nil {
-					_oneofFileCreate0.File = &File{}
+				if _oneofFileCreate0OutFileCreate_15.File == nil {
+					_oneofFileCreate0OutFileCreate_15.File = &File{}
 				}
-				_oneofFileCreate0.File.Path = *x.Path
+				_oneofFileCreate0OutFileCreate_15.File.Path = *x.Path
 			}
 		}
 	} else {
 		if x.Path != nil {
-			var _oneofFileRename0 *FileRename
+			var _oneofFileRename0OutFileRename_16 *FileRename
 			if v, ok := out.PlatformEvent.(*EventData_FileRename); ok {
-				_oneofFileRename0 = v.FileRename
+				_oneofFileRename0OutFileRename_16 = v.FileRename
 			}
-			if _oneofFileRename0 == nil {
-				_oneofFileRename0 = &FileRename{}
-				out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0}
+			if _oneofFileRename0OutFileRename_16 == nil {
+				_oneofFileRename0OutFileRename_16 = &FileRename{}
+				out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0OutFileRename_16}
 			}
-			if _oneofFileRename0.File == nil {
-				_oneofFileRename0.File = &File{}
+			if _oneofFileRename0OutFileRename_16.File == nil {
+				_oneofFileRename0OutFileRename_16.File = &File{}
 			}
-			_oneofFileRename0.File.Path = *x.Path
+			_oneofFileRename0OutFileRename_16.File.Path = *x.Path
 		}
 	}
 	// skip invalid path for PathCRF
 	if x.OtherEvent != nil {
 		out.PlatformEvent = &EventData_OtherEvent{OtherEvent: *x.OtherEvent}
 	}
+	if x.NonPlatformEventCustomEvent != nil {
+		out.NonPlatformEvent = &EventData_CustomEvent{CustomEvent: *x.NonPlatformEventCustomEvent}
+	}
+	var _oneofFile0OutFile_17 *File
+	if v, ok := out.NonPlatformEvent.(*EventData_File); ok {
+		_oneofFile0OutFile_17 = v.File
+	}
+	if _oneofFile0OutFile_17 == nil {
+		_oneofFile0OutFile_17 = &File{}
+		out.NonPlatformEvent = &EventData_File{File: _oneofFile0OutFile_17}
+	}
+	_oneofFile0OutFile_17.Path = x.NonPlatformEventPath
 	out.NoRemovedOneof = x.NoRemovedOneof
 	return out
 }
@@ -400,32 +400,23 @@ func (x *EventData) IntoPlain() *EventDataPlain {
 		return nil
 	}
 	out := &EventDataPlain{}
-	if _oneofCustomEvent0, ok := x.NonPlatformEvent.(*EventData_CustomEvent); ok {
-		_valNonPlatformEventCustomEvent := _oneofCustomEvent0.CustomEvent
-		out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
-	}
-	if _oneofFile0, ok := x.NonPlatformEvent.(*EventData_File); ok {
-		if _oneofFile0.File != nil {
-			out.NonPlatformEventPath = _oneofFile0.File.Path
-		}
-	}
 	// CRF paths
-	if _oneofFileRename0, ok := x.PlatformEvent.(*EventData_FileRename); ok {
-		if _oneofFileRename0.FileRename != nil {
-			if _oneofFileRename0.FileRename.File != nil {
-				if _oneofFileRename0.FileRename.File.Path != "" {
-					_valPath := _oneofFileRename0.FileRename.File.Path
+	if _oneofFileRename0XFileRename_18, ok := x.PlatformEvent.(*EventData_FileRename); ok {
+		if _oneofFileRename0XFileRename_18.FileRename != nil {
+			if _oneofFileRename0XFileRename_18.FileRename.File != nil {
+				if _oneofFileRename0XFileRename_18.FileRename.File.Path != "" {
+					_valPath := _oneofFileRename0XFileRename_18.FileRename.File.Path
 					out.Path = &_valPath
 					out.PathCRF = "file_rename/file/path"
 				}
 			}
 		}
 	}
-	if _oneofFileCreate0, ok := x.PlatformEvent.(*EventData_FileCreate); ok {
-		if _oneofFileCreate0.FileCreate != nil {
-			if _oneofFileCreate0.FileCreate.File != nil {
-				if _oneofFileCreate0.FileCreate.File.Path != "" {
-					_valPath := _oneofFileCreate0.FileCreate.File.Path
+	if _oneofFileCreate0XFileCreate_19, ok := x.PlatformEvent.(*EventData_FileCreate); ok {
+		if _oneofFileCreate0XFileCreate_19.FileCreate != nil {
+			if _oneofFileCreate0XFileCreate_19.FileCreate.File != nil {
+				if _oneofFileCreate0XFileCreate_19.FileCreate.File.Path != "" {
+					_valPath := _oneofFileCreate0XFileCreate_19.FileCreate.File.Path
 					out.Path = &_valPath
 					out.PathCRF = "file_create/file/path"
 				}
@@ -433,9 +424,18 @@ func (x *EventData) IntoPlain() *EventDataPlain {
 		}
 	}
 	// skip invalid path for PathCRF
-	if _oneofOtherEvent0, ok := x.PlatformEvent.(*EventData_OtherEvent); ok {
-		_valOtherEvent := _oneofOtherEvent0.OtherEvent
+	if _oneofOtherEvent0XOtherEvent_20, ok := x.PlatformEvent.(*EventData_OtherEvent); ok {
+		_valOtherEvent := _oneofOtherEvent0XOtherEvent_20.OtherEvent
 		out.OtherEvent = &_valOtherEvent
+	}
+	if _oneofCustomEvent0XCustomEvent_21, ok := x.NonPlatformEvent.(*EventData_CustomEvent); ok {
+		_valNonPlatformEventCustomEvent := _oneofCustomEvent0XCustomEvent_21.CustomEvent
+		out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
+	}
+	if _oneofFile0XFile_22, ok := x.NonPlatformEvent.(*EventData_File); ok {
+		if _oneofFile0XFile_22.File != nil {
+			out.NonPlatformEventPath = _oneofFile0XFile_22.File.Path
+		}
 	}
 	out.NoRemovedOneof = x.NoRemovedOneof
 	return out
@@ -446,72 +446,72 @@ func (x *EventDataPlain) IntoPbErr() (*EventData, error) {
 		return nil, nil
 	}
 	out := &EventData{}
-	if x.NonPlatformEventCustomEvent != nil {
-		out.NonPlatformEvent = &EventData_CustomEvent{CustomEvent: *x.NonPlatformEventCustomEvent}
-	}
-	var _oneofFile0 *File
-	if v, ok := out.NonPlatformEvent.(*EventData_File); ok {
-		_oneofFile0 = v.File
-	}
-	if _oneofFile0 == nil {
-		_oneofFile0 = &File{}
-		out.NonPlatformEvent = &EventData_File{File: _oneofFile0}
-	}
-	_oneofFile0.Path = x.NonPlatformEventPath
 	if x.PathCRF != "" {
 		_crfPath := strings.Join(parseCRFPath(x.PathCRF), "/")
 		switch _crfPath {
 		case "file_rename/file/path":
 			if x.Path != nil {
-				var _oneofFileRename0 *FileRename
+				var _oneofFileRename0OutFileRename_23 *FileRename
 				if v, ok := out.PlatformEvent.(*EventData_FileRename); ok {
-					_oneofFileRename0 = v.FileRename
+					_oneofFileRename0OutFileRename_23 = v.FileRename
 				}
-				if _oneofFileRename0 == nil {
-					_oneofFileRename0 = &FileRename{}
-					out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0}
+				if _oneofFileRename0OutFileRename_23 == nil {
+					_oneofFileRename0OutFileRename_23 = &FileRename{}
+					out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0OutFileRename_23}
 				}
-				if _oneofFileRename0.File == nil {
-					_oneofFileRename0.File = &File{}
+				if _oneofFileRename0OutFileRename_23.File == nil {
+					_oneofFileRename0OutFileRename_23.File = &File{}
 				}
-				_oneofFileRename0.File.Path = *x.Path
+				_oneofFileRename0OutFileRename_23.File.Path = *x.Path
 			}
 		case "file_create/file/path":
 			if x.Path != nil {
-				var _oneofFileCreate0 *FileCreate
+				var _oneofFileCreate0OutFileCreate_24 *FileCreate
 				if v, ok := out.PlatformEvent.(*EventData_FileCreate); ok {
-					_oneofFileCreate0 = v.FileCreate
+					_oneofFileCreate0OutFileCreate_24 = v.FileCreate
 				}
-				if _oneofFileCreate0 == nil {
-					_oneofFileCreate0 = &FileCreate{}
-					out.PlatformEvent = &EventData_FileCreate{FileCreate: _oneofFileCreate0}
+				if _oneofFileCreate0OutFileCreate_24 == nil {
+					_oneofFileCreate0OutFileCreate_24 = &FileCreate{}
+					out.PlatformEvent = &EventData_FileCreate{FileCreate: _oneofFileCreate0OutFileCreate_24}
 				}
-				if _oneofFileCreate0.File == nil {
-					_oneofFileCreate0.File = &File{}
+				if _oneofFileCreate0OutFileCreate_24.File == nil {
+					_oneofFileCreate0OutFileCreate_24.File = &File{}
 				}
-				_oneofFileCreate0.File.Path = *x.Path
+				_oneofFileCreate0OutFileCreate_24.File.Path = *x.Path
 			}
 		}
 	} else {
 		if x.Path != nil {
-			var _oneofFileRename0 *FileRename
+			var _oneofFileRename0OutFileRename_25 *FileRename
 			if v, ok := out.PlatformEvent.(*EventData_FileRename); ok {
-				_oneofFileRename0 = v.FileRename
+				_oneofFileRename0OutFileRename_25 = v.FileRename
 			}
-			if _oneofFileRename0 == nil {
-				_oneofFileRename0 = &FileRename{}
-				out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0}
+			if _oneofFileRename0OutFileRename_25 == nil {
+				_oneofFileRename0OutFileRename_25 = &FileRename{}
+				out.PlatformEvent = &EventData_FileRename{FileRename: _oneofFileRename0OutFileRename_25}
 			}
-			if _oneofFileRename0.File == nil {
-				_oneofFileRename0.File = &File{}
+			if _oneofFileRename0OutFileRename_25.File == nil {
+				_oneofFileRename0OutFileRename_25.File = &File{}
 			}
-			_oneofFileRename0.File.Path = *x.Path
+			_oneofFileRename0OutFileRename_25.File.Path = *x.Path
 		}
 	}
 	// skip invalid path for PathCRF
 	if x.OtherEvent != nil {
 		out.PlatformEvent = &EventData_OtherEvent{OtherEvent: *x.OtherEvent}
 	}
+	if x.NonPlatformEventCustomEvent != nil {
+		out.NonPlatformEvent = &EventData_CustomEvent{CustomEvent: *x.NonPlatformEventCustomEvent}
+	}
+	var _oneofFile0OutFile_26 *File
+	if v, ok := out.NonPlatformEvent.(*EventData_File); ok {
+		_oneofFile0OutFile_26 = v.File
+	}
+	if _oneofFile0OutFile_26 == nil {
+		_oneofFile0OutFile_26 = &File{}
+		out.NonPlatformEvent = &EventData_File{File: _oneofFile0OutFile_26}
+	}
+	_oneofFile0OutFile_26.Path = x.NonPlatformEventPath
 	out.NoRemovedOneof = x.NoRemovedOneof
 	return out, nil
 }
@@ -521,32 +521,23 @@ func (x *EventData) IntoPlainErr() (*EventDataPlain, error) {
 		return nil, nil
 	}
 	out := &EventDataPlain{}
-	if _oneofCustomEvent0, ok := x.NonPlatformEvent.(*EventData_CustomEvent); ok {
-		_valNonPlatformEventCustomEvent := _oneofCustomEvent0.CustomEvent
-		out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
-	}
-	if _oneofFile0, ok := x.NonPlatformEvent.(*EventData_File); ok {
-		if _oneofFile0.File != nil {
-			out.NonPlatformEventPath = _oneofFile0.File.Path
-		}
-	}
 	// CRF paths
-	if _oneofFileRename0, ok := x.PlatformEvent.(*EventData_FileRename); ok {
-		if _oneofFileRename0.FileRename != nil {
-			if _oneofFileRename0.FileRename.File != nil {
-				if _oneofFileRename0.FileRename.File.Path != "" {
-					_valPath := _oneofFileRename0.FileRename.File.Path
+	if _oneofFileRename0XFileRename_27, ok := x.PlatformEvent.(*EventData_FileRename); ok {
+		if _oneofFileRename0XFileRename_27.FileRename != nil {
+			if _oneofFileRename0XFileRename_27.FileRename.File != nil {
+				if _oneofFileRename0XFileRename_27.FileRename.File.Path != "" {
+					_valPath := _oneofFileRename0XFileRename_27.FileRename.File.Path
 					out.Path = &_valPath
 					out.PathCRF = "file_rename/file/path"
 				}
 			}
 		}
 	}
-	if _oneofFileCreate0, ok := x.PlatformEvent.(*EventData_FileCreate); ok {
-		if _oneofFileCreate0.FileCreate != nil {
-			if _oneofFileCreate0.FileCreate.File != nil {
-				if _oneofFileCreate0.FileCreate.File.Path != "" {
-					_valPath := _oneofFileCreate0.FileCreate.File.Path
+	if _oneofFileCreate0XFileCreate_28, ok := x.PlatformEvent.(*EventData_FileCreate); ok {
+		if _oneofFileCreate0XFileCreate_28.FileCreate != nil {
+			if _oneofFileCreate0XFileCreate_28.FileCreate.File != nil {
+				if _oneofFileCreate0XFileCreate_28.FileCreate.File.Path != "" {
+					_valPath := _oneofFileCreate0XFileCreate_28.FileCreate.File.Path
 					out.Path = &_valPath
 					out.PathCRF = "file_create/file/path"
 				}
@@ -554,9 +545,18 @@ func (x *EventData) IntoPlainErr() (*EventDataPlain, error) {
 		}
 	}
 	// skip invalid path for PathCRF
-	if _oneofOtherEvent0, ok := x.PlatformEvent.(*EventData_OtherEvent); ok {
-		_valOtherEvent := _oneofOtherEvent0.OtherEvent
+	if _oneofOtherEvent0XOtherEvent_29, ok := x.PlatformEvent.(*EventData_OtherEvent); ok {
+		_valOtherEvent := _oneofOtherEvent0XOtherEvent_29.OtherEvent
 		out.OtherEvent = &_valOtherEvent
+	}
+	if _oneofCustomEvent0XCustomEvent_30, ok := x.NonPlatformEvent.(*EventData_CustomEvent); ok {
+		_valNonPlatformEventCustomEvent := _oneofCustomEvent0XCustomEvent_30.CustomEvent
+		out.NonPlatformEventCustomEvent = &_valNonPlatformEventCustomEvent
+	}
+	if _oneofFile0XFile_31, ok := x.NonPlatformEvent.(*EventData_File); ok {
+		if _oneofFile0XFile_31.File != nil {
+			out.NonPlatformEventPath = _oneofFile0XFile_31.File.Path
+		}
 	}
 	out.NoRemovedOneof = x.NoRemovedOneof
 	return out, nil

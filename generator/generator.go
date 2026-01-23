@@ -610,12 +610,13 @@ func (g *Generator) processCollisions(flattened []flattenedField) ([]*typepb.Fie
 		result = append(result, mergedField)
 
 		// Create CRF field
+		crfFieldName := name + "CRF"
 		crfField := &typepb.Field{
 			Kind:        typepb.Field_TYPE_STRING,
 			Cardinality: typepb.Field_CARDINALITY_OPTIONAL,
 			Number:      -(mergedField.Number + 1000), // negative to avoid conflicts
-			Name:        name + "CRF",
-			JsonName:    strcase.ToLowerCamel(name + "CRF"),
+			Name:        crfFieldName,
+			JsonName:    strcase.ToLowerCamel(crfFieldName),
 			TypeUrl: marker.New("", map[string]string{
 				crfMarker:    trueVal,
 				crfForMarker: name,
@@ -630,7 +631,21 @@ func (g *Generator) processCollisions(flattened []flattenedField) ([]*typepb.Fie
 		)
 	}
 
-	return result, nil
+	// Deduplicate result by field name (can happen with nested embeds)
+	seen := make(map[string]bool)
+	deduplicated := make([]*typepb.Field, 0, len(result))
+	for _, field := range result {
+		if !seen[field.Name] {
+			deduplicated = append(deduplicated, field)
+			seen[field.Name] = true
+		} else {
+			l.Debug("skipping duplicate field",
+				zap.String("name", field.Name),
+			)
+		}
+	}
+
+	return deduplicated, nil
 }
 
 func (g *Generator) processEmbeddedMessages(ir *TypePbIR, msg *typepb.Type) error {

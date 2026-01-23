@@ -13,13 +13,25 @@ import (
 	"google.golang.org/protobuf/types/known/typepb"
 )
 
+type counterWriter struct {
+	*protogen.GeneratedFile
+	counter int
+}
+
+func (w *counterWriter) getAndIncCounter() int {
+	c := w.counter
+	w.counter++
+	return c
+}
+
 func (g *Generator) RenderConverters(typeIRs []*TypePbIR) error {
 	for _, ir := range typeIRs {
 		if ir.File == nil {
 			continue
 		}
 		outName := ir.File.GeneratedFilenamePrefix + "_plain.conv.go"
-		out := g.Plugin.NewGeneratedFile(outName, ir.File.GoImportPath)
+		genFile := g.Plugin.NewGeneratedFile(outName, ir.File.GoImportPath)
+		out := &counterWriter{GeneratedFile: genFile}
 
 		messageCasterTypes := g.collectMessageCasterTypes(ir)
 		fileCasterTypes := g.collectFileCasterTypes(messageCasterTypes)
@@ -86,7 +98,7 @@ func (g *Generator) RenderConverters(typeIRs []*TypePbIR) error {
 		for _, name := range msgNames {
 			msg := ir.Messages[name]
 			casterTypes := messageCasterTypes[msg.Name]
-			g.renderConvertersForMessage(out, ir, msg, casterTypes, messageCasterTypes)
+			g.renderConvertersForMessage(out, ir, msg, casterTypes, messageCasterTypes, typeIRs)
 			out.P()
 		}
 
@@ -94,7 +106,7 @@ func (g *Generator) RenderConverters(typeIRs []*TypePbIR) error {
 	return nil
 }
 
-func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg *typepb.Type, casterTypes casterTypes, messageCasterTypes map[string]casterTypes) {
+func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg *typepb.Type, casterTypes casterTypes, messageCasterTypes map[string]casterTypes, allIRs []*TypePbIR) {
 	if !g.isPbMessage(ir, msg.Name) {
 		return
 	}
@@ -102,7 +114,7 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 		return
 	}
 	msgPlain := g.plainTypeName(msg.Name)
-	msgPb := strcase.ToCamel(getShortName(msg.Name))
+	msgPb := getShortName(msg.Name)
 	paramList := g.casterParamList(casterTypes.list, true, false)
 	paramListErr := g.casterParamList(casterTypes.list, true, true)
 
@@ -142,16 +154,16 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 					continue
 				}
 				out.P("\t\tcase ", fmt.Sprintf("%q", crfPath), ":")
-				g.renderFieldIntoPb(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t\t\t")
+				g.renderFieldIntoPb(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t\t\t", allIRs)
 			}
 			out.P("\t\t}")
 			out.P("\t} else {")
-			g.renderFieldIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t\t")
+			g.renderFieldIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t\t", allIRs)
 			out.P("\t}")
 			continue
 		}
 
-		g.renderFieldIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t")
+		g.renderFieldIntoPb(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", allIRs)
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -197,11 +209,11 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 				if i == 0 {
 					out.P("\t// CRF paths")
 				}
-				g.renderFieldIntoPlain(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t", crfPath, true)
+				g.renderFieldIntoPlain(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t", crfPath, true, allIRs)
 			}
 			continue
 		}
-		g.renderFieldIntoPlain(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", pathString, false)
+		g.renderFieldIntoPlain(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", pathString, false, allIRs)
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -247,15 +259,15 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 					continue
 				}
 				out.P("\t\tcase ", fmt.Sprintf("%q", crfPath), ":")
-				g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t\t\t")
+				g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t\t\t", allIRs)
 			}
 			out.P("\t\t}")
 			out.P("\t} else {")
-			g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t\t")
+			g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t\t", allIRs)
 			out.P("\t}")
 			continue
 		}
-		g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t")
+		g.renderFieldIntoPbErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", allIRs)
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -299,11 +311,11 @@ func (g *Generator) renderConvertersForMessage(out typeWriter, ir *TypePbIR, msg
 				if i == 0 {
 					out.P("\t// CRF paths")
 				}
-				g.renderFieldIntoPlainErr(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t", crfPath, true)
+				g.renderFieldIntoPlainErr(out, ir, msg, field, fieldName, crfSegments, casterTypes, messageCasterTypes, "\t", crfPath, true, allIRs)
 			}
 			continue
 		}
-		g.renderFieldIntoPlainErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", pathString, false)
+		g.renderFieldIntoPlainErr(out, ir, msg, field, fieldName, segments, casterTypes, messageCasterTypes, "\t", pathString, false, allIRs)
 	}
 
 	for _, oneof := range g.collectOneofFieldNames(msg) {
@@ -431,16 +443,23 @@ func (g *Generator) renderScalarIntoPlain(out typeWriter, field *typepb.Field, f
 		return
 	}
 
-	valueExpr := leafAccess
-	if enumType != "" {
-		valueExpr = "int32(" + valueExpr + ")"
-	}
-
 	if leaf.isOneof {
-		if field.Kind == typepb.Field_TYPE_MESSAGE {
-			out.P(innerIndent, "if ", valueExpr, " != nil {")
+		// For oneof, check if the field is nil before accessing
+		// For enum in oneof, the field is always a pointer, so check for nil
+		needsNilCheck := isPointerScalarField(leaf.field) || field.Kind == typepb.Field_TYPE_MESSAGE || enumType != ""
+		if needsNilCheck {
+			out.P(innerIndent, "if ", leafAccess, " != nil {")
 			innerIndent += "\t"
 		}
+
+		valueExpr := leafAccess
+		if enumType != "" {
+			// For enum in oneof, it's always a pointer, so dereference
+			valueExpr = "int32(*" + valueExpr + ")"
+		} else if isPointerScalarField(leaf.field) {
+			valueExpr = "*" + valueExpr
+		}
+
 		if g.isPointerField(field) {
 			valVar := g.valueVarName(field)
 			out.P(innerIndent, valVar, " := ", valueExpr)
@@ -451,7 +470,7 @@ func (g *Generator) renderScalarIntoPlain(out typeWriter, field *typepb.Field, f
 		if setCrf {
 			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
 		}
-		if field.Kind == typepb.Field_TYPE_MESSAGE {
+		if needsNilCheck {
 			innerIndent = strings.TrimSuffix(innerIndent, "\t")
 			out.P(innerIndent, "}")
 		}
@@ -459,11 +478,26 @@ func (g *Generator) renderScalarIntoPlain(out typeWriter, field *typepb.Field, f
 		return
 	}
 
+	valueExpr := leafAccess
+	castExpr := ""
+	if enumType != "" {
+		// For enum, prepare cast expression
+		if isPointerScalarField(leaf.field) {
+			castExpr = "int32(*" + valueExpr + ")"
+		} else {
+			castExpr = "int32(" + valueExpr + ")"
+		}
+	}
+
 	if isPointerScalarField(leaf.field) {
 		out.P(innerIndent, "if ", valueExpr, " != nil {")
 		innerIndent += "\t"
 		valVar := g.valueVarName(field)
-		out.P(innerIndent, valVar, " := *", valueExpr)
+		if castExpr != "" {
+			out.P(innerIndent, valVar, " := ", castExpr)
+		} else {
+			out.P(innerIndent, valVar, " := *", valueExpr)
+		}
 		out.P(innerIndent, "out.", fieldName, " = &", valVar)
 		if setCrf {
 			out.P(innerIndent, "out.", goFieldNameFromPlain(g.plainName(field)+"CRF"), " = ", fmt.Sprintf("%q", pathString))
@@ -472,6 +506,10 @@ func (g *Generator) renderScalarIntoPlain(out typeWriter, field *typepb.Field, f
 		out.P(innerIndent, "}")
 		closeGuards(out, innerIndent, closers)
 		return
+	}
+
+	if castExpr != "" {
+		valueExpr = castExpr
 	}
 
 	needPresence := g.isPointerField(field) || setCrf
@@ -510,8 +548,38 @@ func (g *Generator) renderFieldIntoPb(
 	casterTypes casterTypes,
 	messageCasterTypes map[string]casterTypes,
 	indent string,
+	allIRs []*TypePbIR,
 ) {
 	_ = msg
+
+	// Type compatibility check for CRF fields
+	if len(segments) > 0 {
+		leaf := segments[len(segments)-1]
+		if leaf.field != nil {
+			// Check if the merged field type is compatible with the target field type
+			mergedKind := field.Kind
+			targetKind := typepb.Field_Kind(leaf.field.Desc.Kind())
+
+			// If kinds don't match, skip this CRF path
+			if mergedKind != targetKind {
+				out.P(indent, "// skip CRF path due to type mismatch: ", field.Kind.String(), " vs ", targetKind.String())
+				return
+			}
+
+			// For message types, check if the type URLs match
+			if mergedKind == typepb.Field_TYPE_MESSAGE {
+				if leaf.field.Message != nil {
+					targetTypeName := string(leaf.field.Message.Desc.FullName())
+					mergedTypeName := empath.Parse(field.TypeUrl).Last().Value()
+					if targetTypeName != mergedTypeName {
+						out.P(indent, "// skip CRF path due to message type mismatch")
+						return
+					}
+				}
+			}
+		}
+	}
+
 	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid alias path")
@@ -569,6 +637,23 @@ func (g *Generator) renderFieldIntoPb(
 			out.P(indent, "}")
 			return
 		}
+		if info.valueKind == typepb.Field_TYPE_MESSAGE {
+			pbType := g.resolvePbTypeName(ir, info.valueType)
+			if pbType == "" {
+				out.P(indent, mapAccess, " = x.", fieldName)
+				return
+			}
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			out.P(indent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]*", pbType, ", len(x.", fieldName, "))")
+			out.P(indent, "\tfor k, v := range x.", fieldName, " {")
+			out.P(indent, "\t\tif v != nil {")
+			out.P(indent, "\t\t\tvals[k] = v.IntoPb()")
+			out.P(indent, "\t\t}")
+			out.P(indent, "\t}")
+			out.P(indent, "\t", mapAccess, " = vals")
+			out.P(indent, "}")
+			return
+		}
 		out.P(indent, mapAccess, " = x.", fieldName)
 		return
 	}
@@ -578,7 +663,7 @@ func (g *Generator) renderFieldIntoPb(
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
-		if !g.isPlainMessage(ir, field.TypeUrl) {
+		if !g.isPlainMessageInIRs(ir, field.TypeUrl, allIRs) {
 			if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 				out.P(indent, "if len(x.", fieldName, ") > 0 {")
 				inner := indent + "\t"
@@ -635,8 +720,38 @@ func (g *Generator) renderFieldIntoPbErr(
 	casterTypes casterTypes,
 	messageCasterTypes map[string]casterTypes,
 	indent string,
+	allIRs []*TypePbIR,
 ) {
 	_ = msg
+
+	// Type compatibility check for CRF fields
+	if len(segments) > 0 {
+		leaf := segments[len(segments)-1]
+		if leaf.field != nil {
+			// Check if the merged field type is compatible with the target field type
+			mergedKind := field.Kind
+			targetKind := typepb.Field_Kind(leaf.field.Desc.Kind())
+
+			// If kinds don't match, skip this CRF path
+			if mergedKind != targetKind {
+				out.P(indent, "// skip CRF path due to type mismatch: ", field.Kind.String(), " vs ", targetKind.String())
+				return
+			}
+
+			// For message types, check if the type URLs match
+			if mergedKind == typepb.Field_TYPE_MESSAGE {
+				if leaf.field.Message != nil {
+					targetTypeName := string(leaf.field.Message.Desc.FullName())
+					mergedTypeName := empath.Parse(field.TypeUrl).Last().Value()
+					if targetTypeName != mergedTypeName {
+						out.P(indent, "// skip CRF path due to message type mismatch")
+						return
+					}
+				}
+			}
+		}
+	}
+
 	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid alias path")
@@ -694,6 +809,23 @@ func (g *Generator) renderFieldIntoPbErr(
 			out.P(indent, "}")
 			return
 		}
+		if info.valueKind == typepb.Field_TYPE_MESSAGE {
+			pbType := g.resolvePbTypeName(ir, info.valueType)
+			if pbType == "" {
+				out.P(indent, mapAccess, " = x.", fieldName)
+				return
+			}
+			out.P(indent, "if len(x.", fieldName, ") > 0 {")
+			out.P(indent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]*", pbType, ", len(x.", fieldName, "))")
+			out.P(indent, "\tfor k, v := range x.", fieldName, " {")
+			out.P(indent, "\t\tif v != nil {")
+			out.P(indent, "\t\t\tvals[k] = v.IntoPb()")
+			out.P(indent, "\t\t}")
+			out.P(indent, "\t}")
+			out.P(indent, "\t", mapAccess, " = vals")
+			out.P(indent, "}")
+			return
+		}
 		out.P(indent, mapAccess, " = x.", fieldName)
 		return
 	}
@@ -703,7 +835,7 @@ func (g *Generator) renderFieldIntoPbErr(
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
-		if !g.isPlainMessage(ir, field.TypeUrl) {
+		if !g.isPlainMessageInIRs(ir, field.TypeUrl, allIRs) {
 			if field.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 				out.P(indent, "if len(x.", fieldName, ") > 0 {")
 				inner := indent + "\t"
@@ -762,11 +894,40 @@ func (g *Generator) renderFieldIntoPlain(
 	segments []pbPathSegment,
 	casterTypes casterTypes,
 	messageCasterTypes map[string]casterTypes,
-	indent string,
-	pathString string,
+	indent, pathString string,
 	setCrf bool,
+	allIRs []*TypePbIR,
 ) {
 	_ = msg
+
+	// Type compatibility check for CRF fields
+	if len(segments) > 0 {
+		leaf := segments[len(segments)-1]
+		if leaf.field != nil {
+			// Check if the merged field type is compatible with the target field type
+			mergedKind := field.Kind
+			targetKind := typepb.Field_Kind(leaf.field.Desc.Kind())
+
+			// If kinds don't match, skip this CRF path
+			if mergedKind != targetKind {
+				out.P(indent, "// skip CRF path due to type mismatch: ", field.Kind.String(), " vs ", targetKind.String())
+				return
+			}
+
+			// For message types, check if the type URLs match
+			if mergedKind == typepb.Field_TYPE_MESSAGE {
+				if leaf.field.Message != nil {
+					targetTypeName := string(leaf.field.Message.Desc.FullName())
+					mergedTypeName := empath.Parse(field.TypeUrl).Last().Value()
+					if targetTypeName != mergedTypeName {
+						out.P(indent, "// skip CRF path due to message type mismatch")
+						return
+					}
+				}
+			}
+		}
+	}
+
 	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid alias path")
@@ -831,6 +992,27 @@ func (g *Generator) renderFieldIntoPlain(
 			closeGuards(out, innerIndent, closers)
 			return
 		}
+		if info.valueKind == typepb.Field_TYPE_MESSAGE {
+			plainType := g.plainTypeName(info.valueType)
+			if plainType == "" {
+				out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+				out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+				out.P(innerIndent, "}")
+				closeGuards(out, innerIndent, closers)
+				return
+			}
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			out.P(innerIndent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]*", plainType, ", len(", leafAccess, "))")
+			out.P(innerIndent, "\tfor k, v := range ", leafAccess, " {")
+			out.P(innerIndent, "\t\tif v != nil {")
+			out.P(innerIndent, "\t\t\tvals[k] = v.IntoPlain()")
+			out.P(innerIndent, "\t\t}")
+			out.P(innerIndent, "\t}")
+			out.P(innerIndent, "\tout.", fieldName, " = vals")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
 		out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
 		out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
 		out.P(innerIndent, "}")
@@ -843,7 +1025,7 @@ func (g *Generator) renderFieldIntoPlain(
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
-		if !g.isPlainMessage(ir, field.TypeUrl) {
+		if !g.isPlainMessageInIRs(ir, field.TypeUrl, allIRs) {
 			leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
 			if !ok {
 				out.P(indent, "// skip invalid path")
@@ -895,11 +1077,40 @@ func (g *Generator) renderFieldIntoPlainErr(
 	segments []pbPathSegment,
 	casterTypes casterTypes,
 	messageCasterTypes map[string]casterTypes,
-	indent string,
-	pathString string,
+	indent, pathString string,
 	setCrf bool,
+	allIRs []*TypePbIR,
 ) {
 	_ = msg
+
+	// Type compatibility check for CRF fields
+	if len(segments) > 0 {
+		leaf := segments[len(segments)-1]
+		if leaf.field != nil {
+			// Check if the merged field type is compatible with the target field type
+			mergedKind := field.Kind
+			targetKind := typepb.Field_Kind(leaf.field.Desc.Kind())
+
+			// If kinds don't match, skip this CRF path
+			if mergedKind != targetKind {
+				out.P(indent, "// skip CRF path due to type mismatch: ", field.Kind.String(), " vs ", targetKind.String())
+				return
+			}
+
+			// For message types, check if the type URLs match
+			if mergedKind == typepb.Field_TYPE_MESSAGE {
+				if leaf.field.Message != nil {
+					targetTypeName := string(leaf.field.Message.Desc.FullName())
+					mergedTypeName := empath.Parse(field.TypeUrl).Last().Value()
+					if targetTypeName != mergedTypeName {
+						out.P(indent, "// skip CRF path due to message type mismatch")
+						return
+					}
+				}
+			}
+		}
+	}
+
 	if alias, ok := g.typeAliasInfoForTypeURL(field.TypeUrl); ok {
 		if len(segments) == 0 {
 			out.P(indent, "// skip invalid alias path")
@@ -964,6 +1175,27 @@ func (g *Generator) renderFieldIntoPlainErr(
 			closeGuards(out, innerIndent, closers)
 			return
 		}
+		if info.valueKind == typepb.Field_TYPE_MESSAGE {
+			plainType := g.plainTypeName(info.valueType)
+			if plainType == "" {
+				out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+				out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
+				out.P(innerIndent, "}")
+				closeGuards(out, innerIndent, closers)
+				return
+			}
+			out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
+			out.P(innerIndent, "\tvals := make(map[", mapScalarGoType(info.keyKind), "]*", plainType, ", len(", leafAccess, "))")
+			out.P(innerIndent, "\tfor k, v := range ", leafAccess, " {")
+			out.P(innerIndent, "\t\tif v != nil {")
+			out.P(innerIndent, "\t\t\tvals[k] = v.IntoPlain()")
+			out.P(innerIndent, "\t\t}")
+			out.P(innerIndent, "\t}")
+			out.P(innerIndent, "\tout.", fieldName, " = vals")
+			out.P(innerIndent, "}")
+			closeGuards(out, innerIndent, closers)
+			return
+		}
 		out.P(innerIndent, "if len(", leafAccess, ") > 0 {")
 		out.P(innerIndent, "\tout.", fieldName, " = ", leafAccess)
 		out.P(innerIndent, "}")
@@ -976,7 +1208,7 @@ func (g *Generator) renderFieldIntoPlainErr(
 	}
 	switch field.Kind {
 	case typepb.Field_TYPE_MESSAGE:
-		if !g.isPlainMessage(ir, field.TypeUrl) {
+		if !g.isPlainMessageInIRs(ir, field.TypeUrl, allIRs) {
 			leafAccess, innerIndent, closers, ok := g.renderPathAccessForGet(out, "x", segments, indent)
 			if !ok {
 				out.P(indent, "// skip invalid path")
@@ -1084,10 +1316,10 @@ func (g *Generator) resolvePbTypeName(ir *TypePbIR, typeURL string) string {
 			if !g.isPbMessage(ir, m.Name) {
 				return ""
 			}
-			return strcase.ToCamel(getShortName(m.Name))
+			return getShortName(m.Name)
 		}
 	}
-	return strcase.ToCamel(getShortName(target))
+	return getShortName(target)
 }
 
 func (g *Generator) isPbMessage(ir *TypePbIR, fullName string) bool {
@@ -1215,7 +1447,7 @@ func (g *Generator) pbPathSegments(out typeWriter, ir *TypePbIR, msg *typepb.Typ
 }
 
 func (g *Generator) oneofVarName(seg pbPathSegment, idx int) string {
-	return fmt.Sprintf("_oneof%s%d", strcase.ToCamel(seg.goName), idx)
+	return fmt.Sprintf("_oneof%s%d", seg.goName, idx)
 }
 
 func (g *Generator) valueVarName(field *typepb.Field) string {
@@ -1239,14 +1471,24 @@ func isPointerScalarField(field *protogen.Field) bool {
 }
 
 func (g *Generator) renderEnsurePath(out typeWriter, base string, segments []pbPathSegment, indent string) (string, bool) {
+	type hasCounter interface {
+		getAndIncCounter() int
+	}
+
 	access := base
+	pathSoFar := base
 	for i := 0; i < len(segments)-1; i++ {
 		seg := segments[i]
+		pathSoFar = pathSoFar + "_" + seg.goName
 		if seg.isOneof {
 			if seg.messageGoType == "" {
 				return "", false
 			}
-			varName := g.oneofVarName(seg, i)
+			counter := 0
+			if hc, ok := out.(hasCounter); ok {
+				counter = hc.getAndIncCounter()
+			}
+			varName := fmt.Sprintf("%s%s_%d", g.oneofVarName(seg, i), strcase.ToCamel(pathSoFar), counter)
 			out.P(indent, "var ", varName, " *", seg.messageGoType)
 			out.P(indent, "if v, ok := ", access, ".", seg.oneofGoName, ".(*", seg.oneofWrapperGo, "); ok {")
 			out.P(indent, "\t", varName, " = v.", seg.goName)
@@ -1271,11 +1513,21 @@ func (g *Generator) renderEnsurePath(out typeWriter, base string, segments []pbP
 }
 
 func (g *Generator) renderPathAccessForGet(out typeWriter, base string, segments []pbPathSegment, indent string) (string, string, int, bool) {
+	type hasCounter interface {
+		getAndIncCounter() int
+	}
+
 	access := base
 	closers := 0
+	pathSoFar := base
 	for i, seg := range segments {
+		pathSoFar = pathSoFar + "_" + seg.goName
 		if seg.isOneof {
-			varName := g.oneofVarName(seg, i)
+			counter := 0
+			if hc, ok := out.(hasCounter); ok {
+				counter = hc.getAndIncCounter()
+			}
+			varName := fmt.Sprintf("%s%s_%d", g.oneofVarName(seg, i), strcase.ToCamel(pathSoFar), counter)
 			out.P(indent, "if ", varName, ", ok := ", access, ".", seg.oneofGoName, ".(*", seg.oneofWrapperGo, "); ok {")
 			indent += "\t"
 			closers++

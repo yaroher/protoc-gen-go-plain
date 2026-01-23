@@ -184,6 +184,10 @@ func (x *UserEventPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("UserEventPlain")
 	}
+	if e.FieldStart("id") {
+		return nil, jxEncodeError("id")
+	}
+	e.Str(x.Id)
 	if e.FieldStart("source") {
 		return nil, jxEncodeError("source")
 	}
@@ -216,10 +220,6 @@ func (x *UserEventPlain) MarshalJSON() ([]byte, error) {
 		return nil, jxEncodeError("eventType")
 	}
 	e.Str(x.EventType)
-	if e.FieldStart("id") {
-		return nil, jxEncodeError("id")
-	}
-	e.Str(x.Id)
 	if e.ObjEnd() {
 		return nil, jxEncodeError("UserEventPlain")
 	}
@@ -234,6 +234,13 @@ func (x *UserEventPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
+		case "id":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("Id", err)
+			}
+			x.Id = val
+			return nil
 		case "source":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
@@ -282,13 +289,6 @@ func (x *UserEventPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("EventType", err)
 			}
 			x.EventType = val
-			return nil
-		case "id":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("Id", err)
-			}
-			x.Id = val
 			return nil
 		default:
 			return d.Skip()

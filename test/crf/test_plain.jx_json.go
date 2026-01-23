@@ -26,18 +26,16 @@ func (x *EventPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("EventPlain")
 	}
-	if e.FieldStart("eventId") {
-		return nil, jxEncodeError("eventId")
+	if x.OtherEvent != nil {
+		if e.FieldStart("otherEvent") {
+			return nil, jxEncodeError("otherEvent")
+		}
+		if x.OtherEvent == nil {
+			e.Null()
+		} else {
+			e.Str(*x.OtherEvent)
+		}
 	}
-	e.Int32(x.EventId)
-	if e.FieldStart("someEventStringPayload") {
-		return nil, jxEncodeError("someEventStringPayload")
-	}
-	raw, err := json.Marshal(x.SomeEventStringPayload)
-	if err != nil {
-		return nil, jxEncodeError("someEventStringPayload")
-	}
-	e.Raw(raw)
 	if x.NonPlatformEventCustomEvent != nil {
 		if e.FieldStart("nonPlatformEventCustomEvent") {
 			return nil, jxEncodeError("nonPlatformEventCustomEvent")
@@ -52,18 +50,14 @@ func (x *EventPlain) MarshalJSON() ([]byte, error) {
 		return nil, jxEncodeError("nonPlatformEventPath")
 	}
 	e.Str(x.NonPlatformEventPath)
-	if e.FieldStart("pathCRF") {
-		return nil, jxEncodeError("pathCRF")
-	}
-	e.Str(x.PathCRF)
 	if e.FieldStart("parentEventId") {
 		return nil, jxEncodeError("parentEventId")
 	}
 	e.Str(x.ParentEventId)
-	if e.FieldStart("eventVirtualType") {
-		return nil, jxEncodeError("eventVirtualType")
+	if e.FieldStart("eventId") {
+		return nil, jxEncodeError("eventId")
 	}
-	e.Str(x.EventVirtualType)
+	e.Int32(x.EventId)
 	if x.Process != nil {
 		if e.FieldStart("process") {
 			return nil, jxEncodeError("process")
@@ -88,16 +82,22 @@ func (x *EventPlain) MarshalJSON() ([]byte, error) {
 			e.Str(*x.Path)
 		}
 	}
-	if x.OtherEvent != nil {
-		if e.FieldStart("otherEvent") {
-			return nil, jxEncodeError("otherEvent")
-		}
-		if x.OtherEvent == nil {
-			e.Null()
-		} else {
-			e.Str(*x.OtherEvent)
-		}
+	if e.FieldStart("pathCRF") {
+		return nil, jxEncodeError("pathCRF")
 	}
+	e.Str(x.PathCRF)
+	if e.FieldStart("eventVirtualType") {
+		return nil, jxEncodeError("eventVirtualType")
+	}
+	e.Str(x.EventVirtualType)
+	if e.FieldStart("someEventStringPayload") {
+		return nil, jxEncodeError("someEventStringPayload")
+	}
+	raw, err := json.Marshal(x.SomeEventStringPayload)
+	if err != nil {
+		return nil, jxEncodeError("someEventStringPayload")
+	}
+	e.Raw(raw)
 	if e.ObjEnd() {
 		return nil, jxEncodeError("EventPlain")
 	}
@@ -112,23 +112,19 @@ func (x *EventPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "eventId":
-			val, err := (*jx.Decoder).Int32(d)
+		case "otherEvent":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("OtherEvent", err)
+				}
+				x.OtherEvent = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
-				return jxDecodeError("EventId", err)
+				return jxDecodeError("OtherEvent", err)
 			}
-			x.EventId = val
-			return nil
-		case "someEventStringPayload":
-			raw, err := d.Raw()
-			if err != nil {
-				return jxDecodeError("SomeEventStringPayload", err)
-			}
-			var outVal uuid.UUID
-			if err := json.Unmarshal(raw, &outVal); err != nil {
-				return jxDecodeError("SomeEventStringPayload", err)
-			}
-			x.SomeEventStringPayload = outVal
+			x.OtherEvent = &val
 			return nil
 		case "nonPlatformEventCustomEvent":
 			if d.Next() == jx.Null {
@@ -151,13 +147,6 @@ func (x *EventPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.NonPlatformEventPath = val
 			return nil
-		case "pathCRF":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("PathCRF", err)
-			}
-			x.PathCRF = val
-			return nil
 		case "parentEventId":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
@@ -165,12 +154,12 @@ func (x *EventPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.ParentEventId = val
 			return nil
-		case "eventVirtualType":
-			val, err := (*jx.Decoder).Str(d)
+		case "eventId":
+			val, err := (*jx.Decoder).Int32(d)
 			if err != nil {
-				return jxDecodeError("EventVirtualType", err)
+				return jxDecodeError("EventId", err)
 			}
-			x.EventVirtualType = val
+			x.EventId = val
 			return nil
 		case "process":
 			if d.Next() == jx.Null {
@@ -204,19 +193,30 @@ func (x *EventPlain) UnmarshalJSON(data []byte) error {
 			}
 			x.Path = &val
 			return nil
-		case "otherEvent":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("OtherEvent", err)
-				}
-				x.OtherEvent = nil
-				return nil
-			}
+		case "pathCRF":
 			val, err := (*jx.Decoder).Str(d)
 			if err != nil {
-				return jxDecodeError("OtherEvent", err)
+				return jxDecodeError("PathCRF", err)
 			}
-			x.OtherEvent = &val
+			x.PathCRF = val
+			return nil
+		case "eventVirtualType":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("EventVirtualType", err)
+			}
+			x.EventVirtualType = val
+			return nil
+		case "someEventStringPayload":
+			raw, err := d.Raw()
+			if err != nil {
+				return jxDecodeError("SomeEventStringPayload", err)
+			}
+			var outVal uuid.UUID
+			if err := json.Unmarshal(raw, &outVal); err != nil {
+				return jxDecodeError("SomeEventStringPayload", err)
+			}
+			x.SomeEventStringPayload = outVal
 			return nil
 		default:
 			return d.Skip()
@@ -233,20 +233,6 @@ func (x *EventDataPlain) MarshalJSON() ([]byte, error) {
 	if e.ObjStart() {
 		return nil, jxEncodeError("EventDataPlain")
 	}
-	if x.NonPlatformEventCustomEvent != nil {
-		if e.FieldStart("nonPlatformEventCustomEvent") {
-			return nil, jxEncodeError("nonPlatformEventCustomEvent")
-		}
-		if x.NonPlatformEventCustomEvent == nil {
-			e.Null()
-		} else {
-			e.Str(*x.NonPlatformEventCustomEvent)
-		}
-	}
-	if e.FieldStart("nonPlatformEventPath") {
-		return nil, jxEncodeError("nonPlatformEventPath")
-	}
-	e.Str(x.NonPlatformEventPath)
 	if x.Path != nil {
 		if e.FieldStart("path") {
 			return nil, jxEncodeError("path")
@@ -271,6 +257,20 @@ func (x *EventDataPlain) MarshalJSON() ([]byte, error) {
 			e.Str(*x.OtherEvent)
 		}
 	}
+	if x.NonPlatformEventCustomEvent != nil {
+		if e.FieldStart("nonPlatformEventCustomEvent") {
+			return nil, jxEncodeError("nonPlatformEventCustomEvent")
+		}
+		if x.NonPlatformEventCustomEvent == nil {
+			e.Null()
+		} else {
+			e.Str(*x.NonPlatformEventCustomEvent)
+		}
+	}
+	if e.FieldStart("nonPlatformEventPath") {
+		return nil, jxEncodeError("nonPlatformEventPath")
+	}
+	e.Str(x.NonPlatformEventPath)
 	if e.FieldStart("noRemovedOneof") {
 		return nil, jxEncodeError("noRemovedOneof")
 	}
@@ -297,27 +297,6 @@ func (x *EventDataPlain) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "nonPlatformEventCustomEvent":
-			if d.Next() == jx.Null {
-				if err := d.Null(); err != nil {
-					return jxDecodeError("NonPlatformEventCustomEvent", err)
-				}
-				x.NonPlatformEventCustomEvent = nil
-				return nil
-			}
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("NonPlatformEventCustomEvent", err)
-			}
-			x.NonPlatformEventCustomEvent = &val
-			return nil
-		case "nonPlatformEventPath":
-			val, err := (*jx.Decoder).Str(d)
-			if err != nil {
-				return jxDecodeError("NonPlatformEventPath", err)
-			}
-			x.NonPlatformEventPath = val
-			return nil
 		case "path":
 			if d.Next() == jx.Null {
 				if err := d.Null(); err != nil {
@@ -352,6 +331,27 @@ func (x *EventDataPlain) UnmarshalJSON(data []byte) error {
 				return jxDecodeError("OtherEvent", err)
 			}
 			x.OtherEvent = &val
+			return nil
+		case "nonPlatformEventCustomEvent":
+			if d.Next() == jx.Null {
+				if err := d.Null(); err != nil {
+					return jxDecodeError("NonPlatformEventCustomEvent", err)
+				}
+				x.NonPlatformEventCustomEvent = nil
+				return nil
+			}
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("NonPlatformEventCustomEvent", err)
+			}
+			x.NonPlatformEventCustomEvent = &val
+			return nil
+		case "nonPlatformEventPath":
+			val, err := (*jx.Decoder).Str(d)
+			if err != nil {
+				return jxDecodeError("NonPlatformEventPath", err)
+			}
+			x.NonPlatformEventPath = val
 			return nil
 		case "noRemovedOneof":
 			raw, err := d.Raw()
