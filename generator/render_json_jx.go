@@ -51,7 +51,7 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 	}
 
 	var infos []*jxFieldInfo
-	useJSON := wrapper.CRF != nil && wrapper.CRF.HasEntries()
+	useJSON := false
 	useProtoJSON := false
 	useStrconv := false
 
@@ -70,11 +70,21 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 		if info.IsMap && info.MapKeyKind != typepb.Field_TYPE_STRING {
 			useStrconv = true
 		}
+		if info.IsMap && info.MapValKind != typepb.Field_TYPE_MESSAGE && jxNeedsJSONFallback(info.MapValKind) {
+			useJSON = true
+		}
+		if !info.IsMap && info.Kind != typepb.Field_TYPE_MESSAGE && jxNeedsJSONFallback(info.Kind) {
+			useJSON = true
+		}
 		if info.IsMap && info.MapValKind == typepb.Field_TYPE_MESSAGE && !g.isPlainMessage(ctx, info.MapValTypeURL) {
-			useProtoJSON = true
+			if g.shouldUseProtoJSON(ctx, info.MapValTypeURL) {
+				useProtoJSON = true
+			}
 		}
 		if !info.IsMap && info.Kind == typepb.Field_TYPE_MESSAGE && !g.isPlainMessage(ctx, info.TypeURL) {
-			useProtoJSON = true
+			if g.shouldUseProtoJSON(ctx, info.TypeURL) {
+				useProtoJSON = true
+			}
 		}
 	}
 
@@ -112,48 +122,29 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 		}
 	}
 
-	ctx.g.P("func (x *", plainName, ") marshalJX(e *", jx.EncoderType, ") error {")
+	ctx.g.P("// MarshalJX сериализует структуру в jx.Encoder")
+	ctx.g.P("func (x *", plainName, ") MarshalJX(e *", jx.EncoderType, ") error {")
+	ctx.g.P("\tif x == nil {")
+	ctx.g.P("\t\te.Null()")
+	ctx.g.P("\t\treturn nil")
+	ctx.g.P("\t}")
 	ctx.g.P("\te.ObjStart()")
 	if wrapper.CRF != nil && wrapper.CRF.HasEntries() {
 		ctx.g.P("\tif x.CRF != nil {")
 		ctx.g.P("\t\te.FieldStart(\"crf\")")
-		ctx.g.P("\t\traw, err := ", jsonRefs.Marshal, "(x.CRF)")
-		ctx.g.P("\t\tif err != nil {")
-		ctx.g.P("\t\t\treturn err")
-		ctx.g.P("\t\t}")
-		ctx.g.P("\t\te.Raw(raw)")
+		ctx.g.P("\t\tx.CRF.MarshalJX(e)")
 		ctx.g.P("\t}")
 	}
 	for _, info := range infos {
-		g.renderJXMarshalField(ctx, info, jx.EncoderType, jsonRefs, protoJSONRefs, strconvRefs)
+		g.renderJXMarshalField(ctx, info, &jx, jsonRefs, protoJSONRefs, strconvRefs)
 	}
 	ctx.g.P("\te.ObjEnd()")
 	ctx.g.P("\treturn nil")
 	ctx.g.P("}")
 	ctx.g.P()
 
-	ctx.g.P("func (x *", plainName, ") MarshalJSON() ([]byte, error) {")
-	ctx.g.P("\tif x == nil {")
-	ctx.g.P("\t\treturn []byte(\"null\"), nil")
-	ctx.g.P("\t}")
-	ctx.g.P("\tvar e ", jx.EncoderType)
-	ctx.g.P("\tif err := x.marshalJX(&e); err != nil {")
-	ctx.g.P("\t\treturn nil, err")
-	ctx.g.P("\t}")
-	ctx.g.P("\treturn e.Bytes(), nil")
-	ctx.g.P("}")
-	ctx.g.P()
-
-	ctx.g.P("func (x *", plainName, ") UnmarshalJSON(data []byte) error {")
-	ctx.g.P("\tif x == nil {")
-	ctx.g.P("\t\treturn ", fmtErrorf, "(\"", plainName, ": UnmarshalJSON on nil pointer\")")
-	ctx.g.P("\t}")
-	ctx.g.P("\td := ", jx.DecodeBytes, "(data)")
-	ctx.g.P("\treturn x.unmarshalJX(d)")
-	ctx.g.P("}")
-	ctx.g.P()
-
-	ctx.g.P("func (x *", plainName, ") unmarshalJX(d *", jx.DecoderType, ") error {")
+	ctx.g.P("// UnmarshalJX десериализует структуру из jx.Decoder")
+	ctx.g.P("func (x *", plainName, ") UnmarshalJX(d *", jx.DecoderType, ") error {")
 	ctx.g.P("\tif d.Next() == ", jx.Null, " {")
 	ctx.g.P("\t\treturn d.Null()")
 	ctx.g.P("\t}")
@@ -168,12 +159,8 @@ func (g *Generator) renderJSONJX(ctx *renderContext, plainName string, wrapper *
 		ctx.g.P("\t\t\t\t\tx.CRF = nil")
 		ctx.g.P("\t\t\t\t\treturn d.Null()")
 		ctx.g.P("\t\t\t\t}")
-		ctx.g.P("\t\t\t\traw, err := d.Raw()")
-		ctx.g.P("\t\t\t\tif err != nil {")
-		ctx.g.P("\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t}")
 		ctx.g.P("\t\t\t\tcrfVal := new(", crfName, ")")
-		ctx.g.P("\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, crfVal); err != nil {")
+		ctx.g.P("\t\t\t\tif err := crfVal.UnmarshalJX(d); err != nil {") // Прямой вызов
 		ctx.g.P("\t\t\t\t\treturn err")
 		ctx.g.P("\t\t\t\t}")
 		ctx.g.P("\t\t\t\tx.CRF = crfVal")
@@ -207,7 +194,9 @@ func (g *Generator) renderProtoJSONJX(ctx *renderContext, msg *protogen.Message,
 
 	msgName := msg.GoIdent.GoName
 	if hasPlain {
-		ctx.g.P("func (x *", msgName, ") marshalJX(e *", jx.EncoderType, ") error {")
+		// Protobuf message с Plain - делегируем в Plain
+		ctx.g.P("// MarshalJX сериализует protobuf сообщение через Plain в jx.Encoder")
+		ctx.g.P("func (x *", msgName, ") MarshalJX(e *", jx.EncoderType, ") error {")
 		ctx.g.P("\tif x == nil {")
 		ctx.g.P("\t\te.Null()")
 		ctx.g.P("\t\treturn nil")
@@ -216,78 +205,41 @@ func (g *Generator) renderProtoJSONJX(ctx *renderContext, msg *protogen.Message,
 		ctx.g.P("\tif err != nil {")
 		ctx.g.P("\t\treturn err")
 		ctx.g.P("\t}")
-		ctx.g.P("\tif plain == nil {")
-		ctx.g.P("\t\te.Null()")
-		ctx.g.P("\t\treturn nil")
-		ctx.g.P("\t}")
-		ctx.g.P("\treturn plain.marshalJX(e)")
+		ctx.g.P("\treturn plain.MarshalJX(e)")
 		ctx.g.P("}")
 		ctx.g.P()
 
-		ctx.g.P("func (x *", msgName, ") MarshalJSON() ([]byte, error) {")
+		ctx.g.P("// UnmarshalJX десериализует protobuf сообщение через Plain из jx.Decoder")
+		ctx.g.P("func (x *", msgName, ") UnmarshalJX(d *", jx.DecoderType, ") error {")
 		ctx.g.P("\tif x == nil {")
-		ctx.g.P("\t\treturn []byte(\"null\"), nil")
-		ctx.g.P("\t}")
-		ctx.g.P("\tplain, err := x.IntoPlainErr()")
-		ctx.g.P("\tif err != nil {")
-		ctx.g.P("\t\treturn nil, err")
-		ctx.g.P("\t}")
-		ctx.g.P("\tif plain == nil {")
-		ctx.g.P("\t\treturn []byte(\"null\"), nil")
-		ctx.g.P("\t}")
-		ctx.g.P("\treturn plain.MarshalJSON()")
-		ctx.g.P("}")
-		ctx.g.P()
-
-		ctx.g.P("func (x *", msgName, ") UnmarshalJSON(data []byte) error {")
-		ctx.g.P("\tif x == nil {")
-		ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": UnmarshalJSON on nil pointer\")")
-		ctx.g.P("\t}")
-		ctx.g.P("\tplain := new(", plainName, ")")
-		ctx.g.P("\tif err := plain.UnmarshalJSON(data); err != nil {")
-		ctx.g.P("\t\treturn err")
-		ctx.g.P("\t}")
-		ctx.g.P("\tpb, err := plain.IntoPbErr()")
-		ctx.g.P("\tif err != nil {")
-		ctx.g.P("\t\treturn err")
-		ctx.g.P("\t}")
-		ctx.g.P("\tif pb == nil {")
-		ctx.g.P("\t\treturn nil")
-		ctx.g.P("\t}")
-		ctx.g.P("\t*x = *pb")
-		ctx.g.P("\treturn nil")
-		ctx.g.P("}")
-		ctx.g.P()
-
-		ctx.g.P("func (x *", msgName, ") unmarshalJX(d *", jx.DecoderType, ") error {")
-		ctx.g.P("\tif x == nil {")
-		ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": unmarshalJX on nil pointer\")")
+		ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": UnmarshalJX on nil pointer\")")
 		ctx.g.P("\t}")
 		ctx.g.P("\tif d.Next() == ", jx.Null, " {")
 		ctx.g.P("\t\treturn d.Null()")
 		ctx.g.P("\t}")
 		ctx.g.P("\tplain := new(", plainName, ")")
-		ctx.g.P("\tif err := plain.unmarshalJX(d); err != nil {")
+		ctx.g.P("\tif err := plain.UnmarshalJX(d); err != nil {")
 		ctx.g.P("\t\treturn err")
 		ctx.g.P("\t}")
 		ctx.g.P("\tpb, err := plain.IntoPbErr()")
 		ctx.g.P("\tif err != nil {")
 		ctx.g.P("\t\treturn err")
 		ctx.g.P("\t}")
-		ctx.g.P("\tif pb == nil {")
-		ctx.g.P("\t\treturn nil")
+		ctx.g.P("\tif pb != nil {")
+		ctx.g.P("\t\t*x = *pb")
 		ctx.g.P("\t}")
-		ctx.g.P("\t*x = *pb")
 		ctx.g.P("\treturn nil")
 		ctx.g.P("}")
 		ctx.g.P()
 		return nil
 	}
 
+	// Protobuf message без Plain - используем protojson
 	protoJSONMarshal := ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Marshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"})
 	protoJSONUnmarshal := ctx.g.QualifiedGoIdent(protogen.GoIdent{GoName: "Unmarshal", GoImportPath: "google.golang.org/protobuf/encoding/protojson"})
 
-	ctx.g.P("func (x *", msgName, ") marshalJX(e *", jx.EncoderType, ") error {")
+	ctx.g.P("// MarshalJX сериализует protobuf сообщение через protojson в jx.Encoder")
+	ctx.g.P("func (x *", msgName, ") MarshalJX(e *", jx.EncoderType, ") error {")
 	ctx.g.P("\tif x == nil {")
 	ctx.g.P("\t\te.Null()")
 	ctx.g.P("\t\treturn nil")
@@ -301,25 +253,10 @@ func (g *Generator) renderProtoJSONJX(ctx *renderContext, msg *protogen.Message,
 	ctx.g.P("}")
 	ctx.g.P()
 
-	ctx.g.P("func (x *", msgName, ") MarshalJSON() ([]byte, error) {")
+	ctx.g.P("// UnmarshalJX десериализует protobuf сообщение через protojson из jx.Decoder")
+	ctx.g.P("func (x *", msgName, ") UnmarshalJX(d *", jx.DecoderType, ") error {")
 	ctx.g.P("\tif x == nil {")
-	ctx.g.P("\t\treturn []byte(\"null\"), nil")
-	ctx.g.P("\t}")
-	ctx.g.P("\treturn ", protoJSONMarshal, "(x)")
-	ctx.g.P("}")
-	ctx.g.P()
-
-	ctx.g.P("func (x *", msgName, ") UnmarshalJSON(data []byte) error {")
-	ctx.g.P("\tif x == nil {")
-	ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": UnmarshalJSON on nil pointer\")")
-	ctx.g.P("\t}")
-	ctx.g.P("\treturn ", protoJSONUnmarshal, "(data, x)")
-	ctx.g.P("}")
-	ctx.g.P()
-
-	ctx.g.P("func (x *", msgName, ") unmarshalJX(d *", jx.DecoderType, ") error {")
-	ctx.g.P("\tif x == nil {")
-	ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": unmarshalJX on nil pointer\")")
+	ctx.g.P("\t\treturn ", fmtErrorf, "(\"", msgName, ": UnmarshalJX on nil pointer\")")
 	ctx.g.P("\t}")
 	ctx.g.P("\tif d.Next() == ", jx.Null, " {")
 	ctx.g.P("\t\treturn d.Null()")
@@ -403,29 +340,24 @@ func (g *Generator) isPlainMessage(ctx *renderContext, typeURL string) bool {
 	return ctx.builder.generatedMessages[full]
 }
 
-func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, jxEncoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, strconvRefs *jxStrconvRefs) {
+func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, jx *jxRefs, jsonRefs, protoJSONRefs *jxJSONRefs, strconvRefs *jxStrconvRefs) {
 	fieldExpr := "x." + info.GoName
 	if info.IsMap {
 		ctx.g.P("\tif len(", fieldExpr, ") > 0 {")
 		ctx.g.P("\t\te.FieldStart(\"", info.Name, "\")")
-		ctx.g.P("\t\tvar marshalErr error")
-		ctx.g.P("\t\te.Obj(func(e *", jxEncoderType, ") {")
-		ctx.g.P("\t\t\tfor k, v := range ", fieldExpr, " {")
+		ctx.g.P("\t\te.ObjStart()")
+		ctx.g.P("\t\tfor k, v := range ", fieldExpr, " {")
 		keyExpr := g.jxMapKeyStringExpr(info.MapKeyKind, "k", strconvRefs)
-		ctx.g.P("\t\t\t\tkey := ", keyExpr)
-		ctx.g.P("\t\t\t\te.FieldStart(key)")
+		ctx.g.P("\t\t\te.FieldStart(", keyExpr, ")")
 		if strings.HasPrefix(info.MapValType, "*") || info.MapValKind == typepb.Field_TYPE_BYTES {
-			ctx.g.P("\t\t\t\tif v == nil {")
-			ctx.g.P("\t\t\t\t\te.Null()")
-			ctx.g.P("\t\t\t\t\tcontinue")
-			ctx.g.P("\t\t\t\t}")
+			ctx.g.P("\t\t\tif v == nil {")
+			ctx.g.P("\t\t\t\te.Null()")
+			ctx.g.P("\t\t\t\tcontinue")
+			ctx.g.P("\t\t\t}")
 		}
-		g.renderJXMarshalValue(ctx, info.MapValKind, info.MapValTypeURL, "v", info.MapValType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
-		ctx.g.P("\t\t\t}")
-		ctx.g.P("\t\t})")
-		ctx.g.P("\t\tif marshalErr != nil {")
-		ctx.g.P("\t\t\treturn marshalErr")
+		g.renderJXMarshalValue(ctx, info.MapValKind, info.MapValTypeURL, "v", info.MapValType, jx, jsonRefs, protoJSONRefs, "\t\t\t")
 		ctx.g.P("\t\t}")
+		ctx.g.P("\t\te.ObjEnd()")
 		ctx.g.P("\t}")
 		return
 	}
@@ -433,30 +365,26 @@ func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, 
 	if info.Cardinality == typepb.Field_CARDINALITY_REPEATED {
 		ctx.g.P("\tif len(", fieldExpr, ") > 0 {")
 		ctx.g.P("\t\te.FieldStart(\"", info.Name, "\")")
-		ctx.g.P("\t\tvar marshalErr error")
-		ctx.g.P("\t\te.Arr(func(e *", jxEncoderType, ") {")
-		ctx.g.P("\t\t\tfor _, v := range ", fieldExpr, " {")
+		ctx.g.P("\t\te.ArrStart()")
+		ctx.g.P("\t\tfor _, v := range ", fieldExpr, " {")
 		elemType := strings.TrimPrefix(info.GoType, "[]")
 		if strings.HasPrefix(elemType, "*") {
-			ctx.g.P("\t\t\t\tif v == nil {")
-			ctx.g.P("\t\t\t\t\te.Null()")
-			ctx.g.P("\t\t\t\t\tcontinue")
-			ctx.g.P("\t\t\t\t}")
-			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
+			ctx.g.P("\t\t\tif v == nil {")
+			ctx.g.P("\t\t\t\te.Null()")
+			ctx.g.P("\t\t\t\tcontinue")
+			ctx.g.P("\t\t\t}")
+			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jx, jsonRefs, protoJSONRefs, "\t\t\t")
 		} else if info.Kind == typepb.Field_TYPE_BYTES {
-			ctx.g.P("\t\t\t\tif v == nil {")
-			ctx.g.P("\t\t\t\t\te.Null()")
-			ctx.g.P("\t\t\t\t\tcontinue")
-			ctx.g.P("\t\t\t\t}")
-			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
+			ctx.g.P("\t\t\tif v == nil {")
+			ctx.g.P("\t\t\t\te.Null()")
+			ctx.g.P("\t\t\t\tcontinue")
+			ctx.g.P("\t\t\t}")
+			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jx, jsonRefs, protoJSONRefs, "\t\t\t")
 		} else {
-			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jxEncoderType, jsonRefs, protoJSONRefs, "\t\t\t\t", "marshalErr")
+			g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, "v", elemType, jx, jsonRefs, protoJSONRefs, "\t\t\t")
 		}
-		ctx.g.P("\t\t\t}")
-		ctx.g.P("\t\t})")
-		ctx.g.P("\t\tif marshalErr != nil {")
-		ctx.g.P("\t\t\treturn marshalErr")
 		ctx.g.P("\t\t}")
+		ctx.g.P("\t\te.ArrEnd()")
 		ctx.g.P("\t}")
 		return
 	}
@@ -477,77 +405,41 @@ func (g *Generator) renderJXMarshalField(ctx *renderContext, info *jxFieldInfo, 
 		valueExpr = "*" + valueExpr
 		valueType = strings.TrimPrefix(valueType, "*")
 	}
-	g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, valueExpr, valueType, jxEncoderType, jsonRefs, protoJSONRefs, indent, "")
+	g.renderJXMarshalValue(ctx, info.Kind, info.TypeURL, valueExpr, valueType, jx, jsonRefs, protoJSONRefs, indent)
 
 	if cond != "" {
 		ctx.g.P("\t}")
 	}
 }
 
-func (g *Generator) renderJXMarshalValue(ctx *renderContext, kind typepb.Field_Kind, typeURL, valueExpr, valueType string, jxEncoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, indent, errVar string) {
+func (g *Generator) renderJXMarshalValue(ctx *renderContext, kind typepb.Field_Kind, typeURL, valueExpr, valueType string, jx *jxRefs, jsonRefs, protoJSONRefs *jxJSONRefs, indent string) {
 	if kind == typepb.Field_TYPE_MESSAGE {
-		if g.isPlainMessage(ctx, typeURL) {
-			if errVar == "" {
-				ctx.g.P(indent, "raw, err := ", valueExpr, ".MarshalJSON()")
-				ctx.g.P(indent, "if err != nil {")
-				ctx.g.P(indent, "\treturn err")
-				ctx.g.P(indent, "}")
-			} else {
-				ctx.g.P(indent, "raw, valueErr := ", valueExpr, ".MarshalJSON()")
-				ctx.g.P(indent, "if valueErr != nil {")
-				ctx.g.P(indent, "\t", errVar, " = valueErr")
-				ctx.g.P(indent, "\treturn")
-				ctx.g.P(indent, "}")
-			}
-			ctx.g.P(indent, "e.Raw(raw)")
+		if g.shouldUseProtoJSON(ctx, typeURL) {
+			// Well-known types - используем protojson
+			ctx.g.P(indent, "if ", valueExpr, " == nil {")
+			ctx.g.P(indent, "\te.Null()")
+			ctx.g.P(indent, "} else {")
+			ctx.g.P(indent, "\traw, err := ", protoJSONRefs.Marshal, "(", valueExpr, ")")
+			ctx.g.P(indent, "\tif err != nil {")
+			ctx.g.P(indent, "\t\treturn err")
+			ctx.g.P(indent, "\t}")
+			ctx.g.P(indent, "\te.Raw(raw)")
+			ctx.g.P(indent, "}")
 			return
 		}
-		if protoJSONRefs != nil {
-			if errVar == "" {
-				ctx.g.P(indent, "raw, err := ", protoJSONRefs.Marshal, "(", valueExpr, ")")
-				ctx.g.P(indent, "if err != nil {")
-				ctx.g.P(indent, "\treturn err")
-				ctx.g.P(indent, "}")
-			} else {
-				ctx.g.P(indent, "raw, valueErr := ", protoJSONRefs.Marshal, "(", valueExpr, ")")
-				ctx.g.P(indent, "if valueErr != nil {")
-				ctx.g.P(indent, "\t", errVar, " = valueErr")
-				ctx.g.P(indent, "\treturn")
-				ctx.g.P(indent, "}")
-			}
-			ctx.g.P(indent, "e.Raw(raw)")
-			return
-		}
-		if errVar == "" {
-			ctx.g.P(indent, "raw, err := ", jsonRefs.Marshal, "(", valueExpr, ")")
-			ctx.g.P(indent, "if err != nil {")
-			ctx.g.P(indent, "\treturn err")
-			ctx.g.P(indent, "}")
-		} else {
-			ctx.g.P(indent, "raw, valueErr := ", jsonRefs.Marshal, "(", valueExpr, ")")
-			ctx.g.P(indent, "if valueErr != nil {")
-			ctx.g.P(indent, "\t", errVar, " = valueErr")
-			ctx.g.P(indent, "\treturn")
-			ctx.g.P(indent, "}")
-		}
-		ctx.g.P(indent, "e.Raw(raw)")
+		// Наши сгенерированные типы - прямой вызов MarshalJX
+		ctx.g.P(indent, "if err := ", valueExpr, ".MarshalJX(e); err != nil {")
+		ctx.g.P(indent, "\treturn err")
+		ctx.g.P(indent, "}")
 		return
 	}
 
 	method, baseType := jxMethodAndBaseType(kind)
 	if method == "" {
-		if errVar == "" {
-			ctx.g.P(indent, "raw, err := ", jsonRefs.Marshal, "(", valueExpr, ")")
-			ctx.g.P(indent, "if err != nil {")
-			ctx.g.P(indent, "\treturn err")
-			ctx.g.P(indent, "}")
-		} else {
-			ctx.g.P(indent, "raw, valueErr := ", jsonRefs.Marshal, "(", valueExpr, ")")
-			ctx.g.P(indent, "if valueErr != nil {")
-			ctx.g.P(indent, "\t", errVar, " = valueErr")
-			ctx.g.P(indent, "\treturn")
-			ctx.g.P(indent, "}")
-		}
+		ctx.g.P(indent, "raw, err := ", jsonRefs.Marshal, "(", valueExpr, ")")
+		ctx.g.P(indent, "if err != nil {")
+		ctx.g.P(indent, "\treturn err")
+		ctx.g.P(indent, "}")
 		ctx.g.P(indent, "e.Raw(raw)")
 		return
 	}
@@ -584,6 +476,11 @@ func jxMethodAndBaseType(kind typepb.Field_Kind) (string, string) {
 	}
 }
 
+func jxNeedsJSONFallback(kind typepb.Field_Kind) bool {
+	method, _ := jxMethodAndBaseType(kind)
+	return method == ""
+}
+
 func (g *Generator) renderJXUnmarshalField(ctx *renderContext, info *jxFieldInfo, jxDecoderType string, jsonRefs, protoJSONRefs *jxJSONRefs, strconvRefs *jxStrconvRefs, fmtErrorf, jxNull string) {
 	ctx.g.P("\t\tcase \"", info.Name, "\":")
 	ctx.g.P("\t\t\t{")
@@ -612,21 +509,8 @@ func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInf
 		ctx.g.P("\t\t\t\t\treturn d.Null()")
 		ctx.g.P("\t\t\t\t}")
 		if info.Kind == typepb.Field_TYPE_MESSAGE {
-			if g.isPlainMessage(ctx, info.TypeURL) {
-				ctx.g.P("\t\t\t\tval := new(", baseType, ")")
-				ctx.g.P("\t\t\t\traw, err := d.Raw()")
-				ctx.g.P("\t\t\t\tif err != nil {")
-				ctx.g.P("\t\t\t\t\treturn err")
-				ctx.g.P("\t\t\t\t}")
-				ctx.g.P("\t\t\t\tif err := val.UnmarshalJSON(raw); err != nil {")
-				ctx.g.P("\t\t\t\t\treturn err")
-				ctx.g.P("\t\t\t\t}")
-				ctx.g.P("\t\t\t\t", fieldExpr, " = val")
-				ctx.g.P("\t\t\t\treturn nil")
-				return
-			}
-			if protoJSONRefs != nil {
-				ctx.g.P("\t\t\t\tval := new(", baseType, ")")
+			ctx.g.P("\t\t\t\tval := new(", baseType, ")")
+			if g.shouldUseProtoJSON(ctx, info.TypeURL) {
 				ctx.g.P("\t\t\t\traw, err := d.Raw()")
 				ctx.g.P("\t\t\t\tif err != nil {")
 				ctx.g.P("\t\t\t\t\treturn err")
@@ -634,18 +518,12 @@ func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInf
 				ctx.g.P("\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, val); err != nil {")
 				ctx.g.P("\t\t\t\t\treturn err")
 				ctx.g.P("\t\t\t\t}")
-				ctx.g.P("\t\t\t\t", fieldExpr, " = val")
-				ctx.g.P("\t\t\t\treturn nil")
-				return
+			} else {
+				// Прямой вызов UnmarshalJX
+				ctx.g.P("\t\t\t\tif err := val.UnmarshalJX(d); err != nil {")
+				ctx.g.P("\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t}")
 			}
-			ctx.g.P("\t\t\t\tval := new(", baseType, ")")
-			ctx.g.P("\t\t\t\traw, err := d.Raw()")
-			ctx.g.P("\t\t\t\tif err != nil {")
-			ctx.g.P("\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t}")
-			ctx.g.P("\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, val); err != nil {")
-			ctx.g.P("\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t}")
 			ctx.g.P("\t\t\t\t", fieldExpr, " = val")
 			ctx.g.P("\t\t\t\treturn nil")
 			return
@@ -663,27 +541,16 @@ func (g *Generator) renderJXUnmarshalScalar(ctx *renderContext, info *jxFieldInf
 	}
 
 	if info.Kind == typepb.Field_TYPE_MESSAGE {
-		if g.isPlainMessage(ctx, info.TypeURL) {
-			ctx.g.P("\t\t\t\traw, err := d.Raw()")
-			ctx.g.P("\t\t\t\tif err != nil {")
-			ctx.g.P("\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t}")
-			ctx.g.P("\t\t\t\treturn (&", fieldExpr, ").UnmarshalJSON(raw)")
-			return
-		}
-		if protoJSONRefs != nil {
+		if g.shouldUseProtoJSON(ctx, info.TypeURL) {
 			ctx.g.P("\t\t\t\traw, err := d.Raw()")
 			ctx.g.P("\t\t\t\tif err != nil {")
 			ctx.g.P("\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t}")
 			ctx.g.P("\t\t\t\treturn ", protoJSONRefs.Unmarshal, "(raw, &", fieldExpr, ")")
-			return
+		} else {
+			// Прямой вызов UnmarshalJX
+			ctx.g.P("\t\t\t\treturn (&", fieldExpr, ").UnmarshalJX(d)")
 		}
-		ctx.g.P("\t\t\t\traw, err := d.Raw()")
-		ctx.g.P("\t\t\t\tif err != nil {")
-		ctx.g.P("\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t}")
-		ctx.g.P("\t\t\t\treturn ", jsonRefs.Unmarshal, "(raw, &", fieldExpr, ")")
 		return
 	}
 
@@ -710,33 +577,17 @@ func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldI
 	ctx.g.P("\t\t\t\t\t", fieldExpr, " = nil")
 	ctx.g.P("\t\t\t\t\treturn d.Null()")
 	ctx.g.P("\t\t\t\t}")
-	ctx.g.P("\t\t\t\t", fieldExpr, " = nil")
+	ctx.g.P("\t\t\t\t", fieldExpr, " = ", fieldExpr, "[:0]") // Переиспользуем slice
 	ctx.g.P("\t\t\t\treturn d.Arr(func(d *", jxDecoderType, ") error {")
 	if elemIsPtr {
 		ctx.g.P("\t\t\t\t\tif d.Next() == ", jxNull, " {")
-		ctx.g.P("\t\t\t\t\t\tif err := d.Null(); err != nil {")
-		ctx.g.P("\t\t\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t\t\t}")
+		ctx.g.P("\t\t\t\t\t\t_ = d.Null()")
 		ctx.g.P("\t\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", nil)")
 		ctx.g.P("\t\t\t\t\t\treturn nil")
 		ctx.g.P("\t\t\t\t\t}")
 		if info.Kind == typepb.Field_TYPE_MESSAGE {
-			if g.isPlainMessage(ctx, info.TypeURL) {
-				ctx.g.P("\t\t\t\t\tval := new(", baseElem, ")")
-				ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-				ctx.g.P("\t\t\t\t\tif err != nil {")
-				ctx.g.P("\t\t\t\t\t\treturn err")
-				ctx.g.P("\t\t\t\t\t}")
-				ctx.g.P("\t\t\t\t\tif err := val.UnmarshalJSON(raw); err != nil {")
-				ctx.g.P("\t\t\t\t\t\treturn err")
-				ctx.g.P("\t\t\t\t\t}")
-				ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
-				ctx.g.P("\t\t\t\t\treturn nil")
-				ctx.g.P("\t\t\t\t})")
-				return
-			}
-			if protoJSONRefs != nil {
-				ctx.g.P("\t\t\t\t\tval := new(", baseElem, ")")
+			ctx.g.P("\t\t\t\t\tval := new(", baseElem, ")")
+			if g.shouldUseProtoJSON(ctx, info.TypeURL) {
 				ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 				ctx.g.P("\t\t\t\t\tif err != nil {")
 				ctx.g.P("\t\t\t\t\t\treturn err")
@@ -744,19 +595,12 @@ func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldI
 				ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, val); err != nil {")
 				ctx.g.P("\t\t\t\t\t\treturn err")
 				ctx.g.P("\t\t\t\t\t}")
-				ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
-				ctx.g.P("\t\t\t\t\treturn nil")
-				ctx.g.P("\t\t\t\t})")
-				return
+			} else {
+				// Прямой вызов UnmarshalJX
+				ctx.g.P("\t\t\t\t\tif err := val.UnmarshalJX(d); err != nil {")
+				ctx.g.P("\t\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t\t}")
 			}
-			ctx.g.P("\t\t\t\t\tval := new(", baseElem, ")")
-			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-			ctx.g.P("\t\t\t\t\tif err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, val); err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
 			ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
 			ctx.g.P("\t\t\t\t\treturn nil")
 			ctx.g.P("\t\t\t\t})")
@@ -775,29 +619,13 @@ func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldI
 	}
 
 	ctx.g.P("\t\t\t\t\tif d.Next() == ", jxNull, " {")
-	ctx.g.P("\t\t\t\t\t\tif err := d.Null(); err != nil {")
-	ctx.g.P("\t\t\t\t\t\t\treturn err")
-	ctx.g.P("\t\t\t\t\t\t}")
+	ctx.g.P("\t\t\t\t\t\t_ = d.Null()")
 	ctx.g.P("\t\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", ", elemType, "(", zeroValueForKind(info.Kind, false), "))")
 	ctx.g.P("\t\t\t\t\t\treturn nil")
 	ctx.g.P("\t\t\t\t\t}")
 	if info.Kind == typepb.Field_TYPE_MESSAGE {
-		if g.isPlainMessage(ctx, info.TypeURL) {
-			ctx.g.P("\t\t\t\t\tvar val ", elemType)
-			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-			ctx.g.P("\t\t\t\t\tif err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\tif err := (&val).UnmarshalJSON(raw); err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
-			ctx.g.P("\t\t\t\t\treturn nil")
-			ctx.g.P("\t\t\t\t})")
-			return
-		}
-		if protoJSONRefs != nil {
-			ctx.g.P("\t\t\t\t\tvar val ", elemType)
+		ctx.g.P("\t\t\t\t\tvar val ", elemType)
+		if g.shouldUseProtoJSON(ctx, info.TypeURL) {
 			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 			ctx.g.P("\t\t\t\t\tif err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
@@ -805,19 +633,12 @@ func (g *Generator) renderJXUnmarshalRepeated(ctx *renderContext, info *jxFieldI
 			ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, &val); err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
-			ctx.g.P("\t\t\t\t\treturn nil")
-			ctx.g.P("\t\t\t\t})")
-			return
+		} else {
+			// Прямой вызов UnmarshalJX
+			ctx.g.P("\t\t\t\t\tif err := (&val).UnmarshalJX(d); err != nil {")
+			ctx.g.P("\t\t\t\t\t\treturn err")
+			ctx.g.P("\t\t\t\t\t}")
 		}
-		ctx.g.P("\t\t\t\t\tvar val ", elemType)
-		ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-		ctx.g.P("\t\t\t\t\tif err != nil {")
-		ctx.g.P("\t\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t\t}")
-		ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, &val); err != nil {")
-		ctx.g.P("\t\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t\t}")
 		ctx.g.P("\t\t\t\t\t", fieldExpr, " = append(", fieldExpr, ", val)")
 		ctx.g.P("\t\t\t\t\treturn nil")
 		ctx.g.P("\t\t\t\t})")
@@ -885,29 +706,13 @@ func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, 
 
 	if valIsPtr {
 		ctx.g.P("\t\t\t\t\tif d.Next() == ", jxNull, " {")
-		ctx.g.P("\t\t\t\t\t\tif err := d.Null(); err != nil {")
-		ctx.g.P("\t\t\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t\t\t}")
+		ctx.g.P("\t\t\t\t\t\t_ = d.Null()")
 		ctx.g.P("\t\t\t\t\t\t", fieldExpr, "[mapKey] = nil")
 		ctx.g.P("\t\t\t\t\t\treturn nil")
 		ctx.g.P("\t\t\t\t\t}")
 		if info.MapValKind == typepb.Field_TYPE_MESSAGE {
-			if g.isPlainMessage(ctx, info.MapValTypeURL) {
-				ctx.g.P("\t\t\t\t\tval := new(", valBase, ")")
-				ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-				ctx.g.P("\t\t\t\t\tif err != nil {")
-				ctx.g.P("\t\t\t\t\t\treturn err")
-				ctx.g.P("\t\t\t\t\t}")
-				ctx.g.P("\t\t\t\t\tif err := val.UnmarshalJSON(raw); err != nil {")
-				ctx.g.P("\t\t\t\t\t\treturn err")
-				ctx.g.P("\t\t\t\t\t}")
-				ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
-				ctx.g.P("\t\t\t\t\treturn nil")
-				ctx.g.P("\t\t\t\t})")
-				return
-			}
-			if protoJSONRefs != nil {
-				ctx.g.P("\t\t\t\t\tval := new(", valBase, ")")
+			ctx.g.P("\t\t\t\t\tval := new(", valBase, ")")
+			if g.shouldUseProtoJSON(ctx, info.MapValTypeURL) {
 				ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 				ctx.g.P("\t\t\t\t\tif err != nil {")
 				ctx.g.P("\t\t\t\t\t\treturn err")
@@ -915,19 +720,12 @@ func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, 
 				ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, val); err != nil {")
 				ctx.g.P("\t\t\t\t\t\treturn err")
 				ctx.g.P("\t\t\t\t\t}")
-				ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
-				ctx.g.P("\t\t\t\t\treturn nil")
-				ctx.g.P("\t\t\t\t})")
-				return
+			} else {
+				// Прямой вызов UnmarshalJX
+				ctx.g.P("\t\t\t\t\tif err := val.UnmarshalJX(d); err != nil {")
+				ctx.g.P("\t\t\t\t\t\treturn err")
+				ctx.g.P("\t\t\t\t\t}")
 			}
-			ctx.g.P("\t\t\t\t\tval := new(", valBase, ")")
-			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-			ctx.g.P("\t\t\t\t\tif err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, val); err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
 			ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
 			ctx.g.P("\t\t\t\t\treturn nil")
 			ctx.g.P("\t\t\t\t})")
@@ -946,29 +744,13 @@ func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, 
 	}
 
 	ctx.g.P("\t\t\t\t\tif d.Next() == ", jxNull, " {")
-	ctx.g.P("\t\t\t\t\t\tif err := d.Null(); err != nil {")
-	ctx.g.P("\t\t\t\t\t\t\treturn err")
-	ctx.g.P("\t\t\t\t\t\t}")
+	ctx.g.P("\t\t\t\t\t\t_ = d.Null()")
 	ctx.g.P("\t\t\t\t\t\t", fieldExpr, "[mapKey] = ", valType, "(", zeroValueForKind(info.MapValKind, false), ")")
 	ctx.g.P("\t\t\t\t\t\treturn nil")
 	ctx.g.P("\t\t\t\t\t}")
 	if info.MapValKind == typepb.Field_TYPE_MESSAGE {
-		if g.isPlainMessage(ctx, info.MapValTypeURL) {
-			ctx.g.P("\t\t\t\t\tvar val ", valType)
-			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-			ctx.g.P("\t\t\t\t\tif err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\tif err := (&val).UnmarshalJSON(raw); err != nil {")
-			ctx.g.P("\t\t\t\t\t\treturn err")
-			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
-			ctx.g.P("\t\t\t\t\treturn nil")
-			ctx.g.P("\t\t\t\t})")
-			return
-		}
-		if protoJSONRefs != nil {
-			ctx.g.P("\t\t\t\t\tvar val ", valType)
+		ctx.g.P("\t\t\t\t\tvar val ", valType)
+		if g.shouldUseProtoJSON(ctx, info.MapValTypeURL) {
 			ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
 			ctx.g.P("\t\t\t\t\tif err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
@@ -976,19 +758,12 @@ func (g *Generator) renderJXUnmarshalMap(ctx *renderContext, info *jxFieldInfo, 
 			ctx.g.P("\t\t\t\t\tif err := ", protoJSONRefs.Unmarshal, "(raw, &val); err != nil {")
 			ctx.g.P("\t\t\t\t\t\treturn err")
 			ctx.g.P("\t\t\t\t\t}")
-			ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
-			ctx.g.P("\t\t\t\t\treturn nil")
-			ctx.g.P("\t\t\t\t})")
-			return
+		} else {
+			// Прямой вызов UnmarshalJX
+			ctx.g.P("\t\t\t\t\tif err := (&val).UnmarshalJX(d); err != nil {")
+			ctx.g.P("\t\t\t\t\t\treturn err")
+			ctx.g.P("\t\t\t\t\t}")
 		}
-		ctx.g.P("\t\t\t\t\tvar val ", valType)
-		ctx.g.P("\t\t\t\t\traw, err := d.Raw()")
-		ctx.g.P("\t\t\t\t\tif err != nil {")
-		ctx.g.P("\t\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t\t}")
-		ctx.g.P("\t\t\t\t\tif err := ", jsonRefs.Unmarshal, "(raw, &val); err != nil {")
-		ctx.g.P("\t\t\t\t\t\treturn err")
-		ctx.g.P("\t\t\t\t\t}")
 		ctx.g.P("\t\t\t\t\t", fieldExpr, "[mapKey] = val")
 		ctx.g.P("\t\t\t\t\treturn nil")
 		ctx.g.P("\t\t\t\t})")
@@ -1068,4 +843,16 @@ func (g *Generator) jxOmitCondition(info *jxFieldInfo) string {
 	default:
 		return fieldExpr + " != 0"
 	}
+}
+
+func (g *Generator) shouldUseProtoJSON(ctx *renderContext, typeURL string) bool {
+	full := strings.TrimPrefix(typeURL, "type.googleapis.com/")
+	if full == "" {
+		return true
+	}
+	if strings.HasPrefix(full, "google.protobuf.") {
+		return true
+	}
+	_, ok := ctx.builder.messagesByFullName[full]
+	return !ok
 }
