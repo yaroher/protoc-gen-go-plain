@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
-	"github.com/yaroher/protoc-gen-go-plain/crf"
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -355,7 +354,7 @@ func (g *Generator) renderIntoPlain(ctx *renderContext, msg *protogen.Message, p
 	}
 	ctx.g.P("\tout := &", plainName, "{}")
 	if wrapper.CRF != nil && wrapper.CRF.HasEntries() {
-		g.renderCRFAssign(ctx, "out", wrapper.CRF)
+		g.renderCRFAssign(ctx, "out", "m", wrapper)
 	}
 
 	oneofGroups := make(map[string]*oneofGroup)
@@ -538,24 +537,57 @@ func (g *Generator) plainFieldPresenceExpr(root string, fw *FieldWrapper) string
 	return name + " != " + zero
 }
 
-func (g *Generator) renderCRFAssign(ctx *renderContext, outVar string, meta *crf.CRF) {
-	if meta == nil || !meta.HasEntries() {
+func (g *Generator) renderCRFAssign(ctx *renderContext, outVar string, rootVar string, wrapper *TypeWrapper) {
+	if wrapper == nil || wrapper.CRF == nil || !wrapper.CRF.HasEntries() {
 		return
 	}
+
+	// Строим карту field -> FieldWrapper
+	fieldByName := make(map[string]*FieldWrapper)
+	for _, fw := range wrapper.Fields {
+		if fw == nil || fw.Field == nil {
+			continue
+		}
+		fieldByName[fw.Field.GetName()] = fw
+	}
+
 	crfIdent := protogen.GoIdent{GoName: "CRF", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/crf"}
 	entryIdent := protogen.GoIdent{GoName: "Entry", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/crf"}
 	sourceIdent := protogen.GoIdent{GoName: "Source", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/crf"}
 
-	ctx.g.P("\t", outVar, ".CRF = &", ctx.g.QualifiedGoIdent(crfIdent), "{")
-	ctx.g.P("\t\tEntries: []", ctx.g.QualifiedGoIdent(entryIdent), "{")
-	for _, entry := range meta.Entries {
-		ctx.g.P("\t\t\t{Field: ", fmt.Sprintf("%q", entry.Field), ", Sources: []", ctx.g.QualifiedGoIdent(sourceIdent), "{")
-		for _, source := range entry.Sources {
-			ctx.g.P("\t\t\t\t{Path: ", fmt.Sprintf("%q", source.Path), "},")
+	// Генерируем динамическое заполнение CRF
+	ctx.g.P("\t{")
+	ctx.g.P("\t\tvar crfEntries []", ctx.g.QualifiedGoIdent(entryIdent))
+
+	for _, entry := range wrapper.CRF.Entries {
+		fw := fieldByName[entry.Field]
+		if fw == nil || len(fw.Origins) < 2 {
+			continue
 		}
-		ctx.g.P("\t\t\t}},")
+
+		// Для каждого поля генерируем проверку какой источник заполнен
+		for i, origin := range fw.Origins {
+			cond := g.originPresenceExpr(rootVar, origin)
+			if cond == "" {
+				continue
+			}
+
+			if i == 0 {
+				ctx.g.P("\t\tif ", cond, " {")
+			} else {
+				ctx.g.P("\t\t} else if ", cond, " {")
+			}
+			ctx.g.P("\t\t\tcrfEntries = append(crfEntries, ", ctx.g.QualifiedGoIdent(entryIdent), "{")
+			ctx.g.P("\t\t\t\tField: ", fmt.Sprintf("%q", entry.Field), ",")
+			ctx.g.P("\t\t\t\tSources: []", ctx.g.QualifiedGoIdent(sourceIdent), "{{Path: ", fmt.Sprintf("%q", origin.FullName), "}},")
+			ctx.g.P("\t\t\t})")
+		}
+		ctx.g.P("\t\t}")
 	}
-	ctx.g.P("\t\t},")
+
+	ctx.g.P("\t\tif len(crfEntries) > 0 {")
+	ctx.g.P("\t\t\t", outVar, ".CRF = &", ctx.g.QualifiedGoIdent(crfIdent), "{Entries: crfEntries}")
+	ctx.g.P("\t\t}")
 	ctx.g.P("\t}")
 }
 
