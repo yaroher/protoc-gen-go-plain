@@ -408,6 +408,43 @@ func (g *Generator) renderCRFValidation(ctx *renderContext, rootVar string, wrap
 	}
 }
 
+func (g *Generator) renderCRFValidationPlain(ctx *renderContext, rootVar string, wrapper *TypeWrapper) {
+	if wrapper == nil || wrapper.CRF == nil || !wrapper.CRF.HasEntries() {
+		return
+	}
+	fieldByName := make(map[string]*FieldWrapper)
+	for _, fw := range wrapper.Fields {
+		if fw == nil || fw.Field == nil {
+			continue
+		}
+		fieldByName[fw.Field.GetName()] = fw
+	}
+
+	errIdent := protogen.GoIdent{GoName: "ErrFieldCollision", GoImportPath: "github.com/yaroher/protoc-gen-go-plain/crf"}
+	for _, entry := range wrapper.CRF.Entries {
+		fw := fieldByName[entry.Field]
+		if fw == nil || len(fw.Origins) < 2 {
+			continue
+		}
+		cond := g.plainFieldPresenceExpr(rootVar, fw)
+		if cond == "" {
+			continue
+		}
+		ctx.g.P("\tif ", cond, " {")
+		ctx.g.P("\t\treturn nil, ", ctx.g.QualifiedGoIdent(errIdent), "{")
+		ctx.g.P("\t\t\tField: ", fmt.Sprintf("%q", entry.Field), ",")
+		if len(entry.Sources) > 0 {
+			ctx.g.P("\t\t\tSources: []string{")
+			for _, src := range entry.Sources {
+				ctx.g.P("\t\t\t\t", fmt.Sprintf("%q", src.Path), ",")
+			}
+			ctx.g.P("\t\t\t},")
+		}
+		ctx.g.P("\t\t}")
+		ctx.g.P("\t}")
+	}
+}
+
 func (g *Generator) originPresenceExpr(root string, origin FieldOrigin) string {
 	if origin.Source == nil || len(origin.Path) == 0 {
 		return ""
@@ -456,6 +493,27 @@ func (g *Generator) originPresenceExpr(root string, origin FieldOrigin) string {
 		conds = append(conds, leafExpr+" != "+zeroValueForKind(kindFromField(leaf), false))
 	}
 	return strings.Join(conds, " && ")
+}
+
+func (g *Generator) plainFieldPresenceExpr(root string, fw *FieldWrapper) string {
+	if fw == nil || fw.Field == nil {
+		return ""
+	}
+	name := root + "." + goFieldName(fw.Field.GetName())
+	if fw.Source != nil && fw.Source.Desc.IsMap() {
+		return "len(" + name + ") > 0"
+	}
+	if fw.Field.GetCardinality() == typepb.Field_CARDINALITY_REPEATED {
+		return "len(" + name + ") > 0"
+	}
+	if fw.Field.GetKind() == typepb.Field_TYPE_MESSAGE {
+		return name + " != nil"
+	}
+	if fw.Oneof != nil {
+		return name + " != nil"
+	}
+	zero := zeroValueForKind(fw.Field.GetKind(), false)
+	return name + " != " + zero
 }
 
 func (g *Generator) renderCRFAssign(ctx *renderContext, outVar string, meta *crf.CRF) {
@@ -748,6 +806,9 @@ func (g *Generator) renderIntoPb(ctx *renderContext, msg *protogen.Message, plai
 	ctx.g.P("\tif m == nil {")
 	ctx.g.P("\t\treturn nil, nil")
 	ctx.g.P("\t}")
+	if wrapper.CRF != nil && wrapper.CRF.HasEntries() {
+		g.renderCRFValidationPlain(ctx, "m", wrapper)
+	}
 	ctx.g.P("\tout := &", msg.GoIdent.GoName, "{}")
 
 	oneofGroups := make(map[string]*oneofGroup)
