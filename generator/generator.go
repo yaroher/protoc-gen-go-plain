@@ -168,9 +168,6 @@ func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, 
 	gf.P("}")
 	gf.P()
 
-	// Generate metadata
-	g.generateMetadata(gf, msg)
-
 	// Generate conversion methods
 	g.generateConversionMethods(gf, msg, f)
 
@@ -183,114 +180,6 @@ func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, 
 	for _, nested := range msg.Nested {
 		g.generateMessage(gf, nested, f)
 	}
-}
-
-// generateMetadata generates metadata variables for a message
-func (g *Generator) generateMetadata(gf *protogen.GeneratedFile, msg *IRMessage) {
-	// Import runtime package
-	runtimePkg := protogen.GoImportPath("github.com/yaroher/protoc-gen-go-plain/runtime")
-
-	// Generate field metadata array
-	gf.P("// _", msg.GoName, "_meta contains field metadata (origin, depth, pathIndex)")
-	gf.P("var _", msg.GoName, "_meta = [...]", gf.QualifiedGoIdent(runtimePkg.Ident("FieldMeta")), "{")
-	for _, field := range msg.Fields {
-		meta := g.computeFieldMeta(field, msg)
-		gf.P("\t", fmt.Sprintf("0x%04X", meta), ", // ", field.GoName, ": origin=", field.Origin, ", depth=", len(field.PathNumbers), ", pathIdx=", g.getPathIndex(field, msg))
-	}
-	gf.P("}")
-	gf.P()
-
-	// Generate path table
-	if len(msg.PathTable) > 0 {
-		gf.P("// _", msg.GoName, "_paths contains field number paths for navigation")
-		gf.P("var _", msg.GoName, "_paths = [...]uint16{")
-		for i := 0; i < len(msg.PathTable); i += 8 {
-			end := i + 8
-			if end > len(msg.PathTable) {
-				end = len(msg.PathTable)
-			}
-			line := "\t"
-			for j := i; j < end; j++ {
-				line += fmt.Sprintf("%d, ", msg.PathTable[j])
-			}
-			gf.P(line)
-		}
-		gf.P("}")
-		gf.P()
-	}
-
-	// Generate JSON field names
-	gf.P("// _", msg.GoName, "_jsonNames contains JSON field names")
-	gf.P("var _", msg.GoName, "_jsonNames = [...]string{")
-	for _, field := range msg.Fields {
-		gf.P("\t", `"`, field.JSONName, `",`)
-	}
-	gf.P("}")
-	gf.P()
-
-	// Generate PlainTypeInfo variable
-	gf.P("// ", msg.GoName, "TypeInfo provides metadata for ", msg.GoName)
-	gf.P("var ", msg.GoName, "TypeInfo = ", gf.QualifiedGoIdent(runtimePkg.Ident("PlainTypeInfo")), "{")
-	gf.P("\tFields:    _", msg.GoName, "_meta[:],")
-	if len(msg.PathTable) > 0 {
-		gf.P("\tPaths:     _", msg.GoName, "_paths[:],")
-	}
-	gf.P("\tJSONNames: _", msg.GoName, "_jsonNames[:],")
-	gf.P("}")
-	gf.P()
-}
-
-// computeFieldMeta computes the uint16 metadata value for a field
-func (g *Generator) computeFieldMeta(field *IRField, msg *IRMessage) uint16 {
-	var origin uint16
-	switch field.Origin {
-	case OriginDirect:
-		origin = 0
-	case OriginEmbed:
-		origin = 1
-	case OriginOneofEmbed:
-		origin = 2
-	case OriginVirtual:
-		origin = 3
-	case OriginSerialized:
-		origin = 4
-	case OriginTypeAlias:
-		origin = 5
-	}
-
-	depth := uint16(len(field.PathNumbers))
-	if depth > 3 {
-		depth = 3
-	}
-
-	pathIndex := uint16(g.getPathIndex(field, msg))
-	if pathIndex > 2047 {
-		pathIndex = 2047
-	}
-
-	return (origin << 13) | (depth << 11) | pathIndex
-}
-
-// getPathIndex returns the index of field's path in PathTable
-func (g *Generator) getPathIndex(field *IRField, msg *IRMessage) int {
-	if len(field.PathNumbers) == 0 {
-		return 0
-	}
-
-	// Find the path in PathTable
-	for i := 0; i <= len(msg.PathTable)-len(field.PathNumbers); i++ {
-		match := true
-		for j, num := range field.PathNumbers {
-			if msg.PathTable[i+j] != num {
-				match = false
-				break
-			}
-		}
-		if match {
-			return i
-		}
-	}
-	return 0
 }
 
 func (g *Generator) generateField(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
