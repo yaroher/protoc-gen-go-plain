@@ -15,12 +15,17 @@ func (g *Generator) generateJSONMethods(gf *protogen.GeneratedFile, msg *IRMessa
 }
 
 // generateMarshalJX generates method for JSON encoding with jx
-// Uses Src_ for sparse serialization - only encodes fields listed in Src_
+// If SparseJSON is enabled, uses Src_ for sparse serialization
 func (g *Generator) generateMarshalJX(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
 	plainType := msg.GoName
+	sparseMode := g.Settings.SparseJSON
 
-	gf.P("// MarshalJX encodes ", plainType, " to JSON using jx.Encoder")
-	gf.P("// If Src_ is set, only fields in Src_ are encoded (sparse mode)")
+	if sparseMode {
+		gf.P("// MarshalJX encodes ", plainType, " to JSON using jx.Encoder")
+		gf.P("// If Src_ is set, only fields in Src_ are encoded (sparse mode)")
+	} else {
+		gf.P("// MarshalJX encodes ", plainType, " to JSON using jx.Encoder")
+	}
 	gf.P("func (p *", plainType, ") MarshalJX(e *", gf.QualifiedGoIdent(jxPkg.Ident("Encoder")), ") {")
 	gf.P("\tif p == nil {")
 	gf.P("\t\te.Null()")
@@ -28,27 +33,31 @@ func (g *Generator) generateMarshalJX(gf *protogen.GeneratedFile, msg *IRMessage
 	gf.P("\t}")
 	gf.P()
 
-	// Build src lookup set for sparse mode
-	gf.P("\t// Build lookup set from Src_ for sparse serialization")
-	gf.P("\tsrcSet := make(map[uint16]struct{}, len(p.Src_))")
-	gf.P("\tfor _, idx := range p.Src_ {")
-	gf.P("\t\tsrcSet[idx] = struct{}{}")
-	gf.P("\t}")
-	gf.P("\tsparse := len(p.Src_) > 0")
-	gf.P()
+	if sparseMode {
+		// Build src lookup set for sparse mode
+		gf.P("\t// Build lookup set from Src_ for sparse serialization")
+		gf.P("\tsrcSet := make(map[uint16]struct{}, len(p.Src_))")
+		gf.P("\tfor _, idx := range p.Src_ {")
+		gf.P("\t\tsrcSet[idx] = struct{}{}")
+		gf.P("\t}")
+		gf.P("\tsparse := len(p.Src_) > 0")
+		gf.P()
+	}
 
 	gf.P("\te.ObjStart()")
 	gf.P()
 
-	// Always encode _src if present
-	gf.P("\tif sparse {")
-	gf.P("\t\te.FieldStart(\"_src\")")
-	gf.P("\t\te.ArrStart()")
-	gf.P("\t\tfor _, idx := range p.Src_ {")
-	gf.P("\t\t\te.UInt16(idx)")
-	gf.P("\t\t}")
-	gf.P("\t\te.ArrEnd()")
-	gf.P("\t}")
+	if sparseMode {
+		// Encode _src if present
+		gf.P("\tif sparse {")
+		gf.P("\t\te.FieldStart(\"_src\")")
+		gf.P("\t\te.ArrStart()")
+		gf.P("\t\tfor _, idx := range p.Src_ {")
+		gf.P("\t\t\te.UInt16(idx)")
+		gf.P("\t\t}")
+		gf.P("\t\te.ArrEnd()")
+		gf.P("\t}")
+	}
 
 	// Generate oneof case field encodings
 	for _, eo := range msg.EmbeddedOneofs {
@@ -58,9 +67,13 @@ func (g *Generator) generateMarshalJX(gf *protogen.GeneratedFile, msg *IRMessage
 		gf.P("\t}")
 	}
 
-	// Generate field encodings with sparse check
+	// Generate field encodings
 	for _, field := range msg.Fields {
-		g.generateMarshalJXFieldSparse(gf, field, f)
+		if sparseMode {
+			g.generateMarshalJXFieldSparse(gf, field, f)
+		} else {
+			g.generateMarshalJXFieldFast(gf, field, f)
+		}
 	}
 
 	gf.P("\te.ObjEnd()")
@@ -109,6 +122,62 @@ func (g *Generator) generateMarshalJXFieldSparse(gf *protogen.GeneratedFile, fie
 	}
 
 	gf.P("\t}")
+}
+
+// generateMarshalJXFieldFast generates encoding without sparse checks (maximum speed)
+// Still applies omitempty logic for zero values
+func (g *Generator) generateMarshalJXFieldFast(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
+	fieldAccess := "p." + field.GoName
+	jsonName := field.JSONName
+
+	// Handle optional/pointer fields
+	if field.GoType.IsPointer {
+		gf.P("\tif ", fieldAccess, " != nil {")
+		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
+		gf.P("\t}")
+	} else if field.IsRepeated {
+		gf.P("\tif len(", fieldAccess, ") > 0 {")
+		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
+		gf.P("\t}")
+	} else if field.Kind == KindMessage {
+		gf.P("\tif ", fieldAccess, " != nil {")
+		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
+		gf.P("\t}")
+	} else {
+		// Scalar - apply omitempty for zero values
+		zeroCheck := g.getScalarZeroCheck(field, fieldAccess)
+		if zeroCheck != "" {
+			gf.P("\tif ", zeroCheck, " {")
+			gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+			g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
+			gf.P("\t}")
+		} else {
+			gf.P("\te.FieldStart(\"", jsonName, "\")")
+			g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t")
+		}
+	}
+}
+
+// getScalarZeroCheck returns condition to check if scalar is non-zero
+func (g *Generator) getScalarZeroCheck(field *IRField, access string) string {
+	switch field.GoType.Name {
+	case "string":
+		return access + " != \"\""
+	case "bool":
+		return access
+	case "int32", "int64", "uint32", "uint64", "float32", "float64":
+		return access + " != 0"
+	case "byte":
+		if field.GoType.IsSlice {
+			return "len(" + access + ") > 0"
+		}
+		return access + " != 0"
+	default:
+		return "" // no check, always encode
+	}
 }
 
 // generateMarshalJXValue generates the actual value encoding

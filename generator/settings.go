@@ -12,6 +12,10 @@ type PluginSettings struct {
 	// JXPB generates MarshalJX/UnmarshalJX methods for original protobuf structs.
 	// This allows nested messages to use fast JX instead of protojson fallback.
 	JXPB bool
+	// SparseJSON enables sparse serialization mode with Src_ field checks.
+	// When false: faster serialization without sparse field tracking.
+	// When true (default): only fields in Src_ are serialized.
+	SparseJSON bool
 	// EnableCRF enables Collision Resolution Fields.
 	// When true: field name collisions are allowed, CRF fields ({Field}Source) are added
 	// to track the EmPath origin of merged fields.
@@ -39,8 +43,9 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{
-		JSONJX: mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
-		JXPB:   mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
+		JSONJX:     mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
+		JXPB:       mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
+		SparseJSON: mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
 	}
 	return settings, nil
 }
