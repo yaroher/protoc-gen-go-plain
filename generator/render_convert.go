@@ -24,6 +24,11 @@ func (g *Generator) generateConversionMethods(gf *protogen.GeneratedFile, msg *I
 
 	g.generateIntoPlain(gf, msg, f, casterFields, castersAsStruct)
 	g.generateIntoPb(gf, msg, f, casterFields, castersAsStruct)
+
+	// Generate IntoPlainReuse for pool usage (only when pool is enabled and no casters)
+	if g.Settings.GeneratePool && !hasCasters {
+		g.generateIntoPlainReuse(gf, msg, f)
+	}
 }
 
 // collectCasterFields returns fields that require casters
@@ -152,6 +157,39 @@ func (g *Generator) generateIntoPlain(gf *protogen.GeneratedFile, msg *IRMessage
 	gf.P()
 }
 
+// generateIntoPlainReuse generates IntoPlainReuse method that fills existing Plain object
+// This is used with sync.Pool for zero-allocation conversions
+func (g *Generator) generateIntoPlainReuse(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
+	if msg.Source == nil {
+		return
+	}
+
+	pbType := msg.Source.GoIdent
+	plainType := msg.GoName
+
+	gf.P("// IntoPlainReuse converts protobuf message to existing plain struct (for pool usage)")
+	gf.P("func (pb *", gf.QualifiedGoIdent(pbType), ") IntoPlainReuse(p *", plainType, ") {")
+	gf.P("\tif pb == nil || p == nil {")
+	gf.P("\t\treturn")
+	gf.P("\t}")
+	gf.P("\t// Reset before filling")
+	gf.P("\tp.Reset()")
+	gf.P()
+
+	// Generate oneof case detection first
+	for _, eo := range msg.EmbeddedOneofs {
+		g.generateOneofCaseDetection(gf, eo)
+	}
+
+	// Generate field conversions (same as IntoPlain but without allocation)
+	for _, field := range msg.Fields {
+		g.generateIntoPlainField(gf, field, msg, f)
+	}
+
+	gf.P("}")
+	gf.P()
+}
+
 // generateOneofCaseDetection generates code to detect which oneof variant is set
 func (g *Generator) generateOneofCaseDetection(gf *protogen.GeneratedFile, eo *EmbeddedOneof) {
 	gf.P("\t// Detect ", eo.Name, " oneof case")
@@ -196,11 +234,38 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 	srcAppend := fmt.Sprintf("p.Src_ = append(p.Src_, %d)", field.Index)
 
 	// Check if proto field is optional (pointer) but plain field is not
-	protoIsPointer := field.Source.Desc.HasOptionalKeyword() || field.Source.Desc.HasPresence()
+	// Note: bytes type in proto3 is never a pointer, even with optional keyword
+	protoIsPointer := (field.Source.Desc.HasOptionalKeyword() || field.Source.Desc.HasPresence()) &&
+		field.Source.Desc.Kind() != protoreflect.BytesKind
 	plainIsPointer := field.GoType.IsPointer
 
 	// Check if types match or need conversion
-	if field.Kind == KindMessage {
+	if field.IsMap && field.MapValue != nil && field.MapValue.Kind == KindMessage {
+		// Map with message value - check if value type has generate=true
+		msgOpts := g.getMessageOptionsFromField(field.MapValue)
+		if msgOpts != nil && msgOpts.Generate {
+			// Need to convert each value via IntoPlain()
+			keyType := "string"
+			if field.MapKey != nil {
+				keyType = field.MapKey.GoType.Name
+			}
+			// Plain map value type (already includes * if pointer)
+			valueType := g.buildTypeStringPlain(field.MapValue, f)
+			gf.P("\tif len(", srcField, ") > 0 {")
+			gf.P("\t\t", dstField, " = make(map[", keyType, "]", valueType, ", len(", srcField, "))")
+			gf.P("\t\tfor k, v := range ", srcField, " {")
+			gf.P("\t\t\tif v != nil {")
+			gf.P("\t\t\t\t", dstField, "[k] = v.IntoPlain()")
+			gf.P("\t\t\t}")
+			gf.P("\t\t}")
+			gf.P("\t\t", srcAppend)
+			gf.P("\t}")
+		} else {
+			// Use original protobuf type
+			gf.P("\t", dstField, " = ", srcField)
+			gf.P("\t", srcAppend)
+		}
+	} else if field.Kind == KindMessage {
 		// Message fields need IntoPlain() call if the nested type has generate=true
 		msgOpts := g.getMessageOptionsFromField(field)
 		if msgOpts != nil && msgOpts.Generate {
@@ -259,8 +324,9 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		// Scalar, enum, bytes - direct copy (types match) or with cast
 		if field.NeedsCaster {
 			gf.P("\t", dstField, " = ", g.casterCall(field, srcField, true))
-		} else if g.needsTypeCast(field) {
+		} else if g.needsTypeCast(field) && !field.GoType.IsSlice && field.Kind != KindBytes {
 			// Type override without explicit caster - use simple cast
+			// Skip cast for slice types and bytes - direct assignment works
 			gf.P("\t", dstField, " = ", field.GoType.Name, "(", srcField, ")")
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
@@ -443,10 +509,33 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 	dstField := "pb." + field.Source.GoName
 
 	// Check if proto field is optional (pointer) but plain field is not
-	protoIsPointer := field.Source.Desc.HasOptionalKeyword() || field.Source.Desc.HasPresence()
+	// Note: bytes type in proto3 is never a pointer, even with optional keyword
+	protoIsPointer := (field.Source.Desc.HasOptionalKeyword() || field.Source.Desc.HasPresence()) &&
+		field.Source.Desc.Kind() != protoreflect.BytesKind
 	plainIsPointer := field.GoType.IsPointer
 
-	if field.Kind == KindMessage {
+	if field.IsMap && field.MapValue != nil && field.MapValue.Kind == KindMessage {
+		// Map with message value - check if value type has generate=true
+		msgOpts := g.getMessageOptionsFromField(field.MapValue)
+		if msgOpts != nil && msgOpts.Generate {
+			// Need to convert each value via IntoPb()
+			keyType := "string"
+			if field.MapKey != nil {
+				keyType = field.MapKey.GoType.Name
+			}
+			pbValueType := g.buildPbMapValueType(gf, field, f)
+			gf.P("\tif len(", srcField, ") > 0 {")
+			gf.P("\t\t", dstField, " = make(map[", keyType, "]", pbValueType, ", len(", srcField, "))")
+			gf.P("\t\tfor k, v := range ", srcField, " {")
+			gf.P("\t\t\tif v != nil {")
+			gf.P("\t\t\t\t", dstField, "[k] = v.IntoPb()")
+			gf.P("\t\t\t}")
+			gf.P("\t\t}")
+			gf.P("\t}")
+		} else {
+			gf.P("\t", dstField, " = ", srcField)
+		}
+	} else if field.Kind == KindMessage {
 		msgOpts := g.getMessageOptionsFromField(field)
 		if msgOpts != nil && msgOpts.Generate {
 			if field.IsRepeated {
@@ -513,8 +602,9 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		// Direct copy or with cast
 		if field.NeedsCaster {
 			gf.P("\t", dstField, " = ", g.casterCall(field, srcField, false))
-		} else if g.needsTypeCast(field) {
+		} else if g.needsTypeCast(field) && !field.GoType.IsSlice && field.Kind != KindBytes {
 			// Type override without explicit caster - use simple cast to source type
+			// Skip cast for slice types and bytes - direct assignment works
 			srcTypeName := g.getSourceTypeName(field)
 			gf.P("\t", dstField, " = ", srcTypeName, "(", srcField, ")")
 		} else {
@@ -828,6 +918,16 @@ func (g *Generator) buildPbSliceType(gf *protogen.GeneratedFile, field *IRField,
 		return "[]*" + gf.QualifiedGoIdent(field.Source.Message.GoIdent)
 	}
 	return "[]" + field.GoType.Name
+}
+
+func (g *Generator) buildPbMapValueType(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) string {
+	if field.MapValue != nil && field.MapValue.Source != nil && field.MapValue.Source.Message != nil {
+		return "*" + gf.QualifiedGoIdent(field.MapValue.Source.Message.GoIdent)
+	}
+	if field.MapValue != nil {
+		return field.MapValue.GoType.Name
+	}
+	return "any"
 }
 
 func (g *Generator) getProtoTypeIdent(gf *protogen.GeneratedFile, field *IRField) string {

@@ -29,7 +29,7 @@ build-test-nda: build .clean-test-nda
 		--go_out=$(CURDIR) \
 		--go_opt=paths=source_relative \
 		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative,json_jx=true,jx_pb=true,sparse_json=false \
+		--go-plain_opt=paths=source_relative,json_jx=true,jx_pb=true,sparse_json=false,pool=true \
 		--proto_path=$(CURDIR) \
 		$(NDA_PROTO_FILES)
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
@@ -45,6 +45,53 @@ run-test-nda:
 bench-test-nda:
 	go clean -testcache && go test -bench=. -v ./test/nda/...
 
+# ============================================================================
+# Full showcase example
+# ============================================================================
+
+FULL_PROTO_DIR=$(CURDIR)/test/full
+FULL_PROTO_FILES=$(shell find "$(FULL_PROTO_DIR)" -type f -name '*.proto')
+
+.PHONY: .clean-test-full
+.clean-test-full:
+	find ./test/full -type f -name "*.pb.go" -delete
+
+.PHONY: build-test-full
+build-test-full: build .clean-test-full
+	rm -f $(CURDIR)/bin/protolog_full.txt
+	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog_full.txt protoc \
+		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
+		--go_out=$(CURDIR) \
+		--go_opt=paths=source_relative \
+		--go-plain_out=$(CURDIR) \
+		--go-plain_opt=paths=source_relative,json_jx=true,pool=true,sparse_json=false \
+		--proto_path=$(CURDIR) \
+		$(FULL_PROTO_FILES)
+	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog_full.txt
+	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog_full.txt
+
+.PHONY: run-test-full
+run-test-full:
+	go clean -testcache && go test -v ./test/full/...
+
+.PHONY: test-full
+test-full: build-test-full run-test-full
+
+# ============================================================================
+# Collision tests
+# ============================================================================
+
+.PHONY: run-test-collision
+run-test-collision:
+	go test -v ./test/collision/...
+
+# ============================================================================
+# All tests
+# ============================================================================
+
+.PHONY: test-all
+test-all: build-test-nda build-test-full
+	go clean -testcache && go test -v ./...
 
 branch=main
 .PHONY: revision

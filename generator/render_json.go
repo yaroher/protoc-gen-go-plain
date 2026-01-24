@@ -5,8 +5,9 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// jx package path
+// Package paths for imports
 var jxPkg = protogen.GoImportPath("github.com/go-faster/jx")
+var fmtPkg = protogen.GoImportPath("fmt")
 
 // generateJSONMethods generates MarshalJX and UnmarshalJX methods
 func (g *Generator) generateJSONMethods(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
@@ -175,6 +176,8 @@ func (g *Generator) getScalarZeroCheck(field *IRField, access string) string {
 			return "len(" + access + ") > 0"
 		}
 		return access + " != 0"
+	case "[]byte":
+		return "len(" + access + ") > 0"
 	default:
 		return "" // no check, always encode
 	}
@@ -301,6 +304,8 @@ func (g *Generator) generateMarshalJXScalar(gf *protogen.GeneratedFile, field *I
 		} else {
 			gf.P(indent, "e.UInt32(uint32(", access, "))")
 		}
+	case "[]byte":
+		gf.P(indent, "e.Base64(", access, ")")
 	default:
 		gf.P(indent, "// unknown scalar: ", field.GoType.Name)
 		gf.P(indent, "e.Null()")
@@ -343,8 +348,8 @@ func (g *Generator) generateMarshalJXMap(gf *protogen.GeneratedFile, field *IRFi
 	if field.MapKey != nil && field.MapKey.GoType.Name == "string" {
 		gf.P(indent, "\te.FieldStart(k)")
 	} else {
-		// Convert key to string
-		gf.P(indent, "\te.FieldStart(fmt.Sprint(k))")
+		// Convert key to string using fmt.Sprint
+		gf.P(indent, "\te.FieldStart(", gf.QualifiedGoIdent(fmtPkg.Ident("Sprint")), "(k))")
 	}
 
 	// Encode value
@@ -605,6 +610,15 @@ func (g *Generator) generateUnmarshalJXScalar(gf *protogen.GeneratedFile, field 
 		}
 		decodeCall = "d.UInt32()"
 		varType = "byte"
+	case "[]byte":
+		gf.P(indent, "v, err := d.Base64()")
+		gf.P(indent, "if err != nil { return err }")
+		if isArrayElem {
+			gf.P(indent, access, " = append(", access, ", v)")
+		} else {
+			gf.P(indent, access, " = v")
+		}
+		return
 	default:
 		gf.P(indent, "return d.Skip()")
 		return
@@ -669,8 +683,37 @@ func (g *Generator) generateUnmarshalJXMap(gf *protogen.GeneratedFile, field *IR
 	gf.P(indent, "}")
 	gf.P(indent, "return d.Obj(func(d *", gf.QualifiedGoIdent(jxPkg.Ident("Decoder")), ", key string) error {")
 
+	// Convert key from string to map key type if needed
+	keyAccess := "key"
+	if field.MapKey != nil && field.MapKey.GoType.Name != "string" {
+		keyAccess = "_mapKey"
+		strconvPkg := protogen.GoImportPath("strconv")
+		switch field.MapKey.GoType.Name {
+		case "int32":
+			gf.P(indent, "\t_k, err := ", gf.QualifiedGoIdent(strconvPkg.Ident("ParseInt")), "(key, 10, 32)")
+			gf.P(indent, "\tif err != nil { return err }")
+			gf.P(indent, "\t_mapKey := int32(_k)")
+		case "int64":
+			gf.P(indent, "\t_mapKey, err := ", gf.QualifiedGoIdent(strconvPkg.Ident("ParseInt")), "(key, 10, 64)")
+			gf.P(indent, "\tif err != nil { return err }")
+		case "uint32":
+			gf.P(indent, "\t_k, err := ", gf.QualifiedGoIdent(strconvPkg.Ident("ParseUint")), "(key, 10, 32)")
+			gf.P(indent, "\tif err != nil { return err }")
+			gf.P(indent, "\t_mapKey := uint32(_k)")
+		case "uint64":
+			gf.P(indent, "\t_mapKey, err := ", gf.QualifiedGoIdent(strconvPkg.Ident("ParseUint")), "(key, 10, 64)")
+			gf.P(indent, "\tif err != nil { return err }")
+		case "bool":
+			gf.P(indent, "\t_mapKey, err := ", gf.QualifiedGoIdent(strconvPkg.Ident("ParseBool")), "(key)")
+			gf.P(indent, "\tif err != nil { return err }")
+		default:
+			// For other types, try direct conversion
+			gf.P(indent, "\t_mapKey := ", field.MapKey.GoType.Name, "(key)")
+		}
+	}
+
 	if field.MapValue != nil {
-		g.generateUnmarshalJXSingleValue(gf, field.MapValue, access+"[key]", f, indent+"\t", false)
+		g.generateUnmarshalJXSingleValue(gf, field.MapValue, access+"["+keyAccess+"]", f, indent+"\t", false)
 	} else {
 		gf.P(indent, "\treturn d.Skip()")
 	}

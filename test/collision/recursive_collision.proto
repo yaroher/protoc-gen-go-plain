@@ -1,0 +1,29 @@
+// Test: Collision from recursive embed - nested embedding creates duplicate field names
+syntax = "proto3";
+
+package collision;
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/collision";
+
+import "goplain/goplain.proto";
+
+message Node {
+  string name = 1;
+  int32 value = 2;
+}
+
+message Level2 {
+  Node node = 1 [(goplain.field).embed = true];  // Creates "Name", "Value"
+}
+
+message Level1 {
+  Level2 level2 = 1 [(goplain.field).embed = true];  // Inherits "Name", "Value" from Level2
+  Node direct = 2 [(goplain.field).embed = true];    // Also creates "Name", "Value" - collision!
+}
+
+// Recursive embed collision: Level1 embeds Level2 which embeds Node,
+// and Level1 also directly embeds Node - both create "Name" and "Value" fields
+message RecursiveCollision {
+  option (goplain.message).generate = true;
+
+  Level1 data = 1 [(goplain.field).embed = true];
+}

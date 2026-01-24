@@ -1,0 +1,25 @@
+// Test 1: Collision from embed - two nested messages with same field name
+syntax = "proto3";
+
+package collision;
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/collision";
+
+import "goplain/goplain.proto";
+
+message Source1 {
+  string name = 1;
+  int32 value = 2;
+}
+
+message Source2 {
+  string name = 1;  // Same field name as Source1
+  bool active = 2;
+}
+
+// Both Source1 and Source2 have "name" field - collision when embedded
+message EmbedCollision {
+  option (goplain.message).generate = true;
+
+  Source1 first = 1 [(goplain.field).embed = true];
+  Source2 second = 2 [(goplain.field).embed = true];
+}

@@ -16,6 +16,9 @@ type PluginSettings struct {
 	// When false: faster serialization without sparse field tracking.
 	// When true (default): only fields in Src_ are serialized.
 	SparseJSON bool
+	// GeneratePool generates sync.Pool, Reset(), Get/Put methods for Plain structs.
+	// Enables zero-allocation reuse of Plain objects in hot paths.
+	GeneratePool bool
 	// EnableCRF enables Collision Resolution Fields.
 	// When true: field name collisions are allowed, CRF fields ({Field}Source) are added
 	// to track the EmPath origin of merged fields.
@@ -43,9 +46,10 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{
-		JSONJX:     mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
-		JXPB:       mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
-		SparseJSON: mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
+		JSONJX:       mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
+		JXPB:         mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
+		SparseJSON:   mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
+		GeneratePool: mapGetOrDefault(paramsMap, "pool", "false") == "true",
 	}
 	return settings, nil
 }

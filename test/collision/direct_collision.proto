@@ -1,0 +1,19 @@
+// Test 5: Collision from direct fields with same name (snake_case normalization)
+syntax = "proto3";
+
+package collision;
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/collision";
+
+import "goplain/goplain.proto";
+
+message Data {
+  string value = 1;
+}
+
+message DirectCollision {
+  option (goplain.message).generate = true;
+
+  // Two embedded messages where first field in each has same name after normalization  
+  Data first = 1 [(goplain.field).embed = true];   // Creates "Value"
+  string value = 2;  // Also creates "Value" - collision
+}

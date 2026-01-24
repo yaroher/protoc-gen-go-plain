@@ -1,0 +1,26 @@
+// Test 4: Collision from embed - two embedded messages with same field name
+syntax = "proto3";
+
+package collision;
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/collision";
+
+import "goplain/goplain.proto";
+
+message InfoA {
+  string name = 1;
+  int32 count = 2;
+}
+
+message InfoB {
+  string name = 1;  // Same field name
+  bool active = 2;
+}
+
+message PrefixCollision {
+  option (goplain.message).generate = true;
+
+  // Both embed=true, so fields will be flattened
+  // InfoA.name and InfoB.name both become "Name" - collision
+  InfoA info_a = 1 [(goplain.field).embed = true];
+  InfoB info_b = 2 [(goplain.field).embed = true];
+}

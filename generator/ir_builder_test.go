@@ -67,7 +67,7 @@ func TestGoType_String(t *testing.T) {
 		{GoType{Name: "int64"}, "int64"},
 		{GoType{Name: "MyMessage", IsPointer: true}, "*MyMessage"},
 		{GoType{Name: "string", IsSlice: true}, "[]string"},
-		{GoType{Name: "byte", IsSlice: true}, "[]byte"},
+		{GoType{Name: "[]byte", IsSlice: false}, "[]byte"},
 		{GoType{Name: "MyMessage", IsPointer: true, IsSlice: true}, "[]*MyMessage"},
 	}
 
@@ -120,7 +120,7 @@ func TestIRBuilder_goTypeFromProtoKind(t *testing.T) {
 		{protoreflect.FloatKind, GoType{Name: "float32"}},
 		{protoreflect.DoubleKind, GoType{Name: "float64"}},
 		{protoreflect.StringKind, GoType{Name: "string"}},
-		{protoreflect.BytesKind, GoType{Name: "byte", IsSlice: true}},
+		{protoreflect.BytesKind, GoType{Name: "[]byte", IsSlice: false}},
 	}
 
 	for _, tt := range tests {

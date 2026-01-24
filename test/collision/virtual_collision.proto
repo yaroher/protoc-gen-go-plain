@@ -1,0 +1,19 @@
+// Test 3: Collision from virtual_field - virtual field conflicts with real field
+syntax = "proto3";
+
+package collision;
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/collision";
+
+import "goplain/goplain.proto";
+import "google/protobuf/type.proto";
+
+message VirtualCollision {
+  option (goplain.message).generate = true;
+  option (goplain.message).virtual_fields = {
+    name: "status"
+    kind: TYPE_STRING
+  };
+
+  string name = 1;
+  string status = 2;  // Conflicts with virtual field "status"
+}

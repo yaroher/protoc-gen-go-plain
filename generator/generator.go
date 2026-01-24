@@ -226,6 +226,11 @@ func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, 
 		g.generateJSONMethods(gf, msg, f)
 	}
 
+	// Generate Pool methods
+	if g.Settings.GeneratePool {
+		g.generatePoolMethods(gf, msg)
+	}
+
 	// Generate nested messages
 	for _, nested := range msg.Nested {
 		g.generateMessage(gf, nested, f, irFile)

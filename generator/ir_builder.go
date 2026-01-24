@@ -385,7 +385,7 @@ func (b *IRBuilder) processSerializedField(
 		Number:         b.nextFieldNumber,
 		OriginalNumber: int32(field.Desc.Number()),
 		Kind:           KindBytes,
-		GoType:         GoType{Name: "byte", IsSlice: true},
+		GoType:         GoType{Name: "[]byte", IsSlice: false},
 		ProtoType:      string(field.Message.Desc.FullName()),
 		Origin:         OriginSerialized,
 		EmPath:         b.buildEmPath(irMsg.EmPath, field, oneofPrefix),
@@ -509,10 +509,12 @@ func (b *IRBuilder) buildDirectField(field *protogen.Field, prefix string, pathN
 			ScalarKind: field.Message.Fields[0].Desc.Kind(),
 			GoType:     b.goTypeFromField(field.Message.Fields[0]),
 		}
+		valueField := field.Message.Fields[1]
 		irField.MapValue = &IRField{
-			Kind:       b.kindFromProtoKind(field.Message.Fields[1].Desc.Kind()),
-			ScalarKind: field.Message.Fields[1].Desc.Kind(),
-			GoType:     b.goTypeFromField(field.Message.Fields[1]),
+			Kind:       b.kindFromProtoKind(valueField.Desc.Kind()),
+			ScalarKind: valueField.Desc.Kind(),
+			GoType:     b.goTypeFromField(valueField),
+			Source:     valueField, // Set Source for proper type checking in JSON generation
 		}
 	}
 
@@ -709,7 +711,8 @@ func (b *IRBuilder) goTypeFromProtoKind(kind protoreflect.Kind) GoType {
 	case protoreflect.StringKind:
 		return GoType{Name: "string"}
 	case protoreflect.BytesKind:
-		return GoType{Name: "byte", IsSlice: true}
+		// bytes is []byte - treat as single type, not as slice of byte
+		return GoType{Name: "[]byte", IsSlice: false}
 	default:
 		return GoType{Name: "interface{}"}
 	}

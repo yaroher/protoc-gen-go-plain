@@ -1,0 +1,762 @@
+// Showcase: All features of protoc-gen-go-plain
+// This file demonstrates every capability of the generator
+syntax = "proto3";
+
+package full;
+option go_package = "github.com/yaroher/protoc-gen-go-plain/test/full";
+
+import "goplain/goplain.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+
+// ============================================================================
+// File-level options
+// ============================================================================
+option (goplain.file).casters_as_struct = true;
+option (goplain.file).go_types_overrides = {
+  selector: { field_kind: TYPE_INT64, target_full_path: ".full.Metrics.duration_ns" }
+  target_go_type: { name: "Duration", import_path: "time" }
+};
+
+// ============================================================================
+// 1. Type Alias - Wrapper types that unwrap to their value
+// ============================================================================
+
+// StringValue will be unwrapped to string when used
+message StringValue {
+  option (goplain.message).type_alias = true;
+  string value = 1;
+}
+
+// Int64Value will be unwrapped to int64 when used
+message Int64Value {
+  option (goplain.message).type_alias = true;
+  int64 value = 1;
+}
+
+// BoolValue will be unwrapped to bool when used  
+message BoolValue {
+  option (goplain.message).type_alias = true;
+  bool value = 1;
+}
+
+// ============================================================================
+// 2. Enums
+// ============================================================================
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+  STATUS_PENDING = 3;
+  STATUS_ARCHIVED = 4;
+}
+
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  PRIORITY_LOW = 1;
+  PRIORITY_MEDIUM = 2;
+  PRIORITY_HIGH = 3;
+  PRIORITY_CRITICAL = 4;
+}
+
+// Enum with allow_alias
+enum ErrorCode {
+  option allow_alias = true;
+  ERROR_UNKNOWN = 0;
+  ERROR_NOT_FOUND = 1;
+  NOT_FOUND = 1;  // alias
+  ERROR_PERMISSION_DENIED = 2;
+  PERMISSION_DENIED = 2;  // alias
+  ERROR_INVALID_ARGUMENT = 3;
+  ERROR_INTERNAL = 4;
+}
+
+// Enum with negative values (for signed representation)
+enum Direction {
+  DIRECTION_NONE = 0;
+  DIRECTION_FORWARD = 1;
+  DIRECTION_BACKWARD = -1;  // negative value
+}
+
+// ============================================================================
+// 3. Basic nested messages for embedding
+// ============================================================================
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string country = 3;
+  string postal_code = 4;
+}
+
+message ContactInfo {
+  string email = 1;
+  string phone = 2;
+  Address address = 3;
+}
+
+message Metadata {
+  string created_by = 1;
+  int64 created_at = 2;
+  string modified_by = 3;
+  int64 modified_at = 4;
+  map<string, string> labels = 5;
+  repeated string tags = 6;
+}
+
+// ============================================================================
+// 4. Deep nesting - Level 5 hierarchy
+// ============================================================================
+
+message Level5 {
+  string leaf_value = 1;
+  int32 leaf_number = 2;
+  bytes leaf_data = 3;
+}
+
+message Level4 {
+  string name = 1;
+  Level5 deep = 2;
+  repeated Level5 items = 3;
+}
+
+message Level3 {
+  string identifier = 1;
+  Level4 nested = 2;
+  map<string, Level4> children = 3;
+}
+
+message Level2 {
+  string label = 1;
+  Level3 content = 2;
+  repeated Level3 sections = 3;
+}
+
+message Level1 {
+  string title = 1;
+  Level2 body = 2;
+  Metadata meta = 3;
+}
+
+// ============================================================================
+// 5. Metrics with type override (int64 -> time.Duration)
+// ============================================================================
+
+message Metrics {
+  int64 duration_ns = 1;  // Will be time.Duration in Plain
+  int64 bytes_processed = 2;
+  int32 requests_count = 3;
+  double success_rate = 4;
+}
+
+// ============================================================================
+// 6. Complex document with oneofs
+// ============================================================================
+
+message TextContent {
+  string text = 1;
+  string format = 2;  // markdown, html, plain
+}
+
+message ImageContent {
+  string url = 1;
+  int32 width = 2;
+  int32 height = 3;
+  string alt_text = 4;
+}
+
+message VideoContent {
+  string url = 1;
+  int32 duration_seconds = 2;
+  string thumbnail_url = 3;
+}
+
+message CodeContent {
+  string code = 1;
+  string language = 2;
+  bool highlighted = 3;
+}
+
+message TableContent {
+  repeated string headers = 1;
+  repeated string rows = 2;  // JSON-encoded rows
+}
+
+// ============================================================================
+// 7. Main showcase message - demonstrates ALL features
+// ============================================================================
+
+message Document {
+  option (goplain.message).generate = true;
+  
+  // Virtual fields - exist only in Plain struct
+  option (goplain.message).virtual_fields = {
+    name: "computed_hash"
+    kind: TYPE_STRING
+  };
+  option (goplain.message).virtual_fields = {
+    name: "is_valid"
+    kind: TYPE_BOOL
+  };
+  
+  // --- Basic fields ---
+  string id = 1;
+  string title = 2;
+  Status status = 3;
+  Priority priority = 4;
+  
+  // --- Type alias fields (unwrapped) ---
+  StringValue description = 5;
+  Int64Value version = 6;
+  BoolValue is_public = 7;
+  
+  // --- Embedded fields (flattened into parent) ---
+  ContactInfo author = 8 [(goplain.field).embed = true];
+  Metadata metadata = 9 [(goplain.field).embed_with_prefix = true];
+  
+  // --- Serialized field (stored as bytes) ---
+  Metrics performance = 10 [(goplain.field).serialize = true];
+  
+  // --- Repeated and map fields ---
+  repeated string keywords = 11;
+  map<string, string> attributes = 12;
+  repeated Address locations = 13;
+  
+  // --- Deep nested structure ---
+  Level1 structure = 14;
+  
+  // --- Oneof with embed (all variants flattened) ---
+  oneof content {
+    option (goplain.oneof).embed = true;
+    TextContent text_content = 20;
+    ImageContent image_content = 21;
+    VideoContent video_content = 22;
+    CodeContent code_content = 23;
+    TableContent table_content = 24;
+  }
+  
+  // --- Another oneof without embed (kept as-is) ---
+  oneof source {
+    string url = 30;
+    string file_path = 31;
+    bytes raw_data = 32;
+  }
+  
+  // --- Self-reference for tree structures ---
+  repeated Document children = 40;
+  Document parent = 41;
+}
+
+// ============================================================================
+// 8. Tree structure with deep recursion
+// ============================================================================
+
+message TreeNode {
+  option (goplain.message).generate = true;
+  
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  
+  // Recursive children
+  repeated TreeNode children = 4;
+  
+  // Back-reference to parent
+  TreeNode parent = 5;
+  
+  // Metadata embedded
+  Metadata info = 6 [(goplain.field).embed = true];
+  
+  // Payload based on type
+  oneof payload {
+    option (goplain.oneof).embed = true;
+    TextContent text = 10;
+    ImageContent image = 11;
+    CodeContent code = 12;
+  }
+}
+
+// ============================================================================
+// 9. Event system with polymorphic events
+// ============================================================================
+
+message UserCreatedEvent {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+message UserUpdatedEvent {
+  string user_id = 1;
+  map<string, string> changes = 2;
+}
+
+message UserDeletedEvent {
+  string user_id = 1;
+  string reason = 2;
+}
+
+message OrderCreatedEvent {
+  string order_id = 1;
+  string user_id = 2;
+  repeated string item_ids = 3;
+  double total_amount = 4;
+}
+
+message OrderCompletedEvent {
+  string order_id = 1;
+  int64 completed_at = 2;
+}
+
+message Event {
+  option (goplain.message).generate = true;
+  
+  // Event header
+  string event_id = 1;
+  string event_type = 2;
+  int64 timestamp = 3;
+  string source = 4;
+  
+  // Metadata embedded
+  Metadata meta = 5 [(goplain.field).embed_with_prefix = true];
+  
+  // Polymorphic event payload
+  oneof payload {
+    option (goplain.oneof).embed = true;
+    UserCreatedEvent user_created = 10;
+    UserUpdatedEvent user_updated = 11;
+    UserDeletedEvent user_deleted = 12;
+    OrderCreatedEvent order_created = 13;
+    OrderCompletedEvent order_completed = 14;
+  }
+}
+
+// ============================================================================
+// 10. Configuration with all scalar types
+// ============================================================================
+
+message Config {
+  option (goplain.message).generate = true;
+  
+  // All scalar types
+  double double_val = 1;
+  float float_val = 2;
+  int32 int32_val = 3;
+  int64 int64_val = 4;
+  uint32 uint32_val = 5;
+  uint64 uint64_val = 6;
+  sint32 sint32_val = 7;
+  sint64 sint64_val = 8;
+  fixed32 fixed32_val = 9;
+  fixed64 fixed64_val = 10;
+  sfixed32 sfixed32_val = 11;
+  sfixed64 sfixed64_val = 12;
+  bool bool_val = 13;
+  string string_val = 14;
+  bytes bytes_val = 15;
+  
+  // Optional scalars (proto3 explicit optional)
+  optional string optional_string = 20;
+  optional int32 optional_int = 21;
+  optional bool optional_bool = 22;
+  optional double optional_double = 23;
+  optional bytes optional_bytes = 24;
+  
+  // Repeated scalars
+  repeated string string_list = 30;
+  repeated int32 int_list = 31;
+  repeated double double_list = 32;
+  repeated bytes bytes_list = 33;
+  repeated bool bool_list = 34;
+  repeated float float_list = 35;
+  repeated int64 int64_list = 36;
+  repeated uint32 uint32_list = 37;
+  repeated uint64 uint64_list = 38;
+  
+  // Maps with different key/value types
+  map<string, string> string_map = 40;
+  map<string, int32> int_map = 41;
+  map<int32, string> int_key_map = 42;
+  map<string, Config> nested_map = 43;
+  
+  // Additional map key types
+  map<int64, string> int64_key_map = 44;
+  map<uint32, string> uint32_key_map = 45;
+  map<uint64, string> uint64_key_map = 46;
+  map<sint32, string> sint32_key_map = 47;
+  map<sint64, string> sint64_key_map = 48;
+  map<fixed32, string> fixed32_key_map = 49;
+  map<fixed64, string> fixed64_key_map = 50;
+  map<sfixed32, string> sfixed32_key_map = 51;
+  map<sfixed64, string> sfixed64_key_map = 52;
+  map<bool, string> bool_key_map = 53;
+  
+  // Map value types
+  map<string, double> double_map = 60;
+  map<string, bytes> bytes_map = 61;
+  map<string, bool> bool_map = 62;
+  map<string, float> float_map = 63;
+  
+  // Enum fields
+  Status status = 70;
+  repeated Status status_list = 71;
+  map<string, Status> status_map = 72;
+  optional Status optional_status = 73;
+  
+  // Nested enum
+  enum NestedEnum {
+    NESTED_UNKNOWN = 0;
+    NESTED_VALUE_A = 1;
+    NESTED_VALUE_B = 2;
+  }
+  NestedEnum nested_enum = 80;
+  repeated NestedEnum nested_enum_list = 81;
+  
+  // Nested message
+  message NestedConfig {
+    string key = 1;
+    string value = 2;
+    int32 priority = 3;
+  }
+  NestedConfig nested_config = 90;
+  repeated NestedConfig nested_config_list = 91;
+  map<string, NestedConfig> nested_config_map = 92;
+  
+  // Self-reference
+  Config parent = 100;
+  repeated Config children = 101;
+}
+
+// ============================================================================
+// 11. Well-known types (google.protobuf.*)
+// ============================================================================
+
+message WellKnownTypes {
+  option (goplain.message).generate = true;
+  
+  // Timestamp and Duration
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Duration ttl = 2;
+  google.protobuf.Timestamp updated_at = 3;
+  google.protobuf.Duration latency = 4;
+  
+  // Wrapper types
+  google.protobuf.StringValue nullable_string = 10;
+  google.protobuf.Int32Value nullable_int32 = 11;
+  google.protobuf.Int64Value nullable_int64 = 12;
+  google.protobuf.UInt32Value nullable_uint32 = 13;
+  google.protobuf.UInt64Value nullable_uint64 = 14;
+  google.protobuf.FloatValue nullable_float = 15;
+  google.protobuf.DoubleValue nullable_double = 16;
+  google.protobuf.BoolValue nullable_bool = 17;
+  google.protobuf.BytesValue nullable_bytes = 18;
+  
+  // Struct types (dynamic JSON)
+  google.protobuf.Struct metadata = 20;
+  google.protobuf.Value dynamic_value = 21;
+  google.protobuf.ListValue list_value = 22;
+  
+  // Any type
+  google.protobuf.Any payload = 30;
+  repeated google.protobuf.Any payloads = 31;
+  
+  // Empty type
+  google.protobuf.Empty empty = 40;
+  
+  // Repeated well-known types
+  repeated google.protobuf.Timestamp timestamps = 50;
+  repeated google.protobuf.Duration durations = 51;
+  repeated google.protobuf.StringValue strings = 52;
+  
+  // Note: maps with well-known type values require special handling
+  // and are not fully supported yet in Plain generation
+}
+
+// ============================================================================
+// 12. All possible map combinations
+// ============================================================================
+
+message MapShowcase {
+  option (goplain.message).generate = true;
+  
+  // String key maps (most common)
+  map<string, string> str_str = 1;
+  map<string, int32> str_int32 = 2;
+  map<string, int64> str_int64 = 3;
+  map<string, uint32> str_uint32 = 4;
+  map<string, uint64> str_uint64 = 5;
+  map<string, float> str_float = 6;
+  map<string, double> str_double = 7;
+  map<string, bool> str_bool = 8;
+  map<string, bytes> str_bytes = 9;
+  
+  // Integer key maps (all supported key types)
+  map<int32, string> int32_str = 10;
+  map<int64, string> int64_str = 11;
+  map<uint32, string> uint32_str = 12;
+  map<uint64, string> uint64_str = 13;
+  map<sint32, string> sint32_str = 14;
+  map<sint64, string> sint64_str = 15;
+  map<fixed32, string> fixed32_str = 16;
+  map<fixed64, string> fixed64_str = 17;
+  map<sfixed32, string> sfixed32_str = 18;
+  map<sfixed64, string> sfixed64_str = 19;
+  map<bool, string> bool_str = 20;
+  
+  // Maps with message values
+  map<string, Address> str_message = 30;
+  map<int32, Address> int32_message = 31;
+  map<int64, Metadata> int64_message = 32;
+  
+  // Maps with enum values
+  map<string, Status> str_enum = 40;
+  map<int32, Priority> int32_enum = 41;
+  
+  // Nested maps (map value is message with maps)
+  map<string, Config> nested = 50;
+}
+
+// ============================================================================
+// 13. Optional fields showcase
+// ============================================================================
+
+message OptionalShowcase {
+  option (goplain.message).generate = true;
+  
+  // All optional scalar types
+  optional double opt_double = 1;
+  optional float opt_float = 2;
+  optional int32 opt_int32 = 3;
+  optional int64 opt_int64 = 4;
+  optional uint32 opt_uint32 = 5;
+  optional uint64 opt_uint64 = 6;
+  optional sint32 opt_sint32 = 7;
+  optional sint64 opt_sint64 = 8;
+  optional fixed32 opt_fixed32 = 9;
+  optional fixed64 opt_fixed64 = 10;
+  optional sfixed32 opt_sfixed32 = 11;
+  optional sfixed64 opt_sfixed64 = 12;
+  optional bool opt_bool = 13;
+  optional string opt_string = 14;
+  optional bytes opt_bytes = 15;
+  
+  // Optional enum
+  optional Status opt_status = 20;
+  optional Priority opt_priority = 21;
+  
+  // Regular (non-optional) fields for comparison
+  double regular_double = 30;
+  string regular_string = 31;
+  bool regular_bool = 32;
+}
+
+// ============================================================================
+// 14. Oneof showcase - all possible oneof variations
+// ============================================================================
+
+message OneofShowcase {
+  option (goplain.message).generate = true;
+  
+  string id = 1;
+  
+  // Oneof with scalar types
+  oneof scalar_choice {
+    string str_val = 10;
+    int32 int_val = 11;
+    int64 long_val = 12;
+    double double_val = 13;
+    bool bool_val = 14;
+    bytes bytes_val = 15;
+  }
+  
+  // Oneof with message types
+  oneof message_choice {
+    Address address = 20;
+    ContactInfo contact = 21;
+    Metadata metadata = 22;
+  }
+  
+  // Oneof with enum
+  oneof enum_choice {
+    Status status = 30;
+    Priority priority = 31;
+    ErrorCode error = 32;
+  }
+  
+  // Embedded oneof (flattened)
+  oneof content {
+    option (goplain.oneof).embed = true;
+    TextContent text = 40;
+    ImageContent image = 41;
+    CodeContent code = 42;
+  }
+  
+  // Multiple oneofs in same message
+  oneof source_type {
+    string url = 50;
+    string file_path = 51;
+  }
+  
+  oneof destination_type {
+    string dest_url = 60;
+    string dest_path = 61;
+  }
+}
+
+// ============================================================================
+// 14a. Oneof embed + field embed - double flattening
+// ============================================================================
+
+// Platform-specific event data that will be embedded
+message Heartbeat {
+  int64 timestamp = 1;
+  string node_id = 2;
+  int32 cpu_percent = 3;
+  int64 memory_bytes = 4;
+}
+
+message ProcessStarted {
+  string process_id = 1;
+  string command = 2;
+  repeated string args = 3;
+  int64 start_time = 4;
+}
+
+message ProcessExited {
+  string process_id = 1;
+  int32 exit_code = 2;
+  int64 exit_time = 3;
+  string signal = 4;
+}
+
+message NetworkEvent {
+  string interface_name = 1;
+  string remote_addr = 2;
+  int32 remote_port = 3;
+  string protocol = 4;
+  int64 bytes_sent = 5;
+  int64 bytes_received = 6;
+}
+
+// This demonstrates oneof with embed=true where variants also have embed=true
+// Result: all fields from Heartbeat/ProcessStarted/ProcessExited/NetworkEvent
+// are flattened directly into PlatformEventPlain
+message PlatformEvent {
+  option (goplain.message).generate = true;
+  
+  // Event header
+  string event_id = 1;
+  int64 event_time = 2;
+  string source = 3;
+  
+  // Double embedding: oneof.embed + field.embed
+  // Each variant's fields will be flattened into the parent struct
+  oneof platform_event {
+    option (goplain.oneof).embed = true;
+    Heartbeat heartbeat = 10 [(goplain.field).embed = true];
+    ProcessStarted process_started = 11 [(goplain.field).embed = true];
+    ProcessExited process_exited = 12 [(goplain.field).embed = true];
+    NetworkEvent network_event = 13 [(goplain.field).embed = true];
+  }
+  
+  // Additional metadata
+  map<string, string> labels = 20;
+}
+
+// ============================================================================
+// 15. Reserved and deprecated fields
+// ============================================================================
+
+message DeprecatedShowcase {
+  option (goplain.message).generate = true;
+  
+  string id = 1;
+  string name = 2;
+  
+  // Deprecated field (still works but marked)
+  string old_field = 3 [deprecated = true];
+  int32 legacy_count = 4 [deprecated = true];
+  
+  // Reserved field numbers (cannot be used)
+  reserved 10, 11, 12;
+  reserved 20 to 30;
+  
+  // Reserved field names
+  reserved "old_name", "deleted_field";
+  
+  // New field that replaced deprecated one
+  string new_field = 5;
+}
+
+// ============================================================================
+// 16. Field with default-like behavior (proto3)
+// ============================================================================
+
+message DefaultsShowcase {
+  option (goplain.message).generate = true;
+  
+  // In proto3, all fields have implicit zero defaults
+  // These demonstrate the zero values
+  string empty_string = 1;    // default: ""
+  int32 zero_int = 2;         // default: 0
+  int64 zero_long = 3;        // default: 0
+  double zero_double = 4;     // default: 0.0
+  bool false_bool = 5;        // default: false
+  bytes empty_bytes = 6;      // default: empty
+  Status zero_enum = 7;       // default: first value (0)
+  
+  // Repeated fields default to empty
+  repeated string empty_list = 10;
+  repeated int32 empty_int_list = 11;
+  
+  // Maps default to empty
+  map<string, string> empty_map = 20;
+  
+  // Messages default to nil/null
+  Address nil_message = 30;
+}
+
+// ============================================================================
+// 17. Complex nested message with all features combined
+// ============================================================================
+
+message ComplexNested {
+  option (goplain.message).generate = true;
+  
+  message Inner {
+    string value = 1;
+    int32 count = 2;
+    
+    message DeepInner {
+      string deep_value = 1;
+      repeated string tags = 2;
+      map<string, int32> scores = 3;
+    }
+    
+    DeepInner deep = 3;
+    repeated DeepInner deep_list = 4;
+  }
+  
+  enum InnerEnum {
+    INNER_UNKNOWN = 0;
+    INNER_FIRST = 1;
+    INNER_SECOND = 2;
+  }
+  
+  string id = 1;
+  Inner inner = 2;
+  repeated Inner inner_list = 3;
+  map<string, Inner> inner_map = 4;
+  InnerEnum inner_enum = 5;
+  repeated InnerEnum inner_enum_list = 6;
+  
+  oneof choice {
+    Inner choice_inner = 10;
+    string choice_string = 11;
+  }
+}
