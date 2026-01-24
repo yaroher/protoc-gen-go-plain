@@ -153,6 +153,9 @@ type IRField struct {
 	// JSONName — имя поля для JSON
 	JSONName string
 
+	// Index — индекс поля в plain-структуре (для _src битмаски)
+	Index uint16
+
 	// Number — номер поля в plain-сообщении
 	Number int32
 	// OriginalNumber — оригинальный номер поля (до перенумерации)

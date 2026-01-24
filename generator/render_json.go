@@ -14,20 +14,42 @@ func (g *Generator) generateJSONMethods(gf *protogen.GeneratedFile, msg *IRMessa
 }
 
 // generateMarshalJX generates method for JSON encoding with jx
+// Uses Src_ for sparse serialization - only encodes fields listed in Src_
 func (g *Generator) generateMarshalJX(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
 	plainType := msg.GoName
 
 	gf.P("// MarshalJX encodes ", plainType, " to JSON using jx.Encoder")
+	gf.P("// If Src_ is set, only fields in Src_ are encoded (sparse mode)")
 	gf.P("func (p *", plainType, ") MarshalJX(e *", gf.QualifiedGoIdent(jxPkg.Ident("Encoder")), ") {")
 	gf.P("\tif p == nil {")
 	gf.P("\t\te.Null()")
 	gf.P("\t\treturn")
 	gf.P("\t}")
 	gf.P()
+
+	// Build src lookup set for sparse mode
+	gf.P("\t// Build lookup set from Src_ for sparse serialization")
+	gf.P("\tsrcSet := make(map[uint16]struct{}, len(p.Src_))")
+	gf.P("\tfor _, idx := range p.Src_ {")
+	gf.P("\t\tsrcSet[idx] = struct{}{}")
+	gf.P("\t}")
+	gf.P("\tsparse := len(p.Src_) > 0")
+	gf.P()
+
 	gf.P("\te.ObjStart()")
 	gf.P()
 
-	// Generate oneof case field encodings first
+	// Always encode _src if present
+	gf.P("\tif sparse {")
+	gf.P("\t\te.FieldStart(\"_src\")")
+	gf.P("\t\te.ArrStart()")
+	gf.P("\t\tfor _, idx := range p.Src_ {")
+	gf.P("\t\t\te.UInt16(idx)")
+	gf.P("\t\t}")
+	gf.P("\t\te.ArrEnd()")
+	gf.P("\t}")
+
+	// Generate oneof case field encodings
 	for _, eo := range msg.EmbeddedOneofs {
 		gf.P("\tif p.", eo.CaseFieldName, " != \"\" {")
 		gf.P("\t\te.FieldStart(\"", eo.JSONName, "\")")
@@ -35,9 +57,9 @@ func (g *Generator) generateMarshalJX(gf *protogen.GeneratedFile, msg *IRMessage
 		gf.P("\t}")
 	}
 
-	// Generate field encodings
+	// Generate field encodings with sparse check
 	for _, field := range msg.Fields {
-		g.generateMarshalJXField(gf, field, f)
+		g.generateMarshalJXFieldSparse(gf, field, f)
 	}
 
 	gf.P("\te.ObjEnd()")
@@ -55,33 +77,37 @@ func (g *Generator) generateMarshalJX(gf *protogen.GeneratedFile, msg *IRMessage
 	gf.P()
 }
 
-// generateMarshalJXField generates encoding for a single field
-func (g *Generator) generateMarshalJXField(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
+// generateMarshalJXFieldSparse generates encoding for a single field with sparse check
+func (g *Generator) generateMarshalJXFieldSparse(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
 	fieldAccess := "p." + field.GoName
 	jsonName := field.JSONName
 
+	// Check if field is in srcSet (sparse mode) or not sparse
+	gf.P("\tif _, inSrc := srcSet[", field.Index, "]; !sparse || inSrc {")
+
 	// Handle optional/pointer fields with omitempty
 	if field.GoType.IsPointer {
-		gf.P("\tif ", fieldAccess, " != nil {")
-		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
-		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
-		gf.P("\t}")
+		gf.P("\t\tif ", fieldAccess, " != nil {")
+		gf.P("\t\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t\t")
+		gf.P("\t\t}")
 	} else if field.IsRepeated {
-		gf.P("\tif len(", fieldAccess, ") > 0 {")
-		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
-		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
-		gf.P("\t}")
-	} else if field.IsOptional && field.GoType.Name == "string" {
-		// Optional string - check for empty
-		gf.P("\tif ", fieldAccess, " != \"\" {")
-		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
-		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
-		gf.P("\t}")
+		gf.P("\t\tif len(", fieldAccess, ") > 0 {")
+		gf.P("\t\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t\t")
+		gf.P("\t\t}")
+	} else if field.Kind == KindMessage {
+		gf.P("\t\tif ", fieldAccess, " != nil {")
+		gf.P("\t\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t\t")
+		gf.P("\t\t}")
 	} else {
-		// Always include non-optional scalar fields
-		gf.P("\te.FieldStart(\"", jsonName, "\")")
-		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t")
+		// Scalar - always encode (no omitempty for simplicity)
+		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
 	}
+
+	gf.P("\t}")
 }
 
 // generateMarshalJXValue generates the actual value encoding
@@ -220,6 +246,7 @@ func (g *Generator) generateUnmarshalJX(gf *protogen.GeneratedFile, msg *IRMessa
 	plainType := msg.GoName
 
 	gf.P("// UnmarshalJX decodes ", plainType, " from JSON using jx.Decoder")
+	gf.P("// Populates Src_ with indices of decoded fields")
 	gf.P("func (p *", plainType, ") UnmarshalJX(d *", gf.QualifiedGoIdent(jxPkg.Ident("Decoder")), ") error {")
 	gf.P("\tif p == nil {")
 	gf.P("\t\treturn nil")
@@ -227,6 +254,15 @@ func (g *Generator) generateUnmarshalJX(gf *protogen.GeneratedFile, msg *IRMessa
 	gf.P()
 	gf.P("\treturn d.Obj(func(d *", gf.QualifiedGoIdent(jxPkg.Ident("Decoder")), ", key string) error {")
 	gf.P("\t\tswitch key {")
+
+	// Handle _src field
+	gf.P("\t\tcase \"_src\":")
+	gf.P("\t\t\treturn d.Arr(func(d *", gf.QualifiedGoIdent(jxPkg.Ident("Decoder")), ") error {")
+	gf.P("\t\t\t\tv, err := d.UInt16()")
+	gf.P("\t\t\t\tif err != nil { return err }")
+	gf.P("\t\t\t\tp.Src_ = append(p.Src_, v)")
+	gf.P("\t\t\t\treturn nil")
+	gf.P("\t\t\t})")
 
 	// Generate oneof case field decodings
 	for _, eo := range msg.EmbeddedOneofs {
@@ -238,7 +274,7 @@ func (g *Generator) generateUnmarshalJX(gf *protogen.GeneratedFile, msg *IRMessa
 
 	// Generate field decodings
 	for _, field := range msg.Fields {
-		g.generateUnmarshalJXField(gf, field, f)
+		g.generateUnmarshalJXFieldWithSrc(gf, field, f)
 	}
 
 	gf.P("\t\tdefault:")
@@ -258,13 +294,18 @@ func (g *Generator) generateUnmarshalJX(gf *protogen.GeneratedFile, msg *IRMessa
 	gf.P()
 }
 
-// generateUnmarshalJXField generates decoding for a single field
-func (g *Generator) generateUnmarshalJXField(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
+// generateUnmarshalJXFieldWithSrc generates decoding for a single field and adds to Src_
+func (g *Generator) generateUnmarshalJXFieldWithSrc(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
 	jsonName := field.JSONName
 	fieldAccess := "p." + field.GoName
 
 	gf.P("\t\tcase \"", jsonName, "\":")
+
+	// Generate field-specific decoding
 	g.generateUnmarshalJXValue(gf, field, fieldAccess, f, "\t\t\t")
+
+	// Add field index to Src_ after successful decode
+	gf.P("\t\t\tp.Src_ = append(p.Src_, ", field.Index, ")")
 }
 
 // generateUnmarshalJXValue generates value decoding

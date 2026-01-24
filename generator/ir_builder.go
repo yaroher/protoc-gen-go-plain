@@ -508,6 +508,9 @@ func (b *IRBuilder) addField(irMsg *IRMessage, field *IRField) {
 		return
 	}
 
+	// Назначаем индекс поля для _src
+	field.Index = uint16(len(irMsg.Fields))
+
 	b.fieldNames[field.Name] = field
 	irMsg.Fields = append(irMsg.Fields, field)
 }
