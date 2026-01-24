@@ -496,7 +496,7 @@ type OneofOptions struct {
 	// Address address_address = 4;
 	// string address_street = 5;
 	// }
-	Embed           bool `protobuf:"varint,1,opt,name=embed,proto3" json:"embed,omitempty"`
+	Embed           bool `protobuf:"varint,1,opt,name=embed,proto3" json:"embed,omitempty"` // only meanfull for go-plain structs (not protoc-gen-go)
 	EmbedWithPrefix bool `protobuf:"varint,2,opt,name=embed_with_prefix,json=embedWithPrefix,proto3" json:"embed_with_prefix,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache

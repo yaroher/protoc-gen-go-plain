@@ -163,7 +163,7 @@ message OneofOptions {
                 string address_street = 5;
             }
     */
-    bool embed = 1;
+    bool embed = 1; // only meanfull for go-plain structs (not protoc-gen-go)
     bool embed_with_prefix = 2;
 }
 

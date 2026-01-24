@@ -7,40 +7,6 @@ compile-proto-ref:
 build: compile-proto-ref
 	go build -o $(CURDIR)/bin/protoc-gen-go-plain ./
 
-.PHONY: build-test
-build-test: build
-	rm -f $(CURDIR)/bin/protolog.txt
-	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
-		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
-		--go_out=$(CURDIR) \
-		--go_opt=paths=source_relative \
-		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative,json_jx=true,enable_crf=true \
-		--proto_path=$(CURDIR) \
-		$(CURDIR)/test/crf/test.proto
-	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
-		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
-		--go_out=$(CURDIR) \
-		--go_opt=paths=source_relative \
-		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative,json_jx=true,enable_crf=true \
-		--proto_path=$(CURDIR) \
-		$(CURDIR)/test/plain/plain.proto
-	LOG_LEVEL=debug LOG_FILE=$(CURDIR)/bin/protolog.txt protoc \
-		--plugin=protoc-gen-go-plain=$(CURDIR)/bin/protoc-gen-go-plain \
-		--go_out=$(CURDIR) \
-		--go_opt=paths=source_relative \
-		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative,json_jx=true,enable_crf=true \
-		--proto_path=$(CURDIR) \
-		$(CURDIR)/test/full/full.proto
-	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
-	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
-	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt
-	#sed -i 's/,/\n/'  $(CURDIR)/bin/protolog.txt
-	#sed -i 's/{/\n{\n/g; s/}/\n}/g'  $(CURDIR)/bin/protolog.txt
-	sed -i 's/[[:space:]]\+/ /g'  $(CURDIR)/bin/protolog.txt
-
 .PHONY: run-test
 run-test:
 	go clean -testcache && go test -v ./...
@@ -63,18 +29,13 @@ build-test-nda: build .clean-test-nda
 		--go_out=$(CURDIR) \
 		--go_opt=paths=source_relative \
 		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative,json_jx=true,enable_crf=true \
+		--go-plain_opt=paths=source_relative,json_jx=true \
 		--proto_path=$(CURDIR) \
 		$(NDA_PROTO_FILES)
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\t/\t/g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/\\//g' $(CURDIR)/bin/protolog.txt
 	sed -i 's/[[:space:]]\+/ /g'  $(CURDIR)/bin/protolog.txt
-	$(MAKE) extract-ir-event
-
-.PHONY: extract-ir-event
-extract-ir-event:
-	python3 $(CURDIR)/scripts/extract_ir_type.py example.xdr.endpoint.EventPlain $(CURDIR)/bin/json/ir.json > $(CURDIR)/bin/json/example.xdr.endpoint.EventPlain.json
 
 .PHONY: run-test-nda
 run-test-nda:
