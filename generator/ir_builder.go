@@ -18,6 +18,8 @@ type IRBuilder struct {
 	Suffix string
 	// GlobalOverrides — глобальные переопределения типов
 	GlobalOverrides []*goplain.TypeOverride
+	// CastersAsStruct — передавать кастеры как структуру (true) или как отдельные аргументы (false)
+	CastersAsStruct bool
 	// Collisions — найденные коллизии
 	Collisions []Collision
 	// Errors — ошибки валидации
@@ -43,15 +45,18 @@ func NewIRBuilder(suffix string) *IRBuilder {
 // BuildFile строит IRFile из protogen.File
 func (b *IRBuilder) BuildFile(f *protogen.File) (*IRFile, error) {
 	irFile := &IRFile{
-		Source:   f,
-		Messages: make([]*IRMessage, 0),
-		Imports:  make([]GoImport, 0),
+		Source:          f,
+		Messages:        make([]*IRMessage, 0),
+		Imports:         make([]GoImport, 0),
+		CastersAsStruct: true, // по умолчанию используем структуру
 	}
 
 	// Получаем file-level опции
 	fileOpts := b.getFileOptions(f)
 	if fileOpts != nil {
 		b.GlobalOverrides = append(b.GlobalOverrides, fileOpts.GoTypesOverrides...)
+		b.CastersAsStruct = fileOpts.CastersAsStruct
+		irFile.CastersAsStruct = fileOpts.CastersAsStruct
 
 		// Обрабатываем virtual_types
 		for _, vt := range fileOpts.VirtualTypes {
@@ -768,20 +773,46 @@ func (b *IRBuilder) applyGlobalOverrides(field *protogen.Field, irField *IRField
 		}
 
 		if b.matchesOverride(field, override.Selector) {
+			// Сохраняем оригинальный тип
+			irField.SourceGoType = irField.GoType
+
+			// Применяем override
 			irField.GoType = GoType{
 				Name:       override.TargetGoType.Name,
 				ImportPath: override.TargetGoType.ImportPath,
 			}
-			// Сохраняем кастеры если они указаны
-			if override.ToPlainCast != nil {
-				irField.ToPlainCast = *override.ToPlainCast
-			}
-			if override.ToPbCast != nil {
-				irField.ToPbCast = *override.ToPbCast
-			}
+
+			// Проверяем нужен ли кастер (типы несовместимы)
+			irField.NeedsCaster = !b.typesCompatible(irField.SourceGoType, irField.GoType)
+
 			return // применяем только первый совпадающий override
 		}
 	}
+}
+
+// typesCompatible проверяет совместимость типов для прямого присваивания
+func (b *IRBuilder) typesCompatible(src, dst GoType) bool {
+	// Одинаковые типы
+	if src.Name == dst.Name && src.ImportPath == dst.ImportPath {
+		return true
+	}
+
+	// Числовые типы совместимы между собой (можно кастить)
+	numericTypes := map[string]bool{
+		"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
+		"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
+		"float32": true, "float64": true,
+	}
+
+	srcNumeric := src.ImportPath == "" && numericTypes[src.Name]
+	dstNumeric := dst.ImportPath == "" && numericTypes[dst.Name]
+
+	// Числовые типы совместимы между собой
+	if srcNumeric && dstNumeric {
+		return true
+	}
+
+	return false
 }
 
 // matchesOverride проверяет соответствие поля селектору

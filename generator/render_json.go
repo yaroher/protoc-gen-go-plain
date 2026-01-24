@@ -140,10 +140,10 @@ func (g *Generator) generateMarshalJXValue(gf *protogen.GeneratedFile, field *IR
 // generateMarshalJXSingleValue generates encoding for a single non-repeated value
 // isArrayElem indicates if this is called from array iteration (v is value, not pointer)
 func (g *Generator) generateMarshalJXSingleValue(gf *protogen.GeneratedFile, field *IRField, access string, f *protogen.File, indent string) {
-	// If field has ToPbCast, convert value before serializing
+	// If field has type override with incompatible types, cast to source type for JSON
 	valueAccess := access
-	if field.ToPbCast != "" {
-		valueAccess = field.ToPbCast + "(" + access + ")"
+	if field.NeedsCaster && field.SourceGoType.Name != "" {
+		valueAccess = field.SourceGoType.Name + "(" + access + ")"
 	}
 
 	switch field.Kind {
@@ -195,9 +195,9 @@ func (g *Generator) generateMarshalJXSingleValue(gf *protogen.GeneratedFile, fie
 
 // generateMarshalJXScalar generates encoding for scalar types
 func (g *Generator) generateMarshalJXScalar(gf *protogen.GeneratedFile, field *IRField, access string, indent string) {
-	// If field has ToPbCast, use ScalarKind (original proto type) for encoding
+	// If field has type override, use ScalarKind (original proto type) for encoding
 	// Otherwise use GoType.Name
-	if field.ToPbCast != "" {
+	if field.NeedsCaster {
 		g.generateMarshalJXScalarByKind(gf, field.ScalarKind, access, indent)
 		return
 	}
@@ -374,7 +374,7 @@ func (g *Generator) generateUnmarshalJXValue(gf *protogen.GeneratedFile, field *
 func (g *Generator) generateUnmarshalJXSingleValue(gf *protogen.GeneratedFile, field *IRField, access string, f *protogen.File, indent string, isArrayElem bool) {
 	switch field.Kind {
 	case KindScalar:
-		g.generateUnmarshalJXScalar(gf, field, access, indent, isArrayElem)
+		g.generateUnmarshalJXScalar(gf, field, access, f, indent, isArrayElem)
 	case KindMessage:
 		// Check if the message type has generate=true (has UnmarshalJX)
 		hasUnmarshalJX := false
@@ -459,11 +459,11 @@ func (g *Generator) generateUnmarshalJXSingleValue(gf *protogen.GeneratedFile, f
 }
 
 // generateUnmarshalJXScalar generates decoding for scalar types
-func (g *Generator) generateUnmarshalJXScalar(gf *protogen.GeneratedFile, field *IRField, access string, indent string, isArrayElem bool) {
+func (g *Generator) generateUnmarshalJXScalar(gf *protogen.GeneratedFile, field *IRField, access string, f *protogen.File, indent string, isArrayElem bool) {
 	var decodeCall, varType string
 
-	// If field has ToPlainCast, decode as original proto type then cast
-	if field.ToPlainCast != "" {
+	// For fields with NeedsCaster, decode using original ScalarKind and cast to GoType
+	if field.NeedsCaster {
 		decodeCall, varType = g.getDecodeCallByKind(field.ScalarKind)
 		if decodeCall == "" {
 			gf.P(indent, "return d.Skip()")
@@ -473,13 +473,16 @@ func (g *Generator) generateUnmarshalJXScalar(gf *protogen.GeneratedFile, field 
 		gf.P(indent, "v, err := ", decodeCall)
 		gf.P(indent, "if err != nil { return err }")
 
+		// Simple type cast for JSON (no external casters) - use qualified type name
+		qualifiedType := g.qualifyType(gf, field.GoType, f)
+		castExpr := qualifiedType + "(v)"
 		if isArrayElem {
-			gf.P(indent, access, " = append(", access, ", ", field.ToPlainCast, "(v))")
+			gf.P(indent, access, " = append(", access, ", ", castExpr, ")")
 		} else if field.GoType.IsPointer {
-			gf.P(indent, "_tmp := ", field.ToPlainCast, "(v)")
+			gf.P(indent, "_tmp := ", castExpr)
 			gf.P(indent, access, " = &_tmp")
 		} else {
-			gf.P(indent, access, " = ", field.ToPlainCast, "(v)")
+			gf.P(indent, access, " = ", castExpr)
 		}
 		return
 	}

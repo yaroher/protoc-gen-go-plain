@@ -11,23 +11,126 @@ import (
 )
 
 // generateConversionMethods generates IntoPb() and IntoPlain() methods
-func (g *Generator) generateConversionMethods(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
-	g.generateIntoPlain(gf, msg, f)
-	g.generateIntoPb(gf, msg, f)
+func (g *Generator) generateConversionMethods(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File, irFile *IRFile) {
+	// Check if message has fields requiring casters
+	casterFields := g.collectCasterFields(msg)
+	hasCasters := len(casterFields) > 0
+	castersAsStruct := irFile.CastersAsStruct
+
+	// Generate Casters struct if needed (only when castersAsStruct=true)
+	if hasCasters && castersAsStruct {
+		g.generateCastersStruct(gf, msg, casterFields, f)
+	}
+
+	g.generateIntoPlain(gf, msg, f, casterFields, castersAsStruct)
+	g.generateIntoPb(gf, msg, f, casterFields, castersAsStruct)
+}
+
+// collectCasterFields returns fields that require casters
+func (g *Generator) collectCasterFields(msg *IRMessage) []*IRField {
+	var result []*IRField
+	for _, field := range msg.Fields {
+		if field.NeedsCaster {
+			result = append(result, field)
+		}
+	}
+	return result
+}
+
+// generateCastersStruct generates struct with caster fields
+func (g *Generator) generateCastersStruct(gf *protogen.GeneratedFile, msg *IRMessage, fields []*IRField, f *protogen.File) {
+	castPkg := protogen.GoImportPath("github.com/yaroher/protoc-gen-go-plain/cast")
+
+	gf.P("// ", msg.GoName, "Casters contains type casters for ", msg.GoName)
+	gf.P("type ", msg.GoName, "Casters struct {")
+
+	for _, field := range fields {
+		srcType := g.qualifyType(gf, field.SourceGoType, f)
+		dstType := g.qualifyType(gf, field.GoType, f)
+
+		// ToPlain caster: SourceGoType -> GoType
+		gf.P("\t", field.GoName, "ToPlain ", gf.QualifiedGoIdent(castPkg.Ident("Caster")), "[", srcType, ", ", dstType, "]")
+		// ToPb caster: GoType -> SourceGoType
+		gf.P("\t", field.GoName, "ToPb ", gf.QualifiedGoIdent(castPkg.Ident("Caster")), "[", dstType, ", ", srcType, "]")
+	}
+
+	gf.P("}")
+	gf.P()
+}
+
+// generateCasterArgs generates caster arguments for IntoPlain/IntoPb
+// toPlain=true: generate args for IntoPlain (SourceType -> TargetType)
+// toPlain=false: generate args for IntoPb (TargetType -> SourceType)
+func (g *Generator) generateCasterArgs(gf *protogen.GeneratedFile, fields []*IRField, f *protogen.File, toPlain bool) {
+	castPkg := protogen.GoImportPath("github.com/yaroher/protoc-gen-go-plain/cast")
+
+	for _, field := range fields {
+		srcType := g.qualifyType(gf, field.SourceGoType, f)
+		dstType := g.qualifyType(gf, field.GoType, f)
+
+		var argName, fromType, toType string
+		if toPlain {
+			argName = g.lowerFirst(field.GoName) + "Caster"
+			fromType = srcType
+			toType = dstType
+		} else {
+			argName = g.lowerFirst(field.GoName) + "Caster"
+			fromType = dstType
+			toType = srcType
+		}
+
+		// Always add trailing comma for multi-line Go function params
+		gf.P("\t", argName, " ", gf.QualifiedGoIdent(castPkg.Ident("Caster")), "[", fromType, ", ", toType, "],")
+	}
+}
+
+// lowerFirst returns string with first letter lowercased
+func (g *Generator) lowerFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToLower(s[:1]) + s[1:]
+}
+
+// casterCall generates caster call expression based on castersAsStruct flag
+// toPlain=true: for IntoPlain (c.FieldToPlain.Cast or fieldCaster.Cast)
+// toPlain=false: for IntoPb (c.FieldToPb.Cast or fieldCaster.Cast)
+func (g *Generator) casterCall(field *IRField, value string, toPlain bool) string {
+	if g.castersAsStruct {
+		if toPlain {
+			return "c." + field.GoName + "ToPlain.Cast(" + value + ")"
+		}
+		return "c." + field.GoName + "ToPb.Cast(" + value + ")"
+	}
+	// Separate arguments mode - same arg name for both directions
+	return g.lowerFirst(field.GoName) + "Caster.Cast(" + value + ")"
 }
 
 // generateIntoPlain generates method to convert protobuf message to plain struct
-// func (pb *OriginalMessage) IntoPlain() *MessagePlain
-func (g *Generator) generateIntoPlain(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
+// func (pb *OriginalMessage) IntoPlain(c *MessageCasters) *MessagePlain (castersAsStruct=true)
+// func (pb *OriginalMessage) IntoPlain(field1 cast.Caster[A,B], ...) *MessagePlain (castersAsStruct=false)
+func (g *Generator) generateIntoPlain(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File, casterFields []*IRField, castersAsStruct bool) {
 	if msg.Source == nil {
 		return
 	}
 
 	pbType := msg.Source.GoIdent
 	plainType := msg.GoName
+	hasCasters := len(casterFields) > 0
 
 	gf.P("// IntoPlain converts protobuf message to plain struct")
-	gf.P("func (pb *", gf.QualifiedGoIdent(pbType), ") IntoPlain() *", plainType, " {")
+	if hasCasters {
+		if castersAsStruct {
+			gf.P("func (pb *", gf.QualifiedGoIdent(pbType), ") IntoPlain(c *", msg.GoName, "Casters) *", plainType, " {")
+		} else {
+			// Generate separate arguments
+			gf.P("func (pb *", gf.QualifiedGoIdent(pbType), ") IntoPlain(")
+			g.generateCasterArgs(gf, casterFields, f, true) // toPlain=true
+			gf.P(") *", plainType, " {")
+		}
+	} else {
+		gf.P("func (pb *", gf.QualifiedGoIdent(pbType), ") IntoPlain() *", plainType, " {")
+	}
 	gf.P("\tif pb == nil {")
 	gf.P("\t\treturn nil")
 	gf.P("\t}")
@@ -128,8 +231,8 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 	} else if protoIsPointer && !plainIsPointer {
 		// Proto has optional (pointer), plain has value - dereference with nil check
 		gf.P("\tif ", srcField, " != nil {")
-		if field.ToPlainCast != "" {
-			gf.P("\t\t", dstField, " = ", field.ToPlainCast, "(*", srcField, ")")
+		if field.NeedsCaster {
+			gf.P("\t\t", dstField, " = ", g.casterCall(field, "*"+srcField, true))
 		} else {
 			gf.P("\t\t", dstField, " = *", srcField)
 		}
@@ -137,8 +240,8 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		gf.P("\t}")
 	} else if !protoIsPointer && plainIsPointer {
 		// Proto has value, plain has pointer - take address
-		if field.ToPlainCast != "" {
-			gf.P("\t_tmp := ", field.ToPlainCast, "(", srcField, ")")
+		if field.NeedsCaster {
+			gf.P("\t_tmp := ", g.casterCall(field, srcField, true))
 			gf.P("\t", dstField, " = &_tmp")
 		} else {
 			gf.P("\t", dstField, " = &", srcField)
@@ -154,8 +257,8 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		gf.P("\t", srcAppend)
 	} else {
 		// Scalar, enum, bytes - direct copy (types match) or with cast
-		if field.ToPlainCast != "" {
-			gf.P("\t", dstField, " = ", field.ToPlainCast, "(", srcField, ")")
+		if field.NeedsCaster {
+			gf.P("\t", dstField, " = ", g.casterCall(field, srcField, true))
 		} else if g.needsTypeCast(field) {
 			// Type override without explicit caster - use simple cast
 			gf.P("\t", dstField, " = ", field.GoType.Name, "(", srcField, ")")
@@ -273,17 +376,30 @@ func (g *Generator) generateIntoPlainTypeAliasField(gf *protogen.GeneratedFile, 
 }
 
 // generateIntoPb generates method to convert plain struct back to protobuf
-// func (p *MessagePlain) IntoPb() *OriginalMessage
-func (g *Generator) generateIntoPb(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
+// func (p *MessagePlain) IntoPb(c *MessageCasters) *OriginalMessage (castersAsStruct=true)
+// func (p *MessagePlain) IntoPb(field1 cast.Caster[A,B], ...) *OriginalMessage (castersAsStruct=false)
+func (g *Generator) generateIntoPb(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File, casterFields []*IRField, castersAsStruct bool) {
 	if msg.Source == nil {
 		return
 	}
 
 	pbType := msg.Source.GoIdent
 	plainType := msg.GoName
+	hasCasters := len(casterFields) > 0
 
 	gf.P("// IntoPb converts plain struct to protobuf message")
-	gf.P("func (p *", plainType, ") IntoPb() *", gf.QualifiedGoIdent(pbType), " {")
+	if hasCasters {
+		if castersAsStruct {
+			gf.P("func (p *", plainType, ") IntoPb(c *", msg.GoName, "Casters) *", gf.QualifiedGoIdent(pbType), " {")
+		} else {
+			// Generate separate arguments
+			gf.P("func (p *", plainType, ") IntoPb(")
+			g.generateCasterArgs(gf, casterFields, f, false) // toPlain=false
+			gf.P(") *", gf.QualifiedGoIdent(pbType), " {")
+		}
+	} else {
+		gf.P("func (p *", plainType, ") IntoPb() *", gf.QualifiedGoIdent(pbType), " {")
+	}
 	gf.P("\tif p == nil {")
 	gf.P("\t\treturn nil")
 	gf.P("\t}")
@@ -355,16 +471,16 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		switch field.GoType.Name {
 		case "string":
 			gf.P("\tif ", srcField, " != \"\" {")
-			if field.ToPbCast != "" {
-				gf.P("\t\t_tmp := ", field.ToPbCast, "(", srcField, ")")
+			if field.NeedsCaster {
+				gf.P("\t\t_tmp := ", g.casterCall(field, srcField, false))
 				gf.P("\t\t", dstField, " = &_tmp")
 			} else {
 				gf.P("\t\t", dstField, " = &", srcField)
 			}
 			gf.P("\t}")
 		default:
-			if field.ToPbCast != "" {
-				gf.P("\t_tmp := ", field.ToPbCast, "(", srcField, ")")
+			if field.NeedsCaster {
+				gf.P("\t_tmp := ", g.casterCall(field, srcField, false))
 				gf.P("\t", dstField, " = &_tmp")
 			} else {
 				gf.P("\t", dstField, " = &", srcField)
@@ -373,8 +489,8 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 	} else if !protoIsPointer && plainIsPointer {
 		// Proto wants value, plain has pointer - dereference
 		gf.P("\tif ", srcField, " != nil {")
-		if field.ToPbCast != "" {
-			gf.P("\t\t", dstField, " = ", field.ToPbCast, "(*", srcField, ")")
+		if field.NeedsCaster {
+			gf.P("\t\t", dstField, " = ", g.casterCall(field, "*"+srcField, false))
 		} else {
 			gf.P("\t\t", dstField, " = *", srcField)
 		}
@@ -395,8 +511,8 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		gf.P("\t", dstField, " = ", enumType, "(", srcField, ")")
 	} else {
 		// Direct copy or with cast
-		if field.ToPbCast != "" {
-			gf.P("\t", dstField, " = ", field.ToPbCast, "(", srcField, ")")
+		if field.NeedsCaster {
+			gf.P("\t", dstField, " = ", g.casterCall(field, srcField, false))
 		} else if g.needsTypeCast(field) {
 			// Type override without explicit caster - use simple cast to source type
 			srcTypeName := g.getSourceTypeName(field)

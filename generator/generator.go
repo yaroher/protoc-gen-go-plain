@@ -16,6 +16,9 @@ type Generator struct {
 	suffix   string
 
 	overrides []*goplain.TypeOverride
+
+	// castersAsStruct - временное поле для текущего файла
+	castersAsStruct bool
 }
 
 type Option func(*Generator) error
@@ -123,6 +126,9 @@ func (g *Generator) generateFile(f *protogen.File, irFile *IRFile) error {
 	filename := f.GeneratedFilenamePrefix + "_plain.pb.go"
 	gf := g.Plugin.NewGeneratedFile(filename, f.GoImportPath)
 
+	// Set casters mode for this file
+	g.castersAsStruct = irFile.CastersAsStruct
+
 	logger.Debug("generating file", zap.String("filename", filename))
 
 	// Write header
@@ -134,13 +140,13 @@ func (g *Generator) generateFile(f *protogen.File, irFile *IRFile) error {
 
 	// Generate structs (imports will be added automatically by protogen)
 	for _, msg := range irFile.Messages {
-		g.generateMessage(gf, msg, f)
+		g.generateMessage(gf, msg, f, irFile)
 	}
 
 	return nil
 }
 
-func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
+func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File, irFile *IRFile) {
 	// Generate comment
 	if msg.Comment != "" {
 		for _, line := range strings.Split(strings.TrimSpace(msg.Comment), "\n") {
@@ -169,7 +175,7 @@ func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, 
 	gf.P()
 
 	// Generate conversion methods
-	g.generateConversionMethods(gf, msg, f)
+	g.generateConversionMethods(gf, msg, f, irFile)
 
 	// Generate JSON methods
 	if g.Settings.JSONJX {
@@ -178,7 +184,7 @@ func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, 
 
 	// Generate nested messages
 	for _, nested := range msg.Nested {
-		g.generateMessage(gf, nested, f)
+		g.generateMessage(gf, nested, f, irFile)
 	}
 }
 

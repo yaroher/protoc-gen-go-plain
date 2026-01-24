@@ -23,19 +23,8 @@ message OverrideSelector {
 message TypeOverride {
     OverrideSelector selector = 1;
     GoIdent target_go_type = 2;
-    
-    // Caster functions for type conversion
-    // to_plain_cast: converts from protobuf type to target_go_type
-    // Example: "time.Duration" for int64 -> time.Duration (value is nanoseconds)
-    // Format: "package.FunctionName" or just "FunctionName" for same package
-    // If empty, direct assignment is used (types must be compatible)
-    optional string to_plain_cast = 3;
-    
-    // to_pb_cast: converts from target_go_type back to protobuf type
-    // Example: "int64" for time.Duration -> int64
-    // Format: "package.FunctionName" or just "FunctionName" for same package
-    // If empty, direct assignment is used (types must be compatible)
-    optional string to_pb_cast = 4;
+    // If types are not directly compatible, casters will be requested
+    // as parameters to IntoPlain/IntoPb methods using cast.Caster[A,B] interface
 }
 
 message MessageOptions {
@@ -83,6 +72,11 @@ message MessageOptions {
 message FileOptions {
     repeated TypeOverride go_types_overrides = 1;
     repeated google.protobuf.Type virtual_types = 2;
+    
+    // How to pass casters to IntoPlain/IntoPb methods:
+    // - true (default): pass as struct parameter, e.g. IntoPlain(c *MsgCasters)
+    // - false: pass as separate arguments, e.g. IntoPlain(fieldACaster cast.Caster[A,B], ...)
+    bool casters_as_struct = 3;
 }
 
 extend google.protobuf.FileOptions {

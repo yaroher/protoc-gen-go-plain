@@ -80,6 +80,8 @@ type IRFile struct {
 	Messages []*IRMessage
 	// Imports — необходимые импорты для Go
 	Imports []GoImport
+	// CastersAsStruct — передавать кастеры как структуру (true) или как отдельные аргументы (false)
+	CastersAsStruct bool
 }
 
 // GoImport представляет Go-импорт
@@ -205,13 +207,12 @@ type IRField struct {
 	// EnumAsInt — сериализовать enum как int
 	EnumAsInt bool
 
-	// Type override casters
-	// ToPlainCast — функция конвертации из protobuf типа в target Go тип
-	// Пример: "time.Duration" или "mypackage.ToMyType"
-	ToPlainCast string
-	// ToPbCast — функция конвертации из target Go типа в protobuf тип
-	// Пример: "int64" или "mypackage.FromMyType"
-	ToPbCast string
+	// NeedsCaster — поле требует кастер (типы несовместимы)
+	// Если true, IntoPlain/IntoPb будут принимать кастер как параметр
+	NeedsCaster bool
+	// SourceGoType — оригинальный Go тип из protobuf (до override)
+	// Используется для генерации cast.Caster[SourceGoType, GoType]
+	SourceGoType GoType
 
 	// Comment — комментарий к полю
 	Comment string
