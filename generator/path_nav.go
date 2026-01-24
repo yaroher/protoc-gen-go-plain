@@ -199,10 +199,15 @@ func (p *PathInfo) BuildSetterCode(gf *protogen.GeneratedFile, rootVar string, v
 		}
 		wrapperType := gf.QualifiedGoIdent(wrapperIdent)
 
-		if valueIsPointer {
+		// Check if the field is a message type (needs pointer) or scalar (no pointer)
+		isMessageField := lastSeg.Field != nil && lastSeg.Field.Message != nil
+
+		if valueIsPointer || !isMessageField {
+			// Value is already a pointer, or field is scalar (no pointer needed)
 			assignCode = fmt.Sprintf("%s.%s = &%s{%s: %s}",
 				currentPath, lastSeg.OneofGoName, wrapperType, lastSeg.GoName, valueExpr)
 		} else {
+			// Value is not pointer but field expects pointer (message type)
 			assignCode = fmt.Sprintf("%s.%s = &%s{%s: &%s}",
 				currentPath, lastSeg.OneofGoName, wrapperType, lastSeg.GoName, valueExpr)
 		}

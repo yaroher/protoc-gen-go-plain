@@ -2,10 +2,12 @@ package generator
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // generateConversionMethods generates IntoPb() and IntoPlain() methods
@@ -217,13 +219,26 @@ func (g *Generator) generateIntoPlainSerializedField(gf *protogen.GeneratedFile,
 
 // generateIntoPlainTypeAliasField handles type alias field
 func (g *Generator) generateIntoPlainTypeAliasField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
-	path := g.buildPbNavigationPath(field, msg)
+	if len(field.PathNumbers) == 0 || msg.Source == nil {
+		gf.P("\t// ", field.GoName, " type alias: no path information")
+		return
+	}
+
+	// Resolve path information using path_nav
+	pathInfo, err := resolvePathInfo(msg.Source, field.PathNumbers)
+	if err != nil {
+		gf.P("\t// ", field.GoName, " type alias: path resolution error: ", err.Error())
+		return
+	}
+
 	dstField := "p." + field.GoName
 	srcAppend := fmt.Sprintf("p.Src_ = append(p.Src_, %d)", field.Index)
+	getterChain := pathInfo.BuildGetterChain("pb")
+	nilCheck := pathInfo.BuildNilCheck("pb")
 
 	gf.P("\t// ", field.GoName, " type alias from ", field.EmPath)
-	gf.P("\tif ", path.NilCheck, " {")
-	gf.P("\t\t", dstField, " = ", path.Value)
+	gf.P("\tif ", nilCheck, " {")
+	gf.P("\t\t", dstField, " = ", getterChain)
 	gf.P("\t\t", srcAppend)
 	gf.P("\t}")
 }
@@ -326,6 +341,12 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 
 // generateIntoPbEmbedField handles embedded field assignment back to protobuf
 func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
+	// Special handling for direct oneof fields (PathNumbers is empty, but oneof info present)
+	if len(field.PathNumbers) == 0 && field.OneofName != "" && field.OneofVariant != "" && field.Source != nil {
+		g.generateIntoPbOneofField(gf, field, msg, f)
+		return
+	}
+
 	if len(field.PathNumbers) == 0 || msg.Source == nil {
 		gf.P("\t// ", field.GoName, ": no path information")
 		return
@@ -351,7 +372,9 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 	gf.P("\t// ", field.GoName, " -> ", field.EmPath)
 
 	// Check if proto field is optional (pointer) but plain is value
-	protoIsPointer := leafField != nil && (leafField.Desc.HasOptionalKeyword() || leafField.Desc.HasPresence())
+	// For oneof scalar fields, proto does NOT use pointer (wrapper contains value directly)
+	isOneofScalar := leafField != nil && leafField.Oneof != nil && !leafField.Oneof.Desc.IsSynthetic() && leafField.Message == nil
+	protoIsPointer := leafField != nil && !isOneofScalar && (leafField.Desc.HasOptionalKeyword() || leafField.Desc.HasPresence())
 	plainIsPointer := field.GoType.IsPointer
 
 	// Determine if value needs conversion
@@ -465,6 +488,45 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 	}
 }
 
+// generateIntoPbOneofField handles oneof field assignment (scalar or message)
+func (g *Generator) generateIntoPbOneofField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
+	if field.Source == nil {
+		return
+	}
+
+	srcField := "p." + field.GoName
+	caseFieldName := field.OneofGoName + "Case"
+
+	// Get oneof info from source field
+	oneof := field.Source.Oneof
+	if oneof == nil {
+		gf.P("\t// ", field.GoName, ": not a oneof field")
+		return
+	}
+
+	// Build wrapper type name: ParentMessage_FieldName
+	wrapperIdent := protogen.GoIdent{
+		GoName:       oneof.Parent.GoIdent.GoName + "_" + field.Source.GoName,
+		GoImportPath: oneof.Parent.GoIdent.GoImportPath,
+	}
+	wrapperType := gf.QualifiedGoIdent(wrapperIdent)
+
+	gf.P("\t// ", field.GoName, " -> ", field.EmPath)
+
+	// Determine if field is message or scalar
+	if field.Source.Message != nil {
+		// Message field - check for nil
+		gf.P("\tif ", srcField, " != nil && p.", caseFieldName, " == \"", field.OneofVariant, "\" {")
+		gf.P("\t\tpb.", oneof.GoName, " = &", wrapperType, "{", field.Source.GoName, ": ", srcField, "}")
+		gf.P("\t}")
+	} else {
+		// Scalar field - check for case only
+		gf.P("\tif p.", caseFieldName, " == \"", field.OneofVariant, "\" {")
+		gf.P("\t\tpb.", oneof.GoName, " = &", wrapperType, "{", field.Source.GoName, ": ", srcField, "}")
+		gf.P("\t}")
+	}
+}
+
 // generateIntoPbSerializedField handles deserialization of bytes back to message
 func (g *Generator) generateIntoPbSerializedField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
 	protoPkg := protogen.GoImportPath("google.golang.org/protobuf/proto")
@@ -486,14 +548,39 @@ func (g *Generator) generateIntoPbSerializedField(gf *protogen.GeneratedFile, fi
 
 // generateIntoPbTypeAliasField handles type alias assignment
 func (g *Generator) generateIntoPbTypeAliasField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
+	if field.Source == nil || field.Source.Message == nil {
+		gf.P("\t// ", field.GoName, " type alias: no source message")
+		return
+	}
+
 	srcField := "p." + field.GoName
-	assignment := g.buildPbAssignmentPath(gf, field, msg, f)
+
+	// Get the wrapper message type
+	wrapperType := gf.QualifiedGoIdent(field.Source.Message.GoIdent)
+
+	// Get the alias field name from message options
+	msgOpts := g.getMessageOptions(field.Source.Message)
+	aliasFieldName := "Value" // default
+	if msgOpts != nil && msgOpts.TypeAliasField != "" {
+		// Convert to Go name (capitalize first letter)
+		aliasFieldName = strings.Title(msgOpts.TypeAliasField)
+	}
 
 	gf.P("\t// ", field.GoName, " type alias -> ", field.EmPath)
-	if assignment.InitCode != "" {
-		gf.P(assignment.InitCode)
+
+	// Check for zero value based on type
+	switch field.ScalarKind {
+	case protoreflect.StringKind:
+		gf.P("\tif ", srcField, " != \"\" {")
+	case protoreflect.BytesKind:
+		gf.P("\tif len(", srcField, ") > 0 {")
+	default:
+		// For numeric types, skip zero-value check or always set
+		gf.P("\t{")
 	}
-	gf.P("\t", assignment.Path, " = ", srcField)
+
+	gf.P("\t\tpb.", field.Source.GoName, " = &", wrapperType, "{", aliasFieldName, ": ", srcField, "}")
+	gf.P("\t}")
 }
 
 // Helper types and functions

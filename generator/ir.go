@@ -113,6 +113,9 @@ type IRMessage struct {
 
 	// EmbeddedOneofs — информация о embedded oneof для генерации Case полей
 	EmbeddedOneofs []*EmbeddedOneof
+
+	// IsVirtual — виртуальный тип (не имеет Source protobuf сообщения)
+	IsVirtual bool
 }
 
 // EmbeddedOneof хранит информацию о oneof с embed=true

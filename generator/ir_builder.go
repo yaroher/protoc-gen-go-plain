@@ -52,6 +52,14 @@ func (b *IRBuilder) BuildFile(f *protogen.File) (*IRFile, error) {
 	fileOpts := b.getFileOptions(f)
 	if fileOpts != nil {
 		b.GlobalOverrides = append(b.GlobalOverrides, fileOpts.GoTypesOverrides...)
+
+		// Обрабатываем virtual_types
+		for _, vt := range fileOpts.VirtualTypes {
+			irMsg := b.BuildVirtualType(vt, f)
+			if irMsg != nil {
+				irFile.Messages = append(irFile.Messages, irMsg)
+			}
+		}
 	}
 
 	// Обрабатываем все сообщения
@@ -134,6 +142,10 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 				Source:        oneof,
 			}
 
+			// Для oneof embed используем prefix: oneof_name + variant_name
+			// чтобы избежать коллизий (многие варианты могут иметь одинаковые поля)
+			basePrefix := string(oneof.Desc.Name())
+
 			// Embed oneof — разворачиваем все варианты
 			for _, field := range oneof.Fields {
 				// Добавляем вариант в список
@@ -143,7 +155,9 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 					FieldNumber: int32(field.Desc.Number()),
 				})
 
-				irFields, err := b.processField(field, irMsg, string(oneof.Desc.Name()), nil)
+				// Prefix включает имя oneof и имя варианта для уникальности
+				variantPrefix := basePrefix + "_" + string(field.Desc.Name())
+				irFields, err := b.processField(field, irMsg, variantPrefix, nil)
 				if err != nil {
 					return nil, err
 				}
@@ -190,10 +204,47 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 		}
 	}
 
+	return irMsg, nil
+}
+
+// BuildVirtualType строит IRMessage из google.protobuf.Type (virtual type)
+func (b *IRBuilder) BuildVirtualType(vt *typepb.Type, f *protogen.File) *IRMessage {
+	if vt == nil || vt.Name == "" {
+		return nil
+	}
+
+	// Сбрасываем состояние для нового сообщения
+	b.nextFieldNumber = 1
+	b.fieldNames = make(map[string]*IRField)
+
+	// Имя типа: если содержит точку, берём последнюю часть
+	typeName := vt.Name
+	if idx := strings.LastIndex(typeName, "."); idx != -1 {
+		typeName = typeName[idx+1:]
+	}
+
+	irMsg := &IRMessage{
+		Source:         nil, // нет исходного protobuf сообщения
+		Name:           typeName + b.Suffix,
+		GoName:         strcase.ToCamel(typeName) + b.Suffix,
+		Fields:         make([]*IRField, 0),
+		OriginalFields: nil,
+		Nested:         make([]*IRMessage, 0),
+		Comment:        "// Virtual type: " + vt.Name,
+		EmPath:         "",
+		IsVirtual:      true,
+	}
+
+	// Обрабатываем поля virtual type
+	for _, field := range vt.Fields {
+		irField := b.buildVirtualField(field, irMsg)
+		b.addField(irMsg, irField)
+	}
+
 	// Строим PathTable и присваиваем FieldIndex
 	b.buildPathTable(irMsg)
 
-	return irMsg, nil
+	return irMsg
 }
 
 // buildPathTable строит таблицу путей и присваивает индексы полям
@@ -251,7 +302,8 @@ func (b *IRBuilder) processField(field *protogen.Field, irMsg *IRMessage, oneofP
 
 	// embed — разворачиваем вложенное сообщение
 	if fieldOpts != nil && fieldOpts.Embed {
-		return b.processEmbedField(field, irMsg, oneofPrefix, currentPath)
+		withPrefix := fieldOpts.EmbedWithPrefix
+		return b.processEmbedField(field, irMsg, oneofPrefix, currentPath, withPrefix)
 	}
 
 	// Обычное поле
@@ -343,11 +395,13 @@ func (b *IRBuilder) processSerializedField(
 }
 
 // processEmbedField разворачивает вложенное сообщение
+// withPrefix=true добавляет имя поля как префикс к именам вложенных полей
 func (b *IRBuilder) processEmbedField(
 	field *protogen.Field,
 	irMsg *IRMessage,
 	oneofPrefix string,
 	pathNumbers []int32,
+	withPrefix bool,
 ) ([]*IRField, error) {
 	if field.Message == nil {
 		return nil, fmt.Errorf(
@@ -365,10 +419,16 @@ func (b *IRBuilder) processEmbedField(
 
 	var result []*IRField
 
-	// Формируем префикс для полей
-	prefix := string(field.Desc.Name())
-	if oneofPrefix != "" {
-		prefix = oneofPrefix + "_" + prefix
+	// Формируем префикс для полей только если withPrefix=true
+	var prefix string
+	if withPrefix {
+		prefix = string(field.Desc.Name())
+		if oneofPrefix != "" {
+			prefix = oneofPrefix + "_" + prefix
+		}
+	} else if oneofPrefix != "" {
+		// Если embed без префикса, но есть oneofPrefix — используем его
+		prefix = oneofPrefix
 	}
 
 	// Разворачиваем все поля вложенного сообщения
@@ -425,13 +485,16 @@ func (b *IRBuilder) buildDirectField(field *protogen.Field, prefix string, pathN
 		irField.EnumAsInt = fieldOpts.EnumAsInt
 	}
 
-	// Обрабатываем override_type
+	// Обрабатываем override_type (field-level)
 	if fieldOpts != nil && fieldOpts.OverrideType != nil {
 		irField.GoType = GoType{
 			Name:       fieldOpts.OverrideType.Name,
 			ImportPath: fieldOpts.OverrideType.ImportPath,
 		}
 	}
+
+	// Применяем GlobalOverrides (file-level)
+	b.applyGlobalOverrides(field, irField)
 
 	// Map поля
 	if field.Desc.IsMap() {
@@ -685,6 +748,117 @@ func (b *IRBuilder) getOneofOptions(oneof *protogen.Oneof) *goplain.OneofOptions
 		return nil
 	}
 	return ext.(*goplain.OneofOptions)
+}
+
+// applyGlobalOverrides применяет глобальные переопределения типов к полю
+func (b *IRBuilder) applyGlobalOverrides(field *protogen.Field, irField *IRField) {
+	for _, override := range b.GlobalOverrides {
+		if override == nil || override.Selector == nil || override.TargetGoType == nil {
+			continue
+		}
+
+		if b.matchesOverride(field, override.Selector) {
+			irField.GoType = GoType{
+				Name:       override.TargetGoType.Name,
+				ImportPath: override.TargetGoType.ImportPath,
+			}
+			return // применяем только первый совпадающий override
+		}
+	}
+}
+
+// matchesOverride проверяет соответствие поля селектору
+func (b *IRBuilder) matchesOverride(field *protogen.Field, selector *goplain.OverrideSelector) bool {
+	// Проверяем target_full_path
+	if selector.TargetFullPath != nil {
+		fullPath := string(field.Parent.Desc.FullName()) + "." + string(field.Desc.Name())
+		if fullPath != *selector.TargetFullPath {
+			return false
+		}
+	}
+
+	// Проверяем field_kind
+	if selector.FieldKind != nil {
+		// Конвертируем protoreflect.Kind в typepb.Field_Kind
+		protoKind := convertKindToTypePb(field.Desc.Kind())
+		if protoKind != *selector.FieldKind {
+			return false
+		}
+	}
+
+	// Проверяем field_cardinality
+	if selector.FieldCardinality != nil {
+		protoCardinality := convertCardinalityToTypePb(field)
+		if protoCardinality != *selector.FieldCardinality {
+			return false
+		}
+	}
+
+	// Проверяем field_type_url
+	if selector.FieldTypeUrl != nil {
+		if field.Message == nil {
+			return false
+		}
+		typeUrl := string(field.Message.Desc.FullName())
+		if typeUrl != *selector.FieldTypeUrl {
+			return false
+		}
+	}
+
+	return true
+}
+
+// convertKindToTypePb конвертирует protoreflect.Kind в typepb.Field_Kind
+func convertKindToTypePb(kind protoreflect.Kind) typepb.Field_Kind {
+	switch kind {
+	case protoreflect.BoolKind:
+		return typepb.Field_TYPE_BOOL
+	case protoreflect.Int32Kind:
+		return typepb.Field_TYPE_INT32
+	case protoreflect.Sint32Kind:
+		return typepb.Field_TYPE_SINT32
+	case protoreflect.Uint32Kind:
+		return typepb.Field_TYPE_UINT32
+	case protoreflect.Int64Kind:
+		return typepb.Field_TYPE_INT64
+	case protoreflect.Sint64Kind:
+		return typepb.Field_TYPE_SINT64
+	case protoreflect.Uint64Kind:
+		return typepb.Field_TYPE_UINT64
+	case protoreflect.Sfixed32Kind:
+		return typepb.Field_TYPE_SFIXED32
+	case protoreflect.Fixed32Kind:
+		return typepb.Field_TYPE_FIXED32
+	case protoreflect.FloatKind:
+		return typepb.Field_TYPE_FLOAT
+	case protoreflect.Sfixed64Kind:
+		return typepb.Field_TYPE_SFIXED64
+	case protoreflect.Fixed64Kind:
+		return typepb.Field_TYPE_FIXED64
+	case protoreflect.DoubleKind:
+		return typepb.Field_TYPE_DOUBLE
+	case protoreflect.StringKind:
+		return typepb.Field_TYPE_STRING
+	case protoreflect.BytesKind:
+		return typepb.Field_TYPE_BYTES
+	case protoreflect.MessageKind:
+		return typepb.Field_TYPE_MESSAGE
+	case protoreflect.EnumKind:
+		return typepb.Field_TYPE_ENUM
+	default:
+		return typepb.Field_TYPE_UNKNOWN
+	}
+}
+
+// convertCardinalityToTypePb конвертирует поле в typepb.Field_Cardinality
+func convertCardinalityToTypePb(field *protogen.Field) typepb.Field_Cardinality {
+	if field.Desc.IsList() {
+		return typepb.Field_CARDINALITY_REPEATED
+	}
+	if field.Desc.HasOptionalKeyword() {
+		return typepb.Field_CARDINALITY_OPTIONAL
+	}
+	return typepb.Field_CARDINALITY_REQUIRED
 }
 
 // Методы для отладки
