@@ -657,13 +657,23 @@ func (b *IRBuilder) goTypeFromField(field *protogen.Field) GoType {
 		// Если нет — используем оригинальный тип
 		msgOpts := b.getMessageOptions(field.Message)
 		suffix := ""
-		if msgOpts != nil && msgOpts.Generate {
+		usePlainType := msgOpts != nil && msgOpts.Generate
+		if usePlainType {
 			suffix = b.Suffix
 		}
+
+		// Для repeated:
+		// - protobuf messages (suffix == ""): всегда указатель, т.к. содержат sync.Mutex
+		// - plain structs (suffix != ""): без указателя
+		isPointer := true
+		if field.Desc.IsList() && usePlainType {
+			isPointer = false
+		}
+
 		return GoType{
 			Name:       field.Message.GoIdent.GoName + suffix,
 			ImportPath: string(field.Message.GoIdent.GoImportPath),
-			IsPointer:  !field.Desc.IsList(),
+			IsPointer:  isPointer,
 		}
 	}
 	if field.Enum != nil {

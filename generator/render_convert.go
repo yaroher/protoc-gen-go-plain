@@ -102,10 +102,15 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		msgOpts := g.getMessageOptionsFromField(field)
 		if msgOpts != nil && msgOpts.Generate {
 			if field.IsRepeated {
+				// Repeated plain: []PlainType (without pointer on element)
+				// Source is []*ProtoMessage, IntoPlain() returns *PlainType
+				// Need to dereference: *v.IntoPlain()
 				gf.P("\tif len(", srcField, ") > 0 {")
 				gf.P("\t\t", dstField, " = make([]", g.buildTypeStringPlain(field, f), ", len(", srcField, "))")
 				gf.P("\t\tfor i, v := range ", srcField, " {")
-				gf.P("\t\t\t", dstField, "[i] = v.IntoPlain()")
+				gf.P("\t\t\tif v != nil {")
+				gf.P("\t\t\t\t", dstField, "[i] = *v.IntoPlain()")
+				gf.P("\t\t\t}")
 				gf.P("\t\t}")
 				gf.P("\t\t", srcAppend)
 				gf.P("\t}")
@@ -139,10 +144,21 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 			gf.P("\t", dstField, " = &", srcField)
 		}
 		gf.P("\t", srcAppend)
+	} else if field.EnumAsString {
+		// Enum to string conversion
+		gf.P("\t", dstField, " = ", srcField, ".String()")
+		gf.P("\t", srcAppend)
+	} else if field.EnumAsInt {
+		// Enum to int32 conversion
+		gf.P("\t", dstField, " = int32(", srcField, ")")
+		gf.P("\t", srcAppend)
 	} else {
 		// Scalar, enum, bytes - direct copy (types match) or with cast
 		if field.ToPlainCast != "" {
 			gf.P("\t", dstField, " = ", field.ToPlainCast, "(", srcField, ")")
+		} else if g.needsTypeCast(field) {
+			// Type override without explicit caster - use simple cast
+			gf.P("\t", dstField, " = ", field.GoType.Name, "(", srcField, ")")
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
 		}
@@ -318,10 +334,12 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		msgOpts := g.getMessageOptionsFromField(field)
 		if msgOpts != nil && msgOpts.Generate {
 			if field.IsRepeated {
+				// Repeated plain: []PlainType (value, not pointer)
+				// Need to take address for IntoPb() call: (&srcField[i]).IntoPb()
 				gf.P("\tif len(", srcField, ") > 0 {")
 				gf.P("\t\t", dstField, " = make(", g.buildPbSliceType(gf, field, f), ", len(", srcField, "))")
-				gf.P("\t\tfor i, v := range ", srcField, " {")
-				gf.P("\t\t\t", dstField, "[i] = v.IntoPb()")
+				gf.P("\t\tfor i := range ", srcField, " {")
+				gf.P("\t\t\t", dstField, "[i] = (&", srcField, "[i]).IntoPb()")
 				gf.P("\t\t}")
 				gf.P("\t}")
 			} else {
@@ -361,10 +379,28 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 			gf.P("\t\t", dstField, " = *", srcField)
 		}
 		gf.P("\t}")
+	} else if field.EnumAsString {
+		// String back to enum conversion
+		enumType := g.qualifyType(gf, GoType{
+			Name:       field.Source.Enum.GoIdent.GoName,
+			ImportPath: string(field.Source.Enum.GoIdent.GoImportPath),
+		}, f)
+		gf.P("\t", dstField, " = ", enumType, "(", enumType, "_value[", srcField, "])")
+	} else if field.EnumAsInt {
+		// Int32 back to enum conversion
+		enumType := g.qualifyType(gf, GoType{
+			Name:       field.Source.Enum.GoIdent.GoName,
+			ImportPath: string(field.Source.Enum.GoIdent.GoImportPath),
+		}, f)
+		gf.P("\t", dstField, " = ", enumType, "(", srcField, ")")
 	} else {
 		// Direct copy or with cast
 		if field.ToPbCast != "" {
 			gf.P("\t", dstField, " = ", field.ToPbCast, "(", srcField, ")")
+		} else if g.needsTypeCast(field) {
+			// Type override without explicit caster - use simple cast to source type
+			srcTypeName := g.getSourceTypeName(field)
+			gf.P("\t", dstField, " = ", srcTypeName, "(", srcField, ")")
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
 		}
@@ -629,13 +665,15 @@ type AssignmentPath struct {
 
 // buildPbNavigationPath builds the getter chain for reading from protobuf
 func (g *Generator) buildPbNavigationPath(field *IRField, msg *IRMessage) NavigationPath {
-	if len(field.PathNumbers) == 0 {
-		if field.Source != nil {
-			return NavigationPath{
-				NilCheck: "pb != nil",
-				Value:    "pb." + field.Source.GoName,
-			}
+	if field.Source != nil {
+		srcGoName := field.Source.GoName
+		// For direct fields (not embedded) - use pb.FieldName
+		return NavigationPath{
+			NilCheck: "pb." + srcGoName + " != nil",
+			Value:    "pb." + srcGoName,
 		}
+	}
+	if len(field.PathNumbers) == 0 {
 		return NavigationPath{NilCheck: "false", Value: ""}
 	}
 
@@ -700,4 +738,43 @@ func (g *Generator) getMessageOptions(msg *protogen.Message) *goplain.MessageOpt
 		return nil
 	}
 	return ext.(*goplain.MessageOptions)
+}
+
+// needsTypeCast checks if the field has override_type that differs from source type
+func (g *Generator) needsTypeCast(field *IRField) bool {
+	if field.Source == nil {
+		return false
+	}
+	// Check if field has override_type set (different GoType than default)
+	srcType := g.getSourceTypeName(field)
+	return srcType != "" && srcType != field.GoType.Name
+}
+
+// getSourceTypeName returns the Go type name of the protobuf source field
+func (g *Generator) getSourceTypeName(field *IRField) string {
+	if field.Source == nil {
+		return ""
+	}
+	switch field.Source.Desc.Kind() {
+	case protoreflect.BoolKind:
+		return "bool"
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		return "int32"
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		return "int64"
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		return "uint32"
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		return "uint64"
+	case protoreflect.FloatKind:
+		return "float32"
+	case protoreflect.DoubleKind:
+		return "float64"
+	case protoreflect.StringKind:
+		return "string"
+	case protoreflect.BytesKind:
+		return "[]byte"
+	default:
+		return ""
+	}
 }

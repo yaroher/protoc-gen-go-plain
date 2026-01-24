@@ -352,11 +352,13 @@ func (g *Generator) generateUnmarshalJXFieldWithSrc(gf *protogen.GeneratedFile, 
 // generateUnmarshalJXValue generates value decoding
 func (g *Generator) generateUnmarshalJXValue(gf *protogen.GeneratedFile, field *IRField, access string, f *protogen.File, indent string) {
 	if field.IsRepeated && !field.IsMap {
-		// Array
-		gf.P(indent, "return d.Arr(func(d *", gf.QualifiedGoIdent(jxPkg.Ident("Decoder")), ") error {")
+		// Array - use err pattern to allow Src_ append after
+		gf.P(indent, "if err := d.Arr(func(d *", gf.QualifiedGoIdent(jxPkg.Ident("Decoder")), ") error {")
 		g.generateUnmarshalJXSingleValue(gf, field, access, f, indent+"\t", true)
 		gf.P(indent, "\treturn nil")
-		gf.P(indent, "})")
+		gf.P(indent, "}); err != nil {")
+		gf.P(indent, "\treturn err")
+		gf.P(indent, "}")
 		return
 	}
 
@@ -395,9 +397,13 @@ func (g *Generator) generateUnmarshalJXSingleValue(gf *protogen.GeneratedFile, f
 				}
 			} else if field.GoType.IsPointer {
 				gf.P(indent, access, " = &", field.GoType.Name, "{}")
-				gf.P(indent, "return ", access, ".UnmarshalJX(d)")
+				gf.P(indent, "if err := ", access, ".UnmarshalJX(d); err != nil {")
+				gf.P(indent, "\treturn err")
+				gf.P(indent, "}")
 			} else {
-				gf.P(indent, "return ", access, ".UnmarshalJX(d)")
+				gf.P(indent, "if err := ", access, ".UnmarshalJX(d); err != nil {")
+				gf.P(indent, "\treturn err")
+				gf.P(indent, "}")
 			}
 		} else {
 			// Protobuf type - use protojson
