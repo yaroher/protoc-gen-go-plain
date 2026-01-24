@@ -426,19 +426,11 @@ func (p *DocumentPlain) MarshalJX(e *jx.Encoder) {
 	}
 	if p.Address != nil {
 		e.FieldStart("address")
-		if data, err := protojson.Marshal(p.Address); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.Address.MarshalJX(e)
 	}
 	if p.Metadata != nil {
 		e.FieldStart("metadata")
-		if data, err := protojson.Marshal(p.Metadata); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.Metadata.MarshalJX(e)
 	}
 	if len(p.Performance) > 0 {
 		e.FieldStart("performance")
@@ -463,21 +455,13 @@ func (p *DocumentPlain) MarshalJX(e *jx.Encoder) {
 		e.FieldStart("locations")
 		e.ArrStart()
 		for _, v := range p.Locations {
-			if data, err := protojson.Marshal(v); err == nil {
-				e.Raw(data)
-			} else {
-				e.Null()
-			}
+			v.MarshalJX(e)
 		}
 		e.ArrEnd()
 	}
 	if p.Structure != nil {
 		e.FieldStart("structure")
-		if data, err := protojson.Marshal(p.Structure); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.Structure.MarshalJX(e)
 	}
 	if len(p.Children) > 0 {
 		e.FieldStart("children")
@@ -493,43 +477,23 @@ func (p *DocumentPlain) MarshalJX(e *jx.Encoder) {
 	}
 	if p.ContentTextContentTextContent != nil {
 		e.FieldStart("contentTextContentTextContent")
-		if data, err := protojson.Marshal(p.ContentTextContentTextContent); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentTextContentTextContent.MarshalJX(e)
 	}
 	if p.ContentImageContentImageContent != nil {
 		e.FieldStart("contentImageContentImageContent")
-		if data, err := protojson.Marshal(p.ContentImageContentImageContent); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentImageContentImageContent.MarshalJX(e)
 	}
 	if p.ContentVideoContentVideoContent != nil {
 		e.FieldStart("contentVideoContentVideoContent")
-		if data, err := protojson.Marshal(p.ContentVideoContentVideoContent); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentVideoContentVideoContent.MarshalJX(e)
 	}
 	if p.ContentCodeContentCodeContent != nil {
 		e.FieldStart("contentCodeContentCodeContent")
-		if data, err := protojson.Marshal(p.ContentCodeContentCodeContent); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentCodeContentCodeContent.MarshalJX(e)
 	}
 	if p.ContentTableContentTableContent != nil {
 		e.FieldStart("contentTableContentTableContent")
-		if data, err := protojson.Marshal(p.ContentTableContentTableContent); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentTableContentTableContent.MarshalJX(e)
 	}
 	if p.ComputedHash != "" {
 		e.FieldStart("computedHash")
@@ -638,22 +602,14 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 			p.Phone = v
 			p.Src_ = append(p.Src_, 8)
 		case "address":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.Address = &Address{}
-			if err := protojson.Unmarshal(raw, p.Address); err != nil {
+			if err := p.Address.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 9)
 		case "metadata":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.Metadata = &Metadata{}
-			if err := protojson.Unmarshal(raw, p.Metadata); err != nil {
+			if err := p.Metadata.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 10)
@@ -691,12 +647,8 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 			p.Src_ = append(p.Src_, 13)
 		case "locations":
 			if err := d.Arr(func(d *jx.Decoder) error {
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				var v Address
-				if err := protojson.Unmarshal(raw, &v); err != nil {
+				if err := v.UnmarshalJX(d); err != nil {
 					return err
 				}
 				p.Locations = append(p.Locations, &v)
@@ -706,12 +658,8 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 			}
 			p.Src_ = append(p.Src_, 14)
 		case "structure":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.Structure = &Level1{}
-			if err := protojson.Unmarshal(raw, p.Structure); err != nil {
+			if err := p.Structure.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 15)
@@ -734,52 +682,32 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 			}
 			p.Src_ = append(p.Src_, 17)
 		case "contentTextContentTextContent":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentTextContentTextContent = &TextContent{}
-			if err := protojson.Unmarshal(raw, p.ContentTextContentTextContent); err != nil {
+			if err := p.ContentTextContentTextContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 18)
 		case "contentImageContentImageContent":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentImageContentImageContent = &ImageContent{}
-			if err := protojson.Unmarshal(raw, p.ContentImageContentImageContent); err != nil {
+			if err := p.ContentImageContentImageContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 19)
 		case "contentVideoContentVideoContent":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentVideoContentVideoContent = &VideoContent{}
-			if err := protojson.Unmarshal(raw, p.ContentVideoContentVideoContent); err != nil {
+			if err := p.ContentVideoContentVideoContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 20)
 		case "contentCodeContentCodeContent":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentCodeContentCodeContent = &CodeContent{}
-			if err := protojson.Unmarshal(raw, p.ContentCodeContentCodeContent); err != nil {
+			if err := p.ContentCodeContentCodeContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 21)
 		case "contentTableContentTableContent":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentTableContentTableContent = &TableContent{}
-			if err := protojson.Unmarshal(raw, p.ContentTableContentTableContent); err != nil {
+			if err := p.ContentTableContentTableContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 22)
@@ -1200,27 +1128,15 @@ func (p *TreeNodePlain) MarshalJX(e *jx.Encoder) {
 	}
 	if p.PayloadTextText != nil {
 		e.FieldStart("payloadTextText")
-		if data, err := protojson.Marshal(p.PayloadTextText); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadTextText.MarshalJX(e)
 	}
 	if p.PayloadImageImage != nil {
 		e.FieldStart("payloadImageImage")
-		if data, err := protojson.Marshal(p.PayloadImageImage); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadImageImage.MarshalJX(e)
 	}
 	if p.PayloadCodeCode != nil {
 		e.FieldStart("payloadCodeCode")
-		if data, err := protojson.Marshal(p.PayloadCodeCode); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadCodeCode.MarshalJX(e)
 	}
 	e.ObjEnd()
 }
@@ -1350,32 +1266,20 @@ func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 			}
 			p.Src_ = append(p.Src_, 10)
 		case "payloadTextText":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadTextText = &TextContent{}
-			if err := protojson.Unmarshal(raw, p.PayloadTextText); err != nil {
+			if err := p.PayloadTextText.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 11)
 		case "payloadImageImage":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadImageImage = &ImageContent{}
-			if err := protojson.Unmarshal(raw, p.PayloadImageImage); err != nil {
+			if err := p.PayloadImageImage.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 12)
 		case "payloadCodeCode":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadCodeCode = &CodeContent{}
-			if err := protojson.Unmarshal(raw, p.PayloadCodeCode); err != nil {
+			if err := p.PayloadCodeCode.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 13)
@@ -1643,51 +1547,27 @@ func (p *EventPlain) MarshalJX(e *jx.Encoder) {
 	}
 	if p.Meta != nil {
 		e.FieldStart("meta")
-		if data, err := protojson.Marshal(p.Meta); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.Meta.MarshalJX(e)
 	}
 	if p.PayloadUserCreatedUserCreated != nil {
 		e.FieldStart("payloadUserCreatedUserCreated")
-		if data, err := protojson.Marshal(p.PayloadUserCreatedUserCreated); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadUserCreatedUserCreated.MarshalJX(e)
 	}
 	if p.PayloadUserUpdatedUserUpdated != nil {
 		e.FieldStart("payloadUserUpdatedUserUpdated")
-		if data, err := protojson.Marshal(p.PayloadUserUpdatedUserUpdated); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadUserUpdatedUserUpdated.MarshalJX(e)
 	}
 	if p.PayloadUserDeletedUserDeleted != nil {
 		e.FieldStart("payloadUserDeletedUserDeleted")
-		if data, err := protojson.Marshal(p.PayloadUserDeletedUserDeleted); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadUserDeletedUserDeleted.MarshalJX(e)
 	}
 	if p.PayloadOrderCreatedOrderCreated != nil {
 		e.FieldStart("payloadOrderCreatedOrderCreated")
-		if data, err := protojson.Marshal(p.PayloadOrderCreatedOrderCreated); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadOrderCreatedOrderCreated.MarshalJX(e)
 	}
 	if p.PayloadOrderCompletedOrderCompleted != nil {
 		e.FieldStart("payloadOrderCompletedOrderCompleted")
-		if data, err := protojson.Marshal(p.PayloadOrderCompletedOrderCompleted); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.PayloadOrderCompletedOrderCompleted.MarshalJX(e)
 	}
 	e.ObjEnd()
 }
@@ -1753,62 +1633,38 @@ func (p *EventPlain) UnmarshalJX(d *jx.Decoder) error {
 			p.Source = v
 			p.Src_ = append(p.Src_, 3)
 		case "meta":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.Meta = &Metadata{}
-			if err := protojson.Unmarshal(raw, p.Meta); err != nil {
+			if err := p.Meta.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 4)
 		case "payloadUserCreatedUserCreated":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadUserCreatedUserCreated = &UserCreatedEvent{}
-			if err := protojson.Unmarshal(raw, p.PayloadUserCreatedUserCreated); err != nil {
+			if err := p.PayloadUserCreatedUserCreated.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 5)
 		case "payloadUserUpdatedUserUpdated":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadUserUpdatedUserUpdated = &UserUpdatedEvent{}
-			if err := protojson.Unmarshal(raw, p.PayloadUserUpdatedUserUpdated); err != nil {
+			if err := p.PayloadUserUpdatedUserUpdated.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 6)
 		case "payloadUserDeletedUserDeleted":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadUserDeletedUserDeleted = &UserDeletedEvent{}
-			if err := protojson.Unmarshal(raw, p.PayloadUserDeletedUserDeleted); err != nil {
+			if err := p.PayloadUserDeletedUserDeleted.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 7)
 		case "payloadOrderCreatedOrderCreated":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadOrderCreatedOrderCreated = &OrderCreatedEvent{}
-			if err := protojson.Unmarshal(raw, p.PayloadOrderCreatedOrderCreated); err != nil {
+			if err := p.PayloadOrderCreatedOrderCreated.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 8)
 		case "payloadOrderCompletedOrderCompleted":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.PayloadOrderCompletedOrderCompleted = &OrderCompletedEvent{}
-			if err := protojson.Unmarshal(raw, p.PayloadOrderCompletedOrderCompleted); err != nil {
+			if err := p.PayloadOrderCompletedOrderCompleted.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 9)
@@ -2638,21 +2494,13 @@ func (p *ConfigPlain) MarshalJX(e *jx.Encoder) {
 	}
 	if p.NestedConfig != nil {
 		e.FieldStart("nestedConfig")
-		if data, err := protojson.Marshal(p.NestedConfig); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.NestedConfig.MarshalJX(e)
 	}
 	if p.NestedConfigList != nil {
 		e.FieldStart("nestedConfigList")
 		e.ArrStart()
 		for _, v := range p.NestedConfigList {
-			if data, err := protojson.Marshal(v); err == nil {
-				e.Raw(data)
-			} else {
-				e.Null()
-			}
+			v.MarshalJX(e)
 		}
 		e.ArrEnd()
 	}
@@ -2660,11 +2508,7 @@ func (p *ConfigPlain) MarshalJX(e *jx.Encoder) {
 	e.ObjStart()
 	for k, v := range p.NestedConfigMap {
 		e.FieldStart(k)
-		if data, err := protojson.Marshal(v); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		v.MarshalJX(e)
 	}
 	e.ObjEnd()
 	if p.Parent != nil {
@@ -3297,23 +3141,15 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}
 			p.Src_ = append(p.Src_, 52)
 		case "nestedConfig":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.NestedConfig = &Config_NestedConfig{}
-			if err := protojson.Unmarshal(raw, p.NestedConfig); err != nil {
+			if err := p.NestedConfig.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 53)
 		case "nestedConfigList":
 			if err := d.Arr(func(d *jx.Decoder) error {
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				var v Config_NestedConfig
-				if err := protojson.Unmarshal(raw, &v); err != nil {
+				if err := v.UnmarshalJX(d); err != nil {
 					return err
 				}
 				p.NestedConfigList = append(p.NestedConfigList, &v)
@@ -3327,12 +3163,8 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.NestedConfigMap = make(map[string]*Config_NestedConfig)
 			}
 			return d.Obj(func(d *jx.Decoder, key string) error {
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				p.NestedConfigMap[key] = &Config_NestedConfig{}
-				if err := protojson.Unmarshal(raw, p.NestedConfigMap[key]); err != nil {
+				if err := p.NestedConfigMap[key].UnmarshalJX(d); err != nil {
 					return err
 				}
 				return nil
@@ -4574,33 +4406,21 @@ func (p *MapShowcasePlain) MarshalJX(e *jx.Encoder) {
 	e.ObjStart()
 	for k, v := range p.StrMessage {
 		e.FieldStart(k)
-		if data, err := protojson.Marshal(v); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		v.MarshalJX(e)
 	}
 	e.ObjEnd()
 	e.FieldStart("int32Message")
 	e.ObjStart()
 	for k, v := range p.Int32Message {
 		e.FieldStart(fmt.Sprint(k))
-		if data, err := protojson.Marshal(v); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		v.MarshalJX(e)
 	}
 	e.ObjEnd()
 	e.FieldStart("int64Message")
 	e.ObjStart()
 	for k, v := range p.Int64Message {
 		e.FieldStart(fmt.Sprint(k))
-		if data, err := protojson.Marshal(v); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		v.MarshalJX(e)
 	}
 	e.ObjEnd()
 	e.FieldStart("strEnum")
@@ -4967,12 +4787,8 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrMessage = make(map[string]*Address)
 			}
 			return d.Obj(func(d *jx.Decoder, key string) error {
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				p.StrMessage[key] = &Address{}
-				if err := protojson.Unmarshal(raw, p.StrMessage[key]); err != nil {
+				if err := p.StrMessage[key].UnmarshalJX(d); err != nil {
 					return err
 				}
 				return nil
@@ -4988,12 +4804,8 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 					return err
 				}
 				_mapKey := int32(_k)
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				p.Int32Message[_mapKey] = &Address{}
-				if err := protojson.Unmarshal(raw, p.Int32Message[_mapKey]); err != nil {
+				if err := p.Int32Message[_mapKey].UnmarshalJX(d); err != nil {
 					return err
 				}
 				return nil
@@ -5008,12 +4820,8 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				if err != nil {
 					return err
 				}
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				p.Int64Message[_mapKey] = &Metadata{}
-				if err := protojson.Unmarshal(raw, p.Int64Message[_mapKey]); err != nil {
+				if err := p.Int64Message[_mapKey].UnmarshalJX(d); err != nil {
 					return err
 				}
 				return nil
@@ -5854,27 +5662,15 @@ func (p *OneofShowcasePlain) MarshalJX(e *jx.Encoder) {
 	}
 	if p.ContentTextText != nil {
 		e.FieldStart("contentTextText")
-		if data, err := protojson.Marshal(p.ContentTextText); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentTextText.MarshalJX(e)
 	}
 	if p.ContentImageImage != nil {
 		e.FieldStart("contentImageImage")
-		if data, err := protojson.Marshal(p.ContentImageImage); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentImageImage.MarshalJX(e)
 	}
 	if p.ContentCodeCode != nil {
 		e.FieldStart("contentCodeCode")
-		if data, err := protojson.Marshal(p.ContentCodeCode); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.ContentCodeCode.MarshalJX(e)
 	}
 	e.ObjEnd()
 }
@@ -5919,32 +5715,20 @@ func (p *OneofShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 			p.Id = v
 			p.Src_ = append(p.Src_, 0)
 		case "contentTextText":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentTextText = &TextContent{}
-			if err := protojson.Unmarshal(raw, p.ContentTextText); err != nil {
+			if err := p.ContentTextText.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 1)
 		case "contentImageImage":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentImageImage = &ImageContent{}
-			if err := protojson.Unmarshal(raw, p.ContentImageImage); err != nil {
+			if err := p.ContentImageImage.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 2)
 		case "contentCodeCode":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.ContentCodeCode = &CodeContent{}
-			if err := protojson.Unmarshal(raw, p.ContentCodeCode); err != nil {
+			if err := p.ContentCodeCode.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 3)
@@ -7161,11 +6945,7 @@ func (p *DefaultsShowcasePlain) MarshalJX(e *jx.Encoder) {
 	e.ObjEnd()
 	if p.NilMessage != nil {
 		e.FieldStart("nilMessage")
-		if data, err := protojson.Marshal(p.NilMessage); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.NilMessage.MarshalJX(e)
 	}
 	e.ObjEnd()
 }
@@ -7283,12 +7063,8 @@ func (p *DefaultsShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 			})
 			p.Src_ = append(p.Src_, 9)
 		case "nilMessage":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.NilMessage = &Address{}
-			if err := protojson.Unmarshal(raw, p.NilMessage); err != nil {
+			if err := p.NilMessage.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 10)
@@ -7437,21 +7213,13 @@ func (p *ComplexNestedPlain) MarshalJX(e *jx.Encoder) {
 	}
 	if p.Inner != nil {
 		e.FieldStart("inner")
-		if data, err := protojson.Marshal(p.Inner); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		p.Inner.MarshalJX(e)
 	}
 	if p.InnerList != nil {
 		e.FieldStart("innerList")
 		e.ArrStart()
 		for _, v := range p.InnerList {
-			if data, err := protojson.Marshal(v); err == nil {
-				e.Raw(data)
-			} else {
-				e.Null()
-			}
+			v.MarshalJX(e)
 		}
 		e.ArrEnd()
 	}
@@ -7459,11 +7227,7 @@ func (p *ComplexNestedPlain) MarshalJX(e *jx.Encoder) {
 	e.ObjStart()
 	for k, v := range p.InnerMap {
 		e.FieldStart(k)
-		if data, err := protojson.Marshal(v); err == nil {
-			e.Raw(data)
-		} else {
-			e.Null()
-		}
+		v.MarshalJX(e)
 	}
 	e.ObjEnd()
 	e.FieldStart("innerEnum")
@@ -7513,23 +7277,15 @@ func (p *ComplexNestedPlain) UnmarshalJX(d *jx.Decoder) error {
 			p.Id = v
 			p.Src_ = append(p.Src_, 0)
 		case "inner":
-			raw, err := d.Raw()
-			if err != nil {
-				return err
-			}
 			p.Inner = &ComplexNested_Inner{}
-			if err := protojson.Unmarshal(raw, p.Inner); err != nil {
+			if err := p.Inner.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 1)
 		case "innerList":
 			if err := d.Arr(func(d *jx.Decoder) error {
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				var v ComplexNested_Inner
-				if err := protojson.Unmarshal(raw, &v); err != nil {
+				if err := v.UnmarshalJX(d); err != nil {
 					return err
 				}
 				p.InnerList = append(p.InnerList, &v)
@@ -7543,12 +7299,8 @@ func (p *ComplexNestedPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.InnerMap = make(map[string]*ComplexNested_Inner)
 			}
 			return d.Obj(func(d *jx.Decoder, key string) error {
-				raw, err := d.Raw()
-				if err != nil {
-					return err
-				}
 				p.InnerMap[key] = &ComplexNested_Inner{}
-				if err := protojson.Unmarshal(raw, p.InnerMap[key]); err != nil {
+				if err := p.InnerMap[key].UnmarshalJX(d); err != nil {
 					return err
 				}
 				return nil

@@ -80,14 +80,22 @@ func (g *Generator) generatePbMarshalJXField(gf *protogen.GeneratedFile, field *
 		gf.P("\t}")
 	} else if field.Desc.HasOptionalKeyword() {
 		// Optional scalar - check pointer field directly
-		gf.P("\tif p.", field.GoName, " != nil {")
-		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
-		if field.Enum != nil {
-			gf.P("\t\te.Int32(int32(*p.", field.GoName, "))")
+		// Note: bytes is never a pointer in proto3, even with optional
+		if field.Desc.Kind() == protoreflect.BytesKind {
+			gf.P("\tif len(p.", field.GoName, ") > 0 {")
+			gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+			gf.P("\t\te.Base64(p.", field.GoName, ")")
+			gf.P("\t}")
 		} else {
-			g.generatePbMarshalJXScalarValue(gf, field.Desc.Kind(), "*p."+field.GoName, "\t\t")
+			gf.P("\tif p.", field.GoName, " != nil {")
+			gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+			if field.Enum != nil {
+				gf.P("\t\te.Int32(int32(*p.", field.GoName, "))")
+			} else {
+				g.generatePbMarshalJXScalarValue(gf, field.Desc.Kind(), "*p."+field.GoName, "\t\t")
+			}
+			gf.P("\t}")
 		}
-		gf.P("\t}")
 	} else {
 		// Required scalar - check for zero value
 		zeroCheck := g.getZeroCheck(field, fieldAccess)
@@ -114,6 +122,8 @@ func (g *Generator) generatePbMarshalJXOneof(gf *protogen.GeneratedFile, oneof *
 		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
 		if field.Message != nil {
 			gf.P("\t\tv.", field.GoName, ".MarshalJX(e)")
+		} else if field.Enum != nil {
+			gf.P("\t\te.Int32(int32(v.", field.GoName, "))")
 		} else {
 			g.generatePbMarshalJXScalarValue(gf, field.Desc.Kind(), "v."+field.GoName, "\t\t")
 		}
@@ -196,6 +206,7 @@ func (g *Generator) generatePbMarshalJXMapValue(gf *protogen.GeneratedFile, fiel
 // generatePbMarshalJXWellKnown generates encoding for well-known types
 func (g *Generator) generatePbMarshalJXWellKnown(gf *protogen.GeneratedFile, field *protogen.Field, access string, f *protogen.File, indent string) {
 	fullName := string(field.Message.Desc.FullName())
+	protojsonPkg := protogen.GoImportPath("google.golang.org/protobuf/encoding/protojson")
 
 	switch fullName {
 	case "google.protobuf.Timestamp":
@@ -222,19 +233,37 @@ func (g *Generator) generatePbMarshalJXWellKnown(gf *protogen.GeneratedFile, fie
 		gf.P(indent, "} else {")
 		gf.P(indent, "\te.Null()")
 		gf.P(indent, "}")
+	case "google.protobuf.BytesValue":
+		gf.P(indent, "if ", access, " != nil {")
+		gf.P(indent, "\te.Base64(", access, ".GetValue())")
+		gf.P(indent, "} else {")
+		gf.P(indent, "\te.Null()")
+		gf.P(indent, "}")
+	case "google.protobuf.Empty":
+		gf.P(indent, "e.ObjStart()")
+		gf.P(indent, "e.ObjEnd()")
 	case "google.protobuf.Int32Value", "google.protobuf.Int64Value",
 		"google.protobuf.UInt32Value", "google.protobuf.UInt64Value",
-		"google.protobuf.FloatValue", "google.protobuf.DoubleValue":
-		// Use protojson for numeric wrappers
-		protojsonPkg := protogen.GoImportPath("google.golang.org/protobuf/encoding/protojson")
+		"google.protobuf.FloatValue", "google.protobuf.DoubleValue",
+		"google.protobuf.Struct", "google.protobuf.Value",
+		"google.protobuf.ListValue", "google.protobuf.Any":
+		// Use protojson for complex well-known types
+		gf.P(indent, "if ", access, " != nil {")
+		gf.P(indent, "\tif data, err := ", gf.QualifiedGoIdent(protojsonPkg.Ident("Marshal")), "(", access, "); err == nil {")
+		gf.P(indent, "\t\te.Raw(data)")
+		gf.P(indent, "\t} else {")
+		gf.P(indent, "\t\te.Null()")
+		gf.P(indent, "\t}")
+		gf.P(indent, "} else {")
+		gf.P(indent, "\te.Null()")
+		gf.P(indent, "}")
+	default:
+		// Unknown type - use protojson fallback
 		gf.P(indent, "if data, err := ", gf.QualifiedGoIdent(protojsonPkg.Ident("Marshal")), "(", access, "); err == nil {")
 		gf.P(indent, "\te.Raw(data)")
 		gf.P(indent, "} else {")
 		gf.P(indent, "\te.Null()")
 		gf.P(indent, "}")
-	default:
-		// Unknown well-known type, use MarshalJX
-		gf.P(indent, access, ".MarshalJX(e)")
 	}
 }
 
@@ -458,6 +487,8 @@ func (g *Generator) generatePbUnmarshalJXMap(gf *protogen.GeneratedFile, field *
 	valueType := g.pbGoTypeName(valueField)
 	if valueField.Message != nil {
 		valueType = "*" + gf.QualifiedGoIdent(valueField.Message.GoIdent)
+	} else if valueField.Enum != nil {
+		valueType = gf.QualifiedGoIdent(valueField.Enum.GoIdent)
 	}
 
 	gf.P(indent, "if ", access, " == nil {")
@@ -501,6 +532,12 @@ func (g *Generator) generatePbUnmarshalJXMap(gf *protogen.GeneratedFile, field *
 		gf.P(indent, "\t\treturn err")
 		gf.P(indent, "\t}")
 		gf.P(indent, "\t", access, "[", keyAccess, "] = v")
+	} else if valueField.Enum != nil {
+		// Decode enum value
+		enumType := gf.QualifiedGoIdent(valueField.Enum.GoIdent)
+		gf.P(indent, "\tv, err := d.Int32()")
+		gf.P(indent, "\tif err != nil { return err }")
+		gf.P(indent, "\t", access, "[", keyAccess, "] = ", enumType, "(v)")
 	} else {
 		// Decode scalar value
 		g.generatePbUnmarshalJXMapScalarValue(gf, valueField, access, keyAccess, f, indent+"\t")
@@ -549,39 +586,31 @@ func (g *Generator) generatePbUnmarshalJXMapScalarValue(gf *protogen.GeneratedFi
 // generatePbUnmarshalJXWellKnown generates decoding for well-known types
 func (g *Generator) generatePbUnmarshalJXWellKnown(gf *protogen.GeneratedFile, field *protogen.Field, access string, f *protogen.File, indent string, isArrayElem bool) {
 	fullName := string(field.Message.Desc.FullName())
-
-	// For now, use protojson for well-known types
 	protojsonPkg := protogen.GoImportPath("google.golang.org/protobuf/encoding/protojson")
 	msgType := gf.QualifiedGoIdent(field.Message.GoIdent)
 
 	switch fullName {
-	case "google.protobuf.Timestamp", "google.protobuf.Duration":
-		// These have special JSON format, use protojson
+	case "google.protobuf.Empty":
+		// Empty just needs to skip and create
+		gf.P(indent, "if err := d.Skip(); err != nil { return err }")
+		if isArrayElem {
+			gf.P(indent, access, " = append(", access, ", &", msgType, "{})")
+		} else {
+			gf.P(indent, access, " = &", msgType, "{}")
+		}
+	default:
+		// Use protojson for all well-known types
 		gf.P(indent, "raw, err := d.Raw()")
 		gf.P(indent, "if err != nil { return err }")
 		if isArrayElem {
-			gf.P(indent, "v := &", msgType, "{}")
-			gf.P(indent, "if err := ", gf.QualifiedGoIdent(protojsonPkg.Ident("Unmarshal")), "(raw, v); err != nil {")
+			gf.P(indent, "_v := &", msgType, "{}")
+			gf.P(indent, "if err := ", gf.QualifiedGoIdent(protojsonPkg.Ident("Unmarshal")), "(raw, _v); err != nil {")
 			gf.P(indent, "\treturn err")
 			gf.P(indent, "}")
-			gf.P(indent, access, " = append(", access, ", v)")
+			gf.P(indent, access, " = append(", access, ", _v)")
 		} else {
 			gf.P(indent, access, " = &", msgType, "{}")
 			gf.P(indent, "if err := ", gf.QualifiedGoIdent(protojsonPkg.Ident("Unmarshal")), "(raw, ", access, "); err != nil {")
-			gf.P(indent, "\treturn err")
-			gf.P(indent, "}")
-		}
-	default:
-		// Use standard message decoding
-		if isArrayElem {
-			gf.P(indent, "v := &", msgType, "{}")
-			gf.P(indent, "if err := v.UnmarshalJX(d); err != nil {")
-			gf.P(indent, "\treturn err")
-			gf.P(indent, "}")
-			gf.P(indent, access, " = append(", access, ", v)")
-		} else {
-			gf.P(indent, access, " = &", msgType, "{}")
-			gf.P(indent, "if err := ", access, ".UnmarshalJX(d); err != nil {")
 			gf.P(indent, "\treturn err")
 			gf.P(indent, "}")
 		}
@@ -604,6 +633,11 @@ func (g *Generator) isWellKnownType(msg *protogen.Message) bool {
 		"google.protobuf.FloatValue",
 		"google.protobuf.DoubleValue",
 		"google.protobuf.BytesValue",
+		"google.protobuf.Struct",
+		"google.protobuf.Value",
+		"google.protobuf.ListValue",
+		"google.protobuf.Any",
+		"google.protobuf.Empty",
 	}
 	for _, wk := range wellKnown {
 		if fullName == wk {
