@@ -145,9 +145,20 @@ func (x *OverrideSelector) GetFieldTypeUrl() string {
 }
 
 type TypeOverride struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Selector      *OverrideSelector      `protobuf:"bytes,1,opt,name=selector,proto3" json:"selector,omitempty"`
-	TargetGoType  *GoIdent               `protobuf:"bytes,2,opt,name=target_go_type,json=targetGoType,proto3" json:"target_go_type,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Selector     *OverrideSelector      `protobuf:"bytes,1,opt,name=selector,proto3" json:"selector,omitempty"`
+	TargetGoType *GoIdent               `protobuf:"bytes,2,opt,name=target_go_type,json=targetGoType,proto3" json:"target_go_type,omitempty"`
+	// Caster functions for type conversion
+	// to_plain_cast: converts from protobuf type to target_go_type
+	// Example: "time.Duration" for int64 -> time.Duration (value is nanoseconds)
+	// Format: "package.FunctionName" or just "FunctionName" for same package
+	// If empty, direct assignment is used (types must be compatible)
+	ToPlainCast *string `protobuf:"bytes,3,opt,name=to_plain_cast,json=toPlainCast,proto3,oneof" json:"to_plain_cast,omitempty"`
+	// to_pb_cast: converts from target_go_type back to protobuf type
+	// Example: "int64" for time.Duration -> int64
+	// Format: "package.FunctionName" or just "FunctionName" for same package
+	// If empty, direct assignment is used (types must be compatible)
+	ToPbCast      *string `protobuf:"bytes,4,opt,name=to_pb_cast,json=toPbCast,proto3,oneof" json:"to_pb_cast,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -194,6 +205,20 @@ func (x *TypeOverride) GetTargetGoType() *GoIdent {
 		return x.TargetGoType
 	}
 	return nil
+}
+
+func (x *TypeOverride) GetToPlainCast() string {
+	if x != nil && x.ToPlainCast != nil {
+		return *x.ToPlainCast
+	}
+	return ""
+}
+
+func (x *TypeOverride) GetToPbCast() string {
+	if x != nil && x.ToPbCast != nil {
+		return *x.ToPbCast
+	}
+	return ""
 }
 
 type MessageOptions struct {
@@ -623,10 +648,15 @@ const file_goplain_proto_rawDesc = "" +
 	"\x11_target_full_pathB\r\n" +
 	"\v_field_kindB\x14\n" +
 	"\x12_field_cardinalityB\x11\n" +
-	"\x0f_field_type_url\"}\n" +
+	"\x0f_field_type_url\"\xea\x01\n" +
 	"\fTypeOverride\x125\n" +
 	"\bselector\x18\x01 \x01(\v2\x19.goplain.OverrideSelectorR\bselector\x126\n" +
-	"\x0etarget_go_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\ftargetGoType\"\xb4\x01\n" +
+	"\x0etarget_go_type\x18\x02 \x01(\v2\x10.goplain.GoIdentR\ftargetGoType\x12'\n" +
+	"\rto_plain_cast\x18\x03 \x01(\tH\x00R\vtoPlainCast\x88\x01\x01\x12!\n" +
+	"\n" +
+	"to_pb_cast\x18\x04 \x01(\tH\x01R\btoPbCast\x88\x01\x01B\x10\n" +
+	"\x0e_to_plain_castB\r\n" +
+	"\v_to_pb_cast\"\xb4\x01\n" +
 	"\x0eMessageOptions\x12\x1a\n" +
 	"\bgenerate\x18\x01 \x01(\bR\bgenerate\x12\x1d\n" +
 	"\n" +
@@ -711,6 +741,7 @@ func file_goplain_proto_init() {
 		return
 	}
 	file_goplain_proto_msgTypes[1].OneofWrappers = []any{}
+	file_goplain_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -123,16 +123,29 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 	} else if protoIsPointer && !plainIsPointer {
 		// Proto has optional (pointer), plain has value - dereference with nil check
 		gf.P("\tif ", srcField, " != nil {")
-		gf.P("\t\t", dstField, " = *", srcField)
+		if field.ToPlainCast != "" {
+			gf.P("\t\t", dstField, " = ", field.ToPlainCast, "(*", srcField, ")")
+		} else {
+			gf.P("\t\t", dstField, " = *", srcField)
+		}
 		gf.P("\t\t", srcAppend)
 		gf.P("\t}")
 	} else if !protoIsPointer && plainIsPointer {
 		// Proto has value, plain has pointer - take address
-		gf.P("\t", dstField, " = &", srcField)
+		if field.ToPlainCast != "" {
+			gf.P("\t_tmp := ", field.ToPlainCast, "(", srcField, ")")
+			gf.P("\t", dstField, " = &_tmp")
+		} else {
+			gf.P("\t", dstField, " = &", srcField)
+		}
 		gf.P("\t", srcAppend)
 	} else {
-		// Scalar, enum, bytes - direct copy (types match)
-		gf.P("\t", dstField, " = ", srcField)
+		// Scalar, enum, bytes - direct copy (types match) or with cast
+		if field.ToPlainCast != "" {
+			gf.P("\t", dstField, " = ", field.ToPlainCast, "(", srcField, ")")
+		} else {
+			gf.P("\t", dstField, " = ", srcField)
+		}
 		gf.P("\t", srcAppend)
 	}
 }
@@ -324,18 +337,37 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		switch field.GoType.Name {
 		case "string":
 			gf.P("\tif ", srcField, " != \"\" {")
-			gf.P("\t\t", dstField, " = &", srcField)
+			if field.ToPbCast != "" {
+				gf.P("\t\t_tmp := ", field.ToPbCast, "(", srcField, ")")
+				gf.P("\t\t", dstField, " = &_tmp")
+			} else {
+				gf.P("\t\t", dstField, " = &", srcField)
+			}
 			gf.P("\t}")
 		default:
-			gf.P("\t", dstField, " = &", srcField)
+			if field.ToPbCast != "" {
+				gf.P("\t_tmp := ", field.ToPbCast, "(", srcField, ")")
+				gf.P("\t", dstField, " = &_tmp")
+			} else {
+				gf.P("\t", dstField, " = &", srcField)
+			}
 		}
 	} else if !protoIsPointer && plainIsPointer {
 		// Proto wants value, plain has pointer - dereference
 		gf.P("\tif ", srcField, " != nil {")
-		gf.P("\t\t", dstField, " = *", srcField)
+		if field.ToPbCast != "" {
+			gf.P("\t\t", dstField, " = ", field.ToPbCast, "(*", srcField, ")")
+		} else {
+			gf.P("\t\t", dstField, " = *", srcField)
+		}
 		gf.P("\t}")
 	} else {
-		gf.P("\t", dstField, " = ", srcField)
+		// Direct copy or with cast
+		if field.ToPbCast != "" {
+			gf.P("\t", dstField, " = ", field.ToPbCast, "(", srcField, ")")
+		} else {
+			gf.P("\t", dstField, " = ", srcField)
+		}
 	}
 }
 

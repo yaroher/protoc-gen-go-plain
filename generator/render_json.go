@@ -2,6 +2,7 @@ package generator
 
 import (
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // jx package path
@@ -139,9 +140,15 @@ func (g *Generator) generateMarshalJXValue(gf *protogen.GeneratedFile, field *IR
 // generateMarshalJXSingleValue generates encoding for a single non-repeated value
 // isArrayElem indicates if this is called from array iteration (v is value, not pointer)
 func (g *Generator) generateMarshalJXSingleValue(gf *protogen.GeneratedFile, field *IRField, access string, f *protogen.File, indent string) {
+	// If field has ToPbCast, convert value before serializing
+	valueAccess := access
+	if field.ToPbCast != "" {
+		valueAccess = field.ToPbCast + "(" + access + ")"
+	}
+
 	switch field.Kind {
 	case KindScalar:
-		g.generateMarshalJXScalar(gf, field, access, indent)
+		g.generateMarshalJXScalar(gf, field, valueAccess, indent)
 	case KindMessage:
 		// Check if the message type has generate=true (has MarshalJX)
 		hasMarshalJX := false
@@ -188,6 +195,13 @@ func (g *Generator) generateMarshalJXSingleValue(gf *protogen.GeneratedFile, fie
 
 // generateMarshalJXScalar generates encoding for scalar types
 func (g *Generator) generateMarshalJXScalar(gf *protogen.GeneratedFile, field *IRField, access string, indent string) {
+	// If field has ToPbCast, use ScalarKind (original proto type) for encoding
+	// Otherwise use GoType.Name
+	if field.ToPbCast != "" {
+		g.generateMarshalJXScalarByKind(gf, field.ScalarKind, access, indent)
+		return
+	}
+
 	switch field.GoType.Name {
 	case "string":
 		gf.P(indent, "e.Str(", access, ")")
@@ -213,6 +227,33 @@ func (g *Generator) generateMarshalJXScalar(gf *protogen.GeneratedFile, field *I
 		}
 	default:
 		gf.P(indent, "// unknown scalar: ", field.GoType.Name)
+		gf.P(indent, "e.Null()")
+	}
+}
+
+// generateMarshalJXScalarByKind generates encoding based on protoreflect.Kind
+func (g *Generator) generateMarshalJXScalarByKind(gf *protogen.GeneratedFile, kind protoreflect.Kind, access string, indent string) {
+	switch kind {
+	case protoreflect.StringKind:
+		gf.P(indent, "e.Str(", access, ")")
+	case protoreflect.BoolKind:
+		gf.P(indent, "e.Bool(", access, ")")
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		gf.P(indent, "e.Int32(", access, ")")
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		gf.P(indent, "e.Int64(", access, ")")
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		gf.P(indent, "e.UInt32(", access, ")")
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		gf.P(indent, "e.UInt64(", access, ")")
+	case protoreflect.FloatKind:
+		gf.P(indent, "e.Float32(", access, ")")
+	case protoreflect.DoubleKind:
+		gf.P(indent, "e.Float64(", access, ")")
+	case protoreflect.BytesKind:
+		gf.P(indent, "e.Base64(", access, ")")
+	default:
+		gf.P(indent, "// unknown kind: ", kind)
 		gf.P(indent, "e.Null()")
 	}
 }
@@ -415,6 +456,28 @@ func (g *Generator) generateUnmarshalJXSingleValue(gf *protogen.GeneratedFile, f
 func (g *Generator) generateUnmarshalJXScalar(gf *protogen.GeneratedFile, field *IRField, access string, indent string, isArrayElem bool) {
 	var decodeCall, varType string
 
+	// If field has ToPlainCast, decode as original proto type then cast
+	if field.ToPlainCast != "" {
+		decodeCall, varType = g.getDecodeCallByKind(field.ScalarKind)
+		if decodeCall == "" {
+			gf.P(indent, "return d.Skip()")
+			return
+		}
+
+		gf.P(indent, "v, err := ", decodeCall)
+		gf.P(indent, "if err != nil { return err }")
+
+		if isArrayElem {
+			gf.P(indent, access, " = append(", access, ", ", field.ToPlainCast, "(v))")
+		} else if field.GoType.IsPointer {
+			gf.P(indent, "_tmp := ", field.ToPlainCast, "(v)")
+			gf.P(indent, access, " = &_tmp")
+		} else {
+			gf.P(indent, access, " = ", field.ToPlainCast, "(v)")
+		}
+		return
+	}
+
 	switch field.GoType.Name {
 	case "string":
 		decodeCall = "d.Str()"
@@ -467,6 +530,30 @@ func (g *Generator) generateUnmarshalJXScalar(gf *protogen.GeneratedFile, field 
 		gf.P(indent, access, " = &v")
 	} else {
 		gf.P(indent, access, " = v")
+	}
+}
+
+// getDecodeCallByKind returns decoder call and variable type for protoreflect.Kind
+func (g *Generator) getDecodeCallByKind(kind protoreflect.Kind) (string, string) {
+	switch kind {
+	case protoreflect.StringKind:
+		return "d.Str()", "string"
+	case protoreflect.BoolKind:
+		return "d.Bool()", "bool"
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		return "d.Int32()", "int32"
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		return "d.Int64()", "int64"
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		return "d.UInt32()", "uint32"
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		return "d.UInt64()", "uint64"
+	case protoreflect.FloatKind:
+		return "d.Float32()", "float32"
+	case protoreflect.DoubleKind:
+		return "d.Float64()", "float64"
+	default:
+		return "", ""
 	}
 }
 

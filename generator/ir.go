@@ -205,6 +205,14 @@ type IRField struct {
 	// EnumAsInt — сериализовать enum как int
 	EnumAsInt bool
 
+	// Type override casters
+	// ToPlainCast — функция конвертации из protobuf типа в target Go тип
+	// Пример: "time.Duration" или "mypackage.ToMyType"
+	ToPlainCast string
+	// ToPbCast — функция конвертации из target Go типа в protobuf тип
+	// Пример: "int64" или "mypackage.FromMyType"
+	ToPbCast string
+
 	// Comment — комментарий к полю
 	Comment string
 

@@ -762,6 +762,13 @@ func (b *IRBuilder) applyGlobalOverrides(field *protogen.Field, irField *IRField
 				Name:       override.TargetGoType.Name,
 				ImportPath: override.TargetGoType.ImportPath,
 			}
+			// Сохраняем кастеры если они указаны
+			if override.ToPlainCast != nil {
+				irField.ToPlainCast = *override.ToPlainCast
+			}
+			if override.ToPbCast != nil {
+				irField.ToPbCast = *override.ToPbCast
+			}
 			return // применяем только первый совпадающий override
 		}
 	}

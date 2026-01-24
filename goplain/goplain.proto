@@ -23,6 +23,19 @@ message OverrideSelector {
 message TypeOverride {
     OverrideSelector selector = 1;
     GoIdent target_go_type = 2;
+    
+    // Caster functions for type conversion
+    // to_plain_cast: converts from protobuf type to target_go_type
+    // Example: "time.Duration" for int64 -> time.Duration (value is nanoseconds)
+    // Format: "package.FunctionName" or just "FunctionName" for same package
+    // If empty, direct assignment is used (types must be compatible)
+    optional string to_plain_cast = 3;
+    
+    // to_pb_cast: converts from target_go_type back to protobuf type
+    // Example: "int64" for time.Duration -> int64
+    // Format: "package.FunctionName" or just "FunctionName" for same package
+    // If empty, direct assignment is used (types must be compatible)
+    optional string to_pb_cast = 4;
 }
 
 message MessageOptions {
