@@ -150,15 +150,22 @@ func (g *Generator) generateMarshalJXSingleValue(gf *protogen.GeneratedFile, fie
 	case KindScalar:
 		g.generateMarshalJXScalar(gf, field, valueAccess, indent)
 	case KindMessage:
-		// Check if the message type has generate=true (has MarshalJX)
+		// Check if the message type has MarshalJX:
+		// 1. Plain type (generate=true)
+		// 2. Protobuf type when JXPB=true AND it's in the same Go import path
 		hasMarshalJX := false
 		if field.Source != nil && field.Source.Message != nil {
 			msgOpts := g.getMessageOptions(field.Source.Message)
-			hasMarshalJX = msgOpts != nil && msgOpts.Generate
+			isPlainType := msgOpts != nil && msgOpts.Generate
+			// Check if JXPB is enabled and message is in same Go package (has JX generated)
+			msgImportPath := string(field.Source.Message.GoIdent.GoImportPath)
+			fileImportPath := string(f.GoImportPath)
+			isLocalPb := g.Settings.JXPB && msgImportPath == fileImportPath
+			hasMarshalJX = isPlainType || isLocalPb
 		}
 
 		if hasMarshalJX {
-			// Plain type - has MarshalJX
+			// Has MarshalJX method
 			// If access is "v" from array iteration and type is not pointer, need &v
 			if access == "v" && !field.GoType.IsPointer {
 				gf.P(indent, "(&", access, ").MarshalJX(e)")
@@ -376,17 +383,25 @@ func (g *Generator) generateUnmarshalJXSingleValue(gf *protogen.GeneratedFile, f
 	case KindScalar:
 		g.generateUnmarshalJXScalar(gf, field, access, f, indent, isArrayElem)
 	case KindMessage:
-		// Check if the message type has generate=true (has UnmarshalJX)
+		// Check if the message type has UnmarshalJX:
+		// 1. Plain type (generate=true)
+		// 2. Protobuf type when JXPB=true AND it's in the same Go import path
 		hasUnmarshalJX := false
 		if field.Source != nil && field.Source.Message != nil {
 			msgOpts := g.getMessageOptions(field.Source.Message)
-			hasUnmarshalJX = msgOpts != nil && msgOpts.Generate
+			isPlainType := msgOpts != nil && msgOpts.Generate
+			// Check if JXPB is enabled and message is in same Go package (has JX generated)
+			msgImportPath := string(field.Source.Message.GoIdent.GoImportPath)
+			fileImportPath := string(f.GoImportPath)
+			isLocalPb := g.Settings.JXPB && msgImportPath == fileImportPath
+			hasUnmarshalJX = isPlainType || isLocalPb
 		}
 
 		if hasUnmarshalJX {
-			// Plain type - has UnmarshalJX
+			// Has UnmarshalJX method
+			typeName := g.qualifyType(gf, field.GoType, f)
 			if isArrayElem {
-				gf.P(indent, "var v ", field.GoType.Name)
+				gf.P(indent, "var v ", typeName)
 				gf.P(indent, "if err := v.UnmarshalJX(d); err != nil {")
 				gf.P(indent, "\treturn err")
 				gf.P(indent, "}")
@@ -396,7 +411,7 @@ func (g *Generator) generateUnmarshalJXSingleValue(gf *protogen.GeneratedFile, f
 					gf.P(indent, access, " = append(", access, ", v)")
 				}
 			} else if field.GoType.IsPointer {
-				gf.P(indent, access, " = &", field.GoType.Name, "{}")
+				gf.P(indent, access, " = &", typeName, "{}")
 				gf.P(indent, "if err := ", access, ".UnmarshalJX(d); err != nil {")
 				gf.P(indent, "\treturn err")
 				gf.P(indent, "}")

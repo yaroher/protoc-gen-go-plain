@@ -29,7 +29,7 @@ build-test-nda: build .clean-test-nda
 		--go_out=$(CURDIR) \
 		--go_opt=paths=source_relative \
 		--go-plain_out=$(CURDIR) \
-		--go-plain_opt=paths=source_relative,json_jx=true \
+		--go-plain_opt=paths=source_relative,json_jx=true,jx_pb=true \
 		--proto_path=$(CURDIR) \
 		$(NDA_PROTO_FILES)
 	sed -i 's/\\n/\n/g' $(CURDIR)/bin/protolog.txt

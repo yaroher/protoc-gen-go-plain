@@ -9,6 +9,9 @@ import (
 
 type PluginSettings struct {
 	JSONJX bool
+	// JXPB generates MarshalJX/UnmarshalJX methods for original protobuf structs.
+	// This allows nested messages to use fast JX instead of protojson fallback.
+	JXPB bool
 	// EnableCRF enables Collision Resolution Fields.
 	// When true: field name collisions are allowed, CRF fields ({Field}Source) are added
 	// to track the EmPath origin of merged fields.
@@ -37,6 +40,7 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 
 	settings := &PluginSettings{
 		JSONJX: mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
+		JXPB:   mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
 	}
 	return settings, nil
 }
