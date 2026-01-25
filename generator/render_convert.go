@@ -326,6 +326,12 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 				gf.P("\t\t", srcAppend)
 				gf.P("\t}")
 			}
+		} else if field.NeedsCaster {
+			// Message with type override (e.g., Timestamp -> time.Time)
+			gf.P("\tif ", srcField, " != nil {")
+			gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, true))
+			gf.P("\t\t", srcAppend)
+			gf.P("\t}")
 		} else {
 			// Use original protobuf type
 			gf.P("\t", dstField, " = ", srcField)
@@ -591,6 +597,9 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 				gf.P("\t\t", dstField, " = ", srcField, ".IntoPb()")
 				gf.P("\t}")
 			}
+		} else if field.NeedsCaster {
+			// Message with type override (e.g., time.Time -> Timestamp)
+			gf.P("\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, false))
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
 		}
