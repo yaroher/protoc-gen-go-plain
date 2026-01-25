@@ -30,15 +30,34 @@ func (g *Generator) generateConversionMethods(gf *protogen.GeneratedFile, msg *I
 	}
 }
 
-// collectCasterFields returns fields that require casters
+// collectCasterFields returns fields that require casters passed as parameters.
+// Fields with existing casters (pre-defined and imported) are excluded.
 func (g *Generator) collectCasterFields(msg *IRMessage) []*IRField {
 	var result []*IRField
 	for _, field := range msg.Fields {
 		if field.NeedsCaster {
-			result = append(result, field)
+			// Check if there's an existing caster for this field
+			// We need casters for both directions, so check both
+			toPlainCaster := g.FindExistingCaster(field.SourceGoType, field.GoType)
+			toPbCaster := g.FindExistingCaster(field.GoType, field.SourceGoType)
+
+			// Only include if at least one direction doesn't have existing caster
+			if toPlainCaster == nil || toPbCaster == nil {
+				result = append(result, field)
+			}
 		}
 	}
 	return result
+}
+
+// hasExistingCaster checks if field has pre-defined casters for both directions
+func (g *Generator) hasExistingCaster(field *IRField) bool {
+	if !field.NeedsCaster {
+		return false
+	}
+	toPlainCaster := g.FindExistingCaster(field.SourceGoType, field.GoType)
+	toPbCaster := g.FindExistingCaster(field.GoType, field.SourceGoType)
+	return toPlainCaster != nil && toPbCaster != nil
 }
 
 // generateCastersStruct generates struct with caster fields
@@ -96,17 +115,37 @@ func (g *Generator) lowerFirst(s string) string {
 	return strings.ToLower(s[:1]) + s[1:]
 }
 
-// casterCall generates caster call expression based on castersAsStruct flag
-// toPlain=true: for IntoPlain (c.FieldToPlain.Cast or fieldCaster.Cast)
-// toPlain=false: for IntoPb (c.FieldToPb.Cast or fieldCaster.Cast)
-func (g *Generator) casterCall(field *IRField, value string, toPlain bool) string {
+// casterCallWithImport generates caster call and ensures import is added
+func (g *Generator) casterCallWithImport(gf *protogen.GeneratedFile, field *IRField, value string, toPlain bool) string {
+	// Check for existing caster first
+	var existingCaster *ExistingCaster
+	if toPlain {
+		existingCaster = g.FindExistingCaster(field.SourceGoType, field.GoType)
+	} else {
+		existingCaster = g.FindExistingCaster(field.GoType, field.SourceGoType)
+	}
+
+	if existingCaster != nil && existingCaster.CasterIdent.ImportPath != "" {
+		// Use QualifiedGoIdent to ensure import is added
+		ident := protogen.GoIdent{
+			GoName:       existingCaster.CasterIdent.Name,
+			GoImportPath: protogen.GoImportPath(existingCaster.CasterIdent.ImportPath),
+		}
+		qualifiedName := gf.QualifiedGoIdent(ident)
+		if existingCaster.IsFunc {
+			return qualifiedName + "(" + value + ")"
+		}
+		return qualifiedName + ".Cast(" + value + ")"
+	}
+
+	// Fall back to parameter-based casters
 	if g.castersAsStruct {
 		if toPlain {
 			return "c." + field.GoName + "ToPlain.Cast(" + value + ")"
 		}
 		return "c." + field.GoName + "ToPb.Cast(" + value + ")"
 	}
-	// Separate arguments mode - same arg name for both directions
+	// Separate arguments mode
 	return g.lowerFirst(field.GoName) + "Caster.Cast(" + value + ")"
 }
 
@@ -296,7 +335,7 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		// Proto has optional (pointer), plain has value - dereference with nil check
 		gf.P("\tif ", srcField, " != nil {")
 		if field.NeedsCaster {
-			gf.P("\t\t", dstField, " = ", g.casterCall(field, "*"+srcField, true))
+			gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, "*"+srcField, true))
 		} else {
 			gf.P("\t\t", dstField, " = *", srcField)
 		}
@@ -305,7 +344,7 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 	} else if !protoIsPointer && plainIsPointer {
 		// Proto has value, plain has pointer - take address
 		if field.NeedsCaster {
-			gf.P("\t_tmp := ", g.casterCall(field, srcField, true))
+			gf.P("\t_tmp := ", g.casterCallWithImport(gf, field, srcField, true))
 			gf.P("\t", dstField, " = &_tmp")
 		} else {
 			gf.P("\t", dstField, " = &", srcField)
@@ -322,7 +361,7 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 	} else {
 		// Scalar, enum, bytes - direct copy (types match) or with cast
 		if field.NeedsCaster {
-			gf.P("\t", dstField, " = ", g.casterCall(field, srcField, true))
+			gf.P("\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, true))
 		} else if g.needsTypeCast(field) && !field.GoType.IsSlice && field.Kind != KindBytes {
 			// Type override without explicit caster - use simple cast
 			// Skip cast for slice types and bytes - direct assignment works
@@ -561,7 +600,7 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		case "string":
 			gf.P("\tif ", srcField, " != \"\" {")
 			if field.NeedsCaster {
-				gf.P("\t\t_tmp := ", g.casterCall(field, srcField, false))
+				gf.P("\t\t_tmp := ", g.casterCallWithImport(gf, field, srcField, false))
 				gf.P("\t\t", dstField, " = &_tmp")
 			} else {
 				gf.P("\t\t", dstField, " = &", srcField)
@@ -569,7 +608,7 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 			gf.P("\t}")
 		default:
 			if field.NeedsCaster {
-				gf.P("\t_tmp := ", g.casterCall(field, srcField, false))
+				gf.P("\t_tmp := ", g.casterCallWithImport(gf, field, srcField, false))
 				gf.P("\t", dstField, " = &_tmp")
 			} else {
 				gf.P("\t", dstField, " = &", srcField)
@@ -579,7 +618,7 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		// Proto wants value, plain has pointer - dereference
 		gf.P("\tif ", srcField, " != nil {")
 		if field.NeedsCaster {
-			gf.P("\t\t", dstField, " = ", g.casterCall(field, "*"+srcField, false))
+			gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, "*"+srcField, false))
 		} else {
 			gf.P("\t\t", dstField, " = *", srcField)
 		}
@@ -601,7 +640,7 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 	} else {
 		// Direct copy or with cast
 		if field.NeedsCaster {
-			gf.P("\t", dstField, " = ", g.casterCall(field, srcField, false))
+			gf.P("\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, false))
 		} else if g.needsTypeCast(field) && !field.GoType.IsSlice && field.Kind != KindBytes {
 			// Type override without explicit caster - use simple cast to source type
 			// Skip cast for slice types and bytes - direct assignment works

@@ -8,7 +8,11 @@ import (
 )
 
 func Generate(p *protogen.Plugin) error {
-	g, err := generator.NewGenerator(p)
+	settings, err := generator.NewPluginSettingsFromPlugin(p)
+	if err != nil {
+		return err
+	}
+	g, err := generator.NewGenerator(p, settings)
 	if err != nil {
 		return err
 	}

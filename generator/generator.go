@@ -10,12 +10,36 @@ import (
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
+// ExistingCaster describes a pre-defined caster that can be imported and used directly
+// instead of being passed as a parameter to IntoPlain/IntoPb methods.
+type ExistingCaster struct {
+	// SourceType is the source Go type (e.g., "int64", "string")
+	SourceType GoType
+	// TargetType is the target Go type (e.g., "time.Duration", "net.IP")
+	TargetType GoType
+	// CasterIdent is the Go identifier for the caster (variable or function)
+	CasterIdent GoIdent
+	// IsFunc indicates if the caster is a function (true) or a Caster interface (false)
+	// If true: result = CasterIdent(value)
+	// If false: result = CasterIdent.Cast(value)
+	IsFunc bool
+}
+
+// GoIdent represents a Go identifier with import path
+type GoIdent struct {
+	Name       string
+	ImportPath string
+}
+
 type Generator struct {
 	Settings *PluginSettings
 	Plugin   *protogen.Plugin
 	suffix   string
 
 	overrides []*goplain.TypeOverride
+
+	// existingCasters contains pre-defined casters that will be imported and used directly
+	existingCasters []*ExistingCaster
 
 	// castersAsStruct - временное поле для текущего файла
 	castersAsStruct bool
@@ -37,11 +61,35 @@ func WithTypeOverrides(overrides []*goplain.TypeOverride) Option {
 	}
 }
 
-func NewGenerator(p *protogen.Plugin, opts ...Option) (*Generator, error) {
-	settings, err := NewPluginSettingsFromPlugin(p)
-	if err != nil {
-		return nil, err
+// WithExistingCasters sets pre-defined casters that will be imported and used directly.
+// This eliminates the need to pass casters as parameters to IntoPlain/IntoPb methods.
+func WithExistingCasters(casters []*ExistingCaster) Option {
+	return func(g *Generator) error {
+		g.existingCasters = casters
+		return nil
 	}
+}
+
+// AddExistingCaster adds a single existing caster to the generator.
+func (g *Generator) AddExistingCaster(caster *ExistingCaster) {
+	g.existingCasters = append(g.existingCasters, caster)
+}
+
+// FindExistingCaster finds a caster for the given source and target types.
+// Returns nil if no matching caster is found.
+func (g *Generator) FindExistingCaster(sourceType, targetType GoType) *ExistingCaster {
+	for _, c := range g.existingCasters {
+		if c.SourceType.Name == sourceType.Name &&
+			c.SourceType.ImportPath == sourceType.ImportPath &&
+			c.TargetType.Name == targetType.Name &&
+			c.TargetType.ImportPath == targetType.ImportPath {
+			return c
+		}
+	}
+	return nil
+}
+
+func NewGenerator(p *protogen.Plugin, settings *PluginSettings, opts ...Option) (*Generator, error) {
 	g := &Generator{
 		Settings: settings,
 		Plugin:   p,
