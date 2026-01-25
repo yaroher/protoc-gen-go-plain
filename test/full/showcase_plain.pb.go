@@ -4,8 +4,10 @@
 package full
 
 import (
+	json "encoding/json"
 	fmt "fmt"
 	jx "github.com/go-faster/jx"
+	cast "github.com/yaroher/protoc-gen-go-plain/cast"
 	protojson "google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
 	anypb "google.golang.org/protobuf/types/known/anypb"
@@ -16,7 +18,396 @@ import (
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	strconv "strconv"
 	sync "sync"
+	time "time"
 )
+
+type MetricsPlain struct {
+	DurationNs     time.Duration `json:"durationNs"`
+	TimestampUnix  int64         `json:"timestampUnix"`
+	BytesProcessed int64         `json:"bytesProcessed"`
+	RequestsCount  int32         `json:"requestsCount"`
+	SuccessRate    float64       `json:"successRate"`
+	// Src_ contains indices of populated fields for sparse serialization
+	Src_ []uint16 `json:"_src,omitempty"`
+}
+
+// MetricsPlainCasters contains type casters for MetricsPlain
+type MetricsPlainCasters struct {
+	DurationNsToPlain cast.Caster[int64, time.Duration]
+	DurationNsToPb    cast.Caster[time.Duration, int64]
+}
+
+// IntoPlain converts protobuf message to plain struct
+func (pb *Metrics) IntoPlain(c *MetricsPlainCasters) *MetricsPlain {
+	if pb == nil {
+		return nil
+	}
+	p := &MetricsPlain{}
+
+	p.DurationNs = c.DurationNsToPlain.Cast(pb.DurationNs)
+	p.Src_ = append(p.Src_, 0)
+	p.TimestampUnix = pb.TimestampUnix
+	p.Src_ = append(p.Src_, 1)
+	p.BytesProcessed = pb.BytesProcessed
+	p.Src_ = append(p.Src_, 2)
+	p.RequestsCount = pb.RequestsCount
+	p.Src_ = append(p.Src_, 3)
+	p.SuccessRate = pb.SuccessRate
+	p.Src_ = append(p.Src_, 4)
+	return p
+}
+
+// IntoPb converts plain struct to protobuf message
+func (p *MetricsPlain) IntoPb(c *MetricsPlainCasters) *Metrics {
+	if p == nil {
+		return nil
+	}
+	pb := &Metrics{}
+
+	pb.DurationNs = c.DurationNsToPb.Cast(p.DurationNs)
+	pb.TimestampUnix = p.TimestampUnix
+	pb.BytesProcessed = p.BytesProcessed
+	pb.RequestsCount = p.RequestsCount
+	pb.SuccessRate = p.SuccessRate
+	return pb
+}
+
+// MarshalJX encodes MetricsPlain to JSON using jx.Encoder
+func (p *MetricsPlain) MarshalJX(e *jx.Encoder) {
+	if p == nil {
+		e.Null()
+		return
+	}
+
+	e.ObjStart()
+
+	e.FieldStart("durationNs")
+	e.Int64(int64(p.DurationNs))
+	if p.TimestampUnix != 0 {
+		e.FieldStart("timestampUnix")
+		e.Int64(p.TimestampUnix)
+	}
+	if p.BytesProcessed != 0 {
+		e.FieldStart("bytesProcessed")
+		e.Int64(p.BytesProcessed)
+	}
+	if p.RequestsCount != 0 {
+		e.FieldStart("requestsCount")
+		e.Int32(p.RequestsCount)
+	}
+	if p.SuccessRate != 0 {
+		e.FieldStart("successRate")
+		e.Float64(p.SuccessRate)
+	}
+	e.ObjEnd()
+}
+
+// MarshalJSON implements json.Marshaler using jx
+func (p *MetricsPlain) MarshalJSON() ([]byte, error) {
+	e := jx.GetEncoder()
+	defer jx.PutEncoder(e)
+	p.MarshalJX(e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJX decodes MetricsPlain from JSON using jx.Decoder
+// Populates Src_ with indices of decoded fields
+func (p *MetricsPlain) UnmarshalJX(d *jx.Decoder) error {
+	if p == nil {
+		return nil
+	}
+
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "_src":
+			return d.Arr(func(d *jx.Decoder) error {
+				v, err := d.UInt16()
+				if err != nil {
+					return err
+				}
+				p.Src_ = append(p.Src_, v)
+				return nil
+			})
+		case "durationNs":
+			v, err := d.Int64()
+			if err != nil {
+				return err
+			}
+			p.DurationNs = time.Duration(v)
+			p.Src_ = append(p.Src_, 0)
+		case "timestampUnix":
+			v, err := d.Int64()
+			if err != nil {
+				return err
+			}
+			p.TimestampUnix = v
+			p.Src_ = append(p.Src_, 1)
+		case "bytesProcessed":
+			v, err := d.Int64()
+			if err != nil {
+				return err
+			}
+			p.BytesProcessed = v
+			p.Src_ = append(p.Src_, 2)
+		case "requestsCount":
+			v, err := d.Int32()
+			if err != nil {
+				return err
+			}
+			p.RequestsCount = v
+			p.Src_ = append(p.Src_, 3)
+		case "successRate":
+			v, err := d.Float64()
+			if err != nil {
+				return err
+			}
+			p.SuccessRate = v
+			p.Src_ = append(p.Src_, 4)
+		default:
+			return d.Skip()
+		}
+		return nil
+	})
+}
+
+// UnmarshalJSON implements json.Unmarshaler using jx
+func (p *MetricsPlain) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return p.UnmarshalJX(d)
+}
+
+// metricsPlainPool is a sync.Pool for MetricsPlain objects
+var metricsPlainPool = sync.Pool{
+	New: func() interface{} {
+		return &MetricsPlain{
+			Src_: make([]uint16, 0, 32),
+		}
+	},
+}
+
+// GetMetricsPlain returns a MetricsPlain from the pool
+func GetMetricsPlain() *MetricsPlain {
+	return metricsPlainPool.Get().(*MetricsPlain)
+}
+
+// PutMetricsPlain returns a MetricsPlain to the pool after resetting it
+func PutMetricsPlain(p *MetricsPlain) {
+	if p == nil {
+		return
+	}
+	p.Reset()
+	metricsPlainPool.Put(p)
+}
+
+// Reset clears all fields in MetricsPlain for reuse
+func (p *MetricsPlain) Reset() {
+	if p == nil {
+		return
+	}
+
+	p.Src_ = p.Src_[:0]
+
+	p.DurationNs = 0
+	p.TimestampUnix = 0
+	p.BytesProcessed = 0
+	p.RequestsCount = 0
+	p.SuccessRate = 0
+}
+
+type CustomTypesPlain struct {
+	RawJson json.RawMessage `json:"rawJson"`
+	Name    string          `json:"name"`
+	Count   int64           `json:"count"`
+	Label   string          `json:"label"` // origin: type_alias, empath: label
+	// Src_ contains indices of populated fields for sparse serialization
+	Src_ []uint16 `json:"_src,omitempty"`
+}
+
+// IntoPlain converts protobuf message to plain struct
+func (pb *CustomTypes) IntoPlain() *CustomTypesPlain {
+	if pb == nil {
+		return nil
+	}
+	p := &CustomTypesPlain{}
+
+	p.RawJson = json.RawMessage(pb.RawJson)
+	p.Src_ = append(p.Src_, 0)
+	p.Name = pb.Name
+	p.Src_ = append(p.Src_, 1)
+	p.Count = pb.Count
+	p.Src_ = append(p.Src_, 2)
+	// Label type alias from label
+	if pb.GetLabel() != nil {
+		p.Label = pb.GetLabel().GetValue()
+		p.Src_ = append(p.Src_, 3)
+	}
+	return p
+}
+
+// IntoPb converts plain struct to protobuf message
+func (p *CustomTypesPlain) IntoPb() *CustomTypes {
+	if p == nil {
+		return nil
+	}
+	pb := &CustomTypes{}
+
+	pb.RawJson = []byte(p.RawJson)
+	pb.Name = p.Name
+	pb.Count = p.Count
+	// Label type alias -> label
+	if p.Label != "" {
+		pb.Label = &MyString{Value: p.Label}
+	}
+	return pb
+}
+
+// IntoPlainReuse converts protobuf message to existing plain struct (for pool usage)
+func (pb *CustomTypes) IntoPlainReuse(p *CustomTypesPlain) {
+	if pb == nil || p == nil {
+		return
+	}
+	// Reset before filling
+	p.Reset()
+
+	p.RawJson = json.RawMessage(pb.RawJson)
+	p.Src_ = append(p.Src_, 0)
+	p.Name = pb.Name
+	p.Src_ = append(p.Src_, 1)
+	p.Count = pb.Count
+	p.Src_ = append(p.Src_, 2)
+	// Label type alias from label
+	if pb.GetLabel() != nil {
+		p.Label = pb.GetLabel().GetValue()
+		p.Src_ = append(p.Src_, 3)
+	}
+}
+
+// MarshalJX encodes CustomTypesPlain to JSON using jx.Encoder
+func (p *CustomTypesPlain) MarshalJX(e *jx.Encoder) {
+	if p == nil {
+		e.Null()
+		return
+	}
+
+	e.ObjStart()
+
+	e.FieldStart("rawJson")
+	// unknown scalar: RawMessage
+	e.Null()
+	if p.Name != "" {
+		e.FieldStart("name")
+		e.Str(p.Name)
+	}
+	if p.Count != 0 {
+		e.FieldStart("count")
+		e.Int64(p.Count)
+	}
+	if p.Label != "" {
+		e.FieldStart("label")
+		e.Str(p.Label)
+	}
+	e.ObjEnd()
+}
+
+// MarshalJSON implements json.Marshaler using jx
+func (p *CustomTypesPlain) MarshalJSON() ([]byte, error) {
+	e := jx.GetEncoder()
+	defer jx.PutEncoder(e)
+	p.MarshalJX(e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJX decodes CustomTypesPlain from JSON using jx.Decoder
+// Populates Src_ with indices of decoded fields
+func (p *CustomTypesPlain) UnmarshalJX(d *jx.Decoder) error {
+	if p == nil {
+		return nil
+	}
+
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "_src":
+			return d.Arr(func(d *jx.Decoder) error {
+				v, err := d.UInt16()
+				if err != nil {
+					return err
+				}
+				p.Src_ = append(p.Src_, v)
+				return nil
+			})
+		case "rawJson":
+			return d.Skip()
+			p.Src_ = append(p.Src_, 0)
+		case "name":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			p.Name = v
+			p.Src_ = append(p.Src_, 1)
+		case "count":
+			v, err := d.Int64()
+			if err != nil {
+				return err
+			}
+			p.Count = v
+			p.Src_ = append(p.Src_, 2)
+		case "label":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			p.Label = v
+			p.Src_ = append(p.Src_, 3)
+		default:
+			return d.Skip()
+		}
+		return nil
+	})
+}
+
+// UnmarshalJSON implements json.Unmarshaler using jx
+func (p *CustomTypesPlain) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return p.UnmarshalJX(d)
+}
+
+// customTypesPlainPool is a sync.Pool for CustomTypesPlain objects
+var customTypesPlainPool = sync.Pool{
+	New: func() interface{} {
+		return &CustomTypesPlain{
+			Src_: make([]uint16, 0, 32),
+		}
+	},
+}
+
+// GetCustomTypesPlain returns a CustomTypesPlain from the pool
+func GetCustomTypesPlain() *CustomTypesPlain {
+	return customTypesPlainPool.Get().(*CustomTypesPlain)
+}
+
+// PutCustomTypesPlain returns a CustomTypesPlain to the pool after resetting it
+func PutCustomTypesPlain(p *CustomTypesPlain) {
+	if p == nil {
+		return
+	}
+	p.Reset()
+	customTypesPlainPool.Put(p)
+}
+
+// Reset clears all fields in CustomTypesPlain for reuse
+func (p *CustomTypesPlain) Reset() {
+	if p == nil {
+		return
+	}
+
+	p.Src_ = p.Src_[:0]
+
+	p.RawJson = nil
+	p.Name = ""
+	p.Count = 0
+	p.Label = ""
+}
 
 type DocumentPlain struct {
 	Id                              string            `json:"id"`

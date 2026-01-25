@@ -99,13 +99,19 @@ func (g *Generator) generateFieldReset(gf *protogen.GeneratedFile, field *IRFiel
 			gf.P("\t", fieldAccess, " = false")
 		case "int32", "int64", "uint32", "uint64", "float32", "float64", "int", "uint":
 			gf.P("\t", fieldAccess, " = 0")
-		case "[]byte":
+		case "[]byte", "RawMessage": // RawMessage is []byte alias
 			gf.P("\t", fieldAccess, " = nil")
+		case "Duration", "Time": // time package types
+			gf.P("\t", fieldAccess, " = 0")
 		default:
 			// For custom types (enums, time.Duration, etc.) use zero value
 			if field.Kind == KindEnum {
 				gf.P("\t", fieldAccess, " = 0")
 			} else if field.Kind == KindMessage {
+				gf.P("\t", fieldAccess, " = nil")
+			} else if field.GoType.ImportPath != "" {
+				// Custom types from external packages - use nil for slice-like types
+				// For others, use zero value declaration
 				gf.P("\t", fieldAccess, " = nil")
 			} else {
 				// Most custom types (like time.Duration) are numeric under the hood

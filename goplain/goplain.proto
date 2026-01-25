@@ -72,11 +72,6 @@ message MessageOptions {
 message FileOptions {
     repeated TypeOverride go_types_overrides = 1;
     repeated google.protobuf.Type virtual_types = 2;
-    
-    // How to pass casters to IntoPlain/IntoPb methods:
-    // - true (default): pass as struct parameter, e.g. IntoPlain(c *MsgCasters)
-    // - false: pass as separate arguments, e.g. IntoPlain(fieldACaster cast.Caster[A,B], ...)
-    bool casters_as_struct = 3;
 }
 
 extend google.protobuf.FileOptions {

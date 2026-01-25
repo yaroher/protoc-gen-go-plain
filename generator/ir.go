@@ -80,8 +80,6 @@ type IRFile struct {
 	Messages []*IRMessage
 	// Imports — необходимые импорты для Go
 	Imports []GoImport
-	// CastersAsStruct — передавать кастеры как структуру (true) или как отдельные аргументы (false)
-	CastersAsStruct bool
 }
 
 // GoImport представляет Go-импорт

@@ -299,12 +299,8 @@ type FileOptions struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	GoTypesOverrides []*TypeOverride        `protobuf:"bytes,1,rep,name=go_types_overrides,json=goTypesOverrides,proto3" json:"go_types_overrides,omitempty"`
 	VirtualTypes     []*typepb.Type         `protobuf:"bytes,2,rep,name=virtual_types,json=virtualTypes,proto3" json:"virtual_types,omitempty"`
-	// How to pass casters to IntoPlain/IntoPb methods:
-	// - true (default): pass as struct parameter, e.g. IntoPlain(c *MsgCasters)
-	// - false: pass as separate arguments, e.g. IntoPlain(fieldACaster cast.Caster[A,B], ...)
-	CastersAsStruct bool `protobuf:"varint,3,opt,name=casters_as_struct,json=castersAsStruct,proto3" json:"casters_as_struct,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *FileOptions) Reset() {
@@ -349,13 +345,6 @@ func (x *FileOptions) GetVirtualTypes() []*typepb.Type {
 		return x.VirtualTypes
 	}
 	return nil
-}
-
-func (x *FileOptions) GetCastersAsStruct() bool {
-	if x != nil {
-		return x.CastersAsStruct
-	}
-	return false
 }
 
 type FieldOptions struct {
@@ -643,11 +632,10 @@ const file_goplain_proto_rawDesc = "" +
 	"\n" +
 	"type_alias\x18\x02 \x01(\bR\ttypeAlias\x12(\n" +
 	"\x10type_alias_field\x18\x03 \x01(\tR\x0etypeAliasField\x12=\n" +
-	"\x0evirtual_fields\x18\x04 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"\xba\x01\n" +
+	"\x0evirtual_fields\x18\x04 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"\x8e\x01\n" +
 	"\vFileOptions\x12C\n" +
 	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\x12:\n" +
-	"\rvirtual_types\x18\x02 \x03(\v2\x15.google.protobuf.TypeR\fvirtualTypes\x12*\n" +
-	"\x11casters_as_struct\x18\x03 \x01(\bR\x0fcastersAsStruct\"\xeb\x01\n" +
+	"\rvirtual_types\x18\x02 \x03(\v2\x15.google.protobuf.TypeR\fvirtualTypes\"\xeb\x01\n" +
 	"\fFieldOptions\x125\n" +
 	"\roverride_type\x18\x01 \x01(\v2\x10.goplain.GoIdentR\foverrideType\x12\x1c\n" +
 	"\tserialize\x18\x02 \x01(\bR\tserialize\x12\x14\n" +

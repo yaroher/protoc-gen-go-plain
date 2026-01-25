@@ -19,10 +19,10 @@ type PluginSettings struct {
 	// GeneratePool generates sync.Pool, Reset(), Get/Put methods for Plain structs.
 	// Enables zero-allocation reuse of Plain objects in hot paths.
 	GeneratePool bool
-	// EnableCRF enables Collision Resolution Fields.
-	// When true: field name collisions are allowed, CRF fields ({Field}Source) are added
-	// to track the EmPath origin of merged fields.
-	// When false (default): collisions cause generation error.
+	// CastersAsStruct controls how casters are passed to IntoPlain/IntoPb methods:
+	// - true (default): pass as struct parameter, e.g. IntoPlain(c *MsgCasters)
+	// - false: pass as separate arguments, e.g. IntoPlain(fieldACaster cast.Caster[A,B], ...)
+	CastersAsStruct bool
 }
 
 func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue string) string {
@@ -46,10 +46,11 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{
-		JSONJX:       mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
-		JXPB:         mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
-		SparseJSON:   mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
-		GeneratePool: mapGetOrDefault(paramsMap, "pool", "false") == "true",
+		JSONJX:          mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
+		JXPB:            mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
+		SparseJSON:      mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
+		GeneratePool:    mapGetOrDefault(paramsMap, "pool", "false") == "true",
+		CastersAsStruct: mapGetOrDefault(paramsMap, "casters_as_struct", "true") == "true", // default true
 	}
 	return settings, nil
 }

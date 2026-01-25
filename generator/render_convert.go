@@ -15,15 +15,14 @@ func (g *Generator) generateConversionMethods(gf *protogen.GeneratedFile, msg *I
 	// Check if message has fields requiring casters
 	casterFields := g.collectCasterFields(msg)
 	hasCasters := len(casterFields) > 0
-	castersAsStruct := irFile.CastersAsStruct
 
 	// Generate Casters struct if needed (only when castersAsStruct=true)
-	if hasCasters && castersAsStruct {
+	if hasCasters && g.castersAsStruct {
 		g.generateCastersStruct(gf, msg, casterFields, f)
 	}
 
-	g.generateIntoPlain(gf, msg, f, casterFields, castersAsStruct)
-	g.generateIntoPb(gf, msg, f, casterFields, castersAsStruct)
+	g.generateIntoPlain(gf, msg, f, casterFields, g.castersAsStruct)
+	g.generateIntoPb(gf, msg, f, casterFields, g.castersAsStruct)
 
 	// Generate IntoPlainReuse for pool usage (only when pool is enabled and no casters)
 	if g.Settings.GeneratePool && !hasCasters {
@@ -327,7 +326,8 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		} else if g.needsTypeCast(field) && !field.GoType.IsSlice && field.Kind != KindBytes {
 			// Type override without explicit caster - use simple cast
 			// Skip cast for slice types and bytes - direct assignment works
-			gf.P("\t", dstField, " = ", field.GoType.Name, "(", srcField, ")")
+			typeStr := g.qualifyType(gf, field.GoType, f)
+			gf.P("\t", dstField, " = ", typeStr, "(", srcField, ")")
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
 		}

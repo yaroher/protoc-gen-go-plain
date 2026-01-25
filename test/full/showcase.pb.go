@@ -300,7 +300,7 @@ func (x Config_NestedEnum) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Config_NestedEnum.Descriptor instead.
 func (Config_NestedEnum) EnumDescriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{25, 0}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{27, 0}
 }
 
 type ComplexNested_InnerEnum int32
@@ -349,7 +349,7 @@ func (x ComplexNested_InnerEnum) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ComplexNested_InnerEnum.Descriptor instead.
 func (ComplexNested_InnerEnum) EnumDescriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{37, 0}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{39, 0}
 }
 
 // StringValue will be unwrapped to string when used
@@ -1001,10 +1001,11 @@ func (x *Level1) GetMeta() *Metadata {
 
 type Metrics struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	DurationNs     int64                  `protobuf:"varint,1,opt,name=duration_ns,json=durationNs,proto3" json:"duration_ns,omitempty"` // Will be time.Duration in Plain
-	BytesProcessed int64                  `protobuf:"varint,2,opt,name=bytes_processed,json=bytesProcessed,proto3" json:"bytes_processed,omitempty"`
-	RequestsCount  int32                  `protobuf:"varint,3,opt,name=requests_count,json=requestsCount,proto3" json:"requests_count,omitempty"`
-	SuccessRate    float64                `protobuf:"fixed64,4,opt,name=success_rate,json=successRate,proto3" json:"success_rate,omitempty"`
+	DurationNs     int64                  `protobuf:"varint,1,opt,name=duration_ns,json=durationNs,proto3" json:"duration_ns,omitempty"`          // Will be time.Duration in Plain (via go_types_overrides)
+	TimestampUnix  int64                  `protobuf:"varint,2,opt,name=timestamp_unix,json=timestampUnix,proto3" json:"timestamp_unix,omitempty"` // Regular int64 (unix timestamp)
+	BytesProcessed int64                  `protobuf:"varint,3,opt,name=bytes_processed,json=bytesProcessed,proto3" json:"bytes_processed,omitempty"`
+	RequestsCount  int32                  `protobuf:"varint,4,opt,name=requests_count,json=requestsCount,proto3" json:"requests_count,omitempty"`
+	SuccessRate    float64                `protobuf:"fixed64,5,opt,name=success_rate,json=successRate,proto3" json:"success_rate,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1046,6 +1047,13 @@ func (x *Metrics) GetDurationNs() int64 {
 	return 0
 }
 
+func (x *Metrics) GetTimestampUnix() int64 {
+	if x != nil {
+		return x.TimestampUnix
+	}
+	return 0
+}
+
 func (x *Metrics) GetBytesProcessed() int64 {
 	if x != nil {
 		return x.BytesProcessed
@@ -1067,6 +1075,123 @@ func (x *Metrics) GetSuccessRate() float64 {
 	return 0
 }
 
+// Type alias for custom string type
+type MyString struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MyString) Reset() {
+	*x = MyString{}
+	mi := &file_test_full_showcase_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MyString) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MyString) ProtoMessage() {}
+
+func (x *MyString) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_showcase_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MyString.ProtoReflect.Descriptor instead.
+func (*MyString) Descriptor() ([]byte, []int) {
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *MyString) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type CustomTypes struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Field-level type override: bytes -> json.RawMessage (compatible types)
+	// RawMessage is []byte under the hood, so no caster needed
+	RawJson []byte `protobuf:"bytes,1,opt,name=raw_json,json=rawJson,proto3" json:"raw_json,omitempty"`
+	// Regular fields for comparison
+	Name  string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Count int64  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	// Using type alias message
+	Label         *MyString `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CustomTypes) Reset() {
+	*x = CustomTypes{}
+	mi := &file_test_full_showcase_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CustomTypes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CustomTypes) ProtoMessage() {}
+
+func (x *CustomTypes) ProtoReflect() protoreflect.Message {
+	mi := &file_test_full_showcase_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CustomTypes.ProtoReflect.Descriptor instead.
+func (*CustomTypes) Descriptor() ([]byte, []int) {
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *CustomTypes) GetRawJson() []byte {
+	if x != nil {
+		return x.RawJson
+	}
+	return nil
+}
+
+func (x *CustomTypes) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CustomTypes) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *CustomTypes) GetLabel() *MyString {
+	if x != nil {
+		return x.Label
+	}
+	return nil
+}
+
 type TextContent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
@@ -1077,7 +1202,7 @@ type TextContent struct {
 
 func (x *TextContent) Reset() {
 	*x = TextContent{}
-	mi := &file_test_full_showcase_proto_msgTypes[12]
+	mi := &file_test_full_showcase_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1089,7 +1214,7 @@ func (x *TextContent) String() string {
 func (*TextContent) ProtoMessage() {}
 
 func (x *TextContent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[12]
+	mi := &file_test_full_showcase_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1102,7 +1227,7 @@ func (x *TextContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextContent.ProtoReflect.Descriptor instead.
 func (*TextContent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{12}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *TextContent) GetText() string {
@@ -1131,7 +1256,7 @@ type ImageContent struct {
 
 func (x *ImageContent) Reset() {
 	*x = ImageContent{}
-	mi := &file_test_full_showcase_proto_msgTypes[13]
+	mi := &file_test_full_showcase_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1143,7 +1268,7 @@ func (x *ImageContent) String() string {
 func (*ImageContent) ProtoMessage() {}
 
 func (x *ImageContent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[13]
+	mi := &file_test_full_showcase_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1156,7 +1281,7 @@ func (x *ImageContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageContent.ProtoReflect.Descriptor instead.
 func (*ImageContent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{13}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ImageContent) GetUrl() string {
@@ -1198,7 +1323,7 @@ type VideoContent struct {
 
 func (x *VideoContent) Reset() {
 	*x = VideoContent{}
-	mi := &file_test_full_showcase_proto_msgTypes[14]
+	mi := &file_test_full_showcase_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1210,7 +1335,7 @@ func (x *VideoContent) String() string {
 func (*VideoContent) ProtoMessage() {}
 
 func (x *VideoContent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[14]
+	mi := &file_test_full_showcase_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1223,7 +1348,7 @@ func (x *VideoContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VideoContent.ProtoReflect.Descriptor instead.
 func (*VideoContent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{14}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *VideoContent) GetUrl() string {
@@ -1258,7 +1383,7 @@ type CodeContent struct {
 
 func (x *CodeContent) Reset() {
 	*x = CodeContent{}
-	mi := &file_test_full_showcase_proto_msgTypes[15]
+	mi := &file_test_full_showcase_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1270,7 +1395,7 @@ func (x *CodeContent) String() string {
 func (*CodeContent) ProtoMessage() {}
 
 func (x *CodeContent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[15]
+	mi := &file_test_full_showcase_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1283,7 +1408,7 @@ func (x *CodeContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CodeContent.ProtoReflect.Descriptor instead.
 func (*CodeContent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{15}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CodeContent) GetCode() string {
@@ -1317,7 +1442,7 @@ type TableContent struct {
 
 func (x *TableContent) Reset() {
 	*x = TableContent{}
-	mi := &file_test_full_showcase_proto_msgTypes[16]
+	mi := &file_test_full_showcase_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1329,7 +1454,7 @@ func (x *TableContent) String() string {
 func (*TableContent) ProtoMessage() {}
 
 func (x *TableContent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[16]
+	mi := &file_test_full_showcase_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1342,7 +1467,7 @@ func (x *TableContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TableContent.ProtoReflect.Descriptor instead.
 func (*TableContent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{16}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *TableContent) GetHeaders() []string {
@@ -1408,7 +1533,7 @@ type Document struct {
 
 func (x *Document) Reset() {
 	*x = Document{}
-	mi := &file_test_full_showcase_proto_msgTypes[17]
+	mi := &file_test_full_showcase_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1420,7 +1545,7 @@ func (x *Document) String() string {
 func (*Document) ProtoMessage() {}
 
 func (x *Document) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[17]
+	mi := &file_test_full_showcase_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1433,7 +1558,7 @@ func (x *Document) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Document.ProtoReflect.Descriptor instead.
 func (*Document) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{17}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Document) GetId() string {
@@ -1715,7 +1840,7 @@ type TreeNode struct {
 
 func (x *TreeNode) Reset() {
 	*x = TreeNode{}
-	mi := &file_test_full_showcase_proto_msgTypes[18]
+	mi := &file_test_full_showcase_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1727,7 +1852,7 @@ func (x *TreeNode) String() string {
 func (*TreeNode) ProtoMessage() {}
 
 func (x *TreeNode) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[18]
+	mi := &file_test_full_showcase_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1740,7 +1865,7 @@ func (x *TreeNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TreeNode.ProtoReflect.Descriptor instead.
 func (*TreeNode) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{18}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *TreeNode) GetId() string {
@@ -1852,7 +1977,7 @@ type UserCreatedEvent struct {
 
 func (x *UserCreatedEvent) Reset() {
 	*x = UserCreatedEvent{}
-	mi := &file_test_full_showcase_proto_msgTypes[19]
+	mi := &file_test_full_showcase_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1864,7 +1989,7 @@ func (x *UserCreatedEvent) String() string {
 func (*UserCreatedEvent) ProtoMessage() {}
 
 func (x *UserCreatedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[19]
+	mi := &file_test_full_showcase_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1877,7 +2002,7 @@ func (x *UserCreatedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserCreatedEvent.ProtoReflect.Descriptor instead.
 func (*UserCreatedEvent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{19}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *UserCreatedEvent) GetUserId() string {
@@ -1911,7 +2036,7 @@ type UserUpdatedEvent struct {
 
 func (x *UserUpdatedEvent) Reset() {
 	*x = UserUpdatedEvent{}
-	mi := &file_test_full_showcase_proto_msgTypes[20]
+	mi := &file_test_full_showcase_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1923,7 +2048,7 @@ func (x *UserUpdatedEvent) String() string {
 func (*UserUpdatedEvent) ProtoMessage() {}
 
 func (x *UserUpdatedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[20]
+	mi := &file_test_full_showcase_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1936,7 +2061,7 @@ func (x *UserUpdatedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserUpdatedEvent.ProtoReflect.Descriptor instead.
 func (*UserUpdatedEvent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{20}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *UserUpdatedEvent) GetUserId() string {
@@ -1963,7 +2088,7 @@ type UserDeletedEvent struct {
 
 func (x *UserDeletedEvent) Reset() {
 	*x = UserDeletedEvent{}
-	mi := &file_test_full_showcase_proto_msgTypes[21]
+	mi := &file_test_full_showcase_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1975,7 +2100,7 @@ func (x *UserDeletedEvent) String() string {
 func (*UserDeletedEvent) ProtoMessage() {}
 
 func (x *UserDeletedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[21]
+	mi := &file_test_full_showcase_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1988,7 +2113,7 @@ func (x *UserDeletedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserDeletedEvent.ProtoReflect.Descriptor instead.
 func (*UserDeletedEvent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{21}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *UserDeletedEvent) GetUserId() string {
@@ -2017,7 +2142,7 @@ type OrderCreatedEvent struct {
 
 func (x *OrderCreatedEvent) Reset() {
 	*x = OrderCreatedEvent{}
-	mi := &file_test_full_showcase_proto_msgTypes[22]
+	mi := &file_test_full_showcase_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2029,7 +2154,7 @@ func (x *OrderCreatedEvent) String() string {
 func (*OrderCreatedEvent) ProtoMessage() {}
 
 func (x *OrderCreatedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[22]
+	mi := &file_test_full_showcase_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2042,7 +2167,7 @@ func (x *OrderCreatedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderCreatedEvent.ProtoReflect.Descriptor instead.
 func (*OrderCreatedEvent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{22}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *OrderCreatedEvent) GetOrderId() string {
@@ -2083,7 +2208,7 @@ type OrderCompletedEvent struct {
 
 func (x *OrderCompletedEvent) Reset() {
 	*x = OrderCompletedEvent{}
-	mi := &file_test_full_showcase_proto_msgTypes[23]
+	mi := &file_test_full_showcase_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2095,7 +2220,7 @@ func (x *OrderCompletedEvent) String() string {
 func (*OrderCompletedEvent) ProtoMessage() {}
 
 func (x *OrderCompletedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[23]
+	mi := &file_test_full_showcase_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2108,7 +2233,7 @@ func (x *OrderCompletedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderCompletedEvent.ProtoReflect.Descriptor instead.
 func (*OrderCompletedEvent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{23}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *OrderCompletedEvent) GetOrderId() string {
@@ -2150,7 +2275,7 @@ type Event struct {
 
 func (x *Event) Reset() {
 	*x = Event{}
-	mi := &file_test_full_showcase_proto_msgTypes[24]
+	mi := &file_test_full_showcase_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2162,7 +2287,7 @@ func (x *Event) String() string {
 func (*Event) ProtoMessage() {}
 
 func (x *Event) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[24]
+	mi := &file_test_full_showcase_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2175,7 +2300,7 @@ func (x *Event) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Event.ProtoReflect.Descriptor instead.
 func (*Event) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{24}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *Event) GetEventId() string {
@@ -2373,7 +2498,7 @@ type Config struct {
 
 func (x *Config) Reset() {
 	*x = Config{}
-	mi := &file_test_full_showcase_proto_msgTypes[25]
+	mi := &file_test_full_showcase_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2385,7 +2510,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[25]
+	mi := &file_test_full_showcase_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2398,7 +2523,7 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config.ProtoReflect.Descriptor instead.
 func (*Config) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{25}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *Config) GetDoubleVal() float64 {
@@ -2843,7 +2968,7 @@ type WellKnownTypes struct {
 
 func (x *WellKnownTypes) Reset() {
 	*x = WellKnownTypes{}
-	mi := &file_test_full_showcase_proto_msgTypes[26]
+	mi := &file_test_full_showcase_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2855,7 +2980,7 @@ func (x *WellKnownTypes) String() string {
 func (*WellKnownTypes) ProtoMessage() {}
 
 func (x *WellKnownTypes) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[26]
+	mi := &file_test_full_showcase_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2868,7 +2993,7 @@ func (x *WellKnownTypes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WellKnownTypes.ProtoReflect.Descriptor instead.
 func (*WellKnownTypes) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{26}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *WellKnownTypes) GetCreatedAt() *timestamppb.Timestamp {
@@ -3064,7 +3189,7 @@ type MapShowcase struct {
 
 func (x *MapShowcase) Reset() {
 	*x = MapShowcase{}
-	mi := &file_test_full_showcase_proto_msgTypes[27]
+	mi := &file_test_full_showcase_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3076,7 +3201,7 @@ func (x *MapShowcase) String() string {
 func (*MapShowcase) ProtoMessage() {}
 
 func (x *MapShowcase) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[27]
+	mi := &file_test_full_showcase_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3089,7 +3214,7 @@ func (x *MapShowcase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapShowcase.ProtoReflect.Descriptor instead.
 func (*MapShowcase) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{27}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *MapShowcase) GetStrStr() map[string]string {
@@ -3305,7 +3430,7 @@ type OptionalShowcase struct {
 
 func (x *OptionalShowcase) Reset() {
 	*x = OptionalShowcase{}
-	mi := &file_test_full_showcase_proto_msgTypes[28]
+	mi := &file_test_full_showcase_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3317,7 +3442,7 @@ func (x *OptionalShowcase) String() string {
 func (*OptionalShowcase) ProtoMessage() {}
 
 func (x *OptionalShowcase) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[28]
+	mi := &file_test_full_showcase_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3330,7 +3455,7 @@ func (x *OptionalShowcase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OptionalShowcase.ProtoReflect.Descriptor instead.
 func (*OptionalShowcase) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{28}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *OptionalShowcase) GetOptDouble() float64 {
@@ -3529,7 +3654,7 @@ type OneofShowcase struct {
 
 func (x *OneofShowcase) Reset() {
 	*x = OneofShowcase{}
-	mi := &file_test_full_showcase_proto_msgTypes[29]
+	mi := &file_test_full_showcase_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3541,7 +3666,7 @@ func (x *OneofShowcase) String() string {
 func (*OneofShowcase) ProtoMessage() {}
 
 func (x *OneofShowcase) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[29]
+	mi := &file_test_full_showcase_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3554,7 +3679,7 @@ func (x *OneofShowcase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OneofShowcase.ProtoReflect.Descriptor instead.
 func (*OneofShowcase) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{29}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *OneofShowcase) GetId() string {
@@ -3928,7 +4053,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_test_full_showcase_proto_msgTypes[30]
+	mi := &file_test_full_showcase_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3940,7 +4065,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[30]
+	mi := &file_test_full_showcase_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3953,7 +4078,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{30}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *Heartbeat) GetTimestamp() int64 {
@@ -3996,7 +4121,7 @@ type ProcessStarted struct {
 
 func (x *ProcessStarted) Reset() {
 	*x = ProcessStarted{}
-	mi := &file_test_full_showcase_proto_msgTypes[31]
+	mi := &file_test_full_showcase_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4008,7 +4133,7 @@ func (x *ProcessStarted) String() string {
 func (*ProcessStarted) ProtoMessage() {}
 
 func (x *ProcessStarted) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[31]
+	mi := &file_test_full_showcase_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4021,7 +4146,7 @@ func (x *ProcessStarted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessStarted.ProtoReflect.Descriptor instead.
 func (*ProcessStarted) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{31}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ProcessStarted) GetProcessId() string {
@@ -4064,7 +4189,7 @@ type ProcessExited struct {
 
 func (x *ProcessExited) Reset() {
 	*x = ProcessExited{}
-	mi := &file_test_full_showcase_proto_msgTypes[32]
+	mi := &file_test_full_showcase_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4076,7 +4201,7 @@ func (x *ProcessExited) String() string {
 func (*ProcessExited) ProtoMessage() {}
 
 func (x *ProcessExited) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[32]
+	mi := &file_test_full_showcase_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4089,7 +4214,7 @@ func (x *ProcessExited) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessExited.ProtoReflect.Descriptor instead.
 func (*ProcessExited) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{32}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ProcessExited) GetProcessId() string {
@@ -4134,7 +4259,7 @@ type NetworkEvent struct {
 
 func (x *NetworkEvent) Reset() {
 	*x = NetworkEvent{}
-	mi := &file_test_full_showcase_proto_msgTypes[33]
+	mi := &file_test_full_showcase_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4146,7 +4271,7 @@ func (x *NetworkEvent) String() string {
 func (*NetworkEvent) ProtoMessage() {}
 
 func (x *NetworkEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[33]
+	mi := &file_test_full_showcase_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4159,7 +4284,7 @@ func (x *NetworkEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkEvent.ProtoReflect.Descriptor instead.
 func (*NetworkEvent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{33}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *NetworkEvent) GetInterfaceName() string {
@@ -4231,7 +4356,7 @@ type PlatformEvent struct {
 
 func (x *PlatformEvent) Reset() {
 	*x = PlatformEvent{}
-	mi := &file_test_full_showcase_proto_msgTypes[34]
+	mi := &file_test_full_showcase_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4243,7 +4368,7 @@ func (x *PlatformEvent) String() string {
 func (*PlatformEvent) ProtoMessage() {}
 
 func (x *PlatformEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[34]
+	mi := &file_test_full_showcase_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4256,7 +4381,7 @@ func (x *PlatformEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformEvent.ProtoReflect.Descriptor instead.
 func (*PlatformEvent) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{34}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *PlatformEvent) GetEventId() string {
@@ -4376,7 +4501,7 @@ type DeprecatedShowcase struct {
 
 func (x *DeprecatedShowcase) Reset() {
 	*x = DeprecatedShowcase{}
-	mi := &file_test_full_showcase_proto_msgTypes[35]
+	mi := &file_test_full_showcase_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4388,7 +4513,7 @@ func (x *DeprecatedShowcase) String() string {
 func (*DeprecatedShowcase) ProtoMessage() {}
 
 func (x *DeprecatedShowcase) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[35]
+	mi := &file_test_full_showcase_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4401,7 +4526,7 @@ func (x *DeprecatedShowcase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeprecatedShowcase.ProtoReflect.Descriptor instead.
 func (*DeprecatedShowcase) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{35}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *DeprecatedShowcase) GetId() string {
@@ -4465,7 +4590,7 @@ type DefaultsShowcase struct {
 
 func (x *DefaultsShowcase) Reset() {
 	*x = DefaultsShowcase{}
-	mi := &file_test_full_showcase_proto_msgTypes[36]
+	mi := &file_test_full_showcase_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4477,7 +4602,7 @@ func (x *DefaultsShowcase) String() string {
 func (*DefaultsShowcase) ProtoMessage() {}
 
 func (x *DefaultsShowcase) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[36]
+	mi := &file_test_full_showcase_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4490,7 +4615,7 @@ func (x *DefaultsShowcase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DefaultsShowcase.ProtoReflect.Descriptor instead.
 func (*DefaultsShowcase) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{36}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *DefaultsShowcase) GetEmptyString() string {
@@ -4589,7 +4714,7 @@ type ComplexNested struct {
 
 func (x *ComplexNested) Reset() {
 	*x = ComplexNested{}
-	mi := &file_test_full_showcase_proto_msgTypes[37]
+	mi := &file_test_full_showcase_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4601,7 +4726,7 @@ func (x *ComplexNested) String() string {
 func (*ComplexNested) ProtoMessage() {}
 
 func (x *ComplexNested) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[37]
+	mi := &file_test_full_showcase_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4614,7 +4739,7 @@ func (x *ComplexNested) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplexNested.ProtoReflect.Descriptor instead.
 func (*ComplexNested) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{37}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ComplexNested) GetId() string {
@@ -4712,7 +4837,7 @@ type Config_NestedConfig struct {
 
 func (x *Config_NestedConfig) Reset() {
 	*x = Config_NestedConfig{}
-	mi := &file_test_full_showcase_proto_msgTypes[61]
+	mi := &file_test_full_showcase_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4724,7 +4849,7 @@ func (x *Config_NestedConfig) String() string {
 func (*Config_NestedConfig) ProtoMessage() {}
 
 func (x *Config_NestedConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[61]
+	mi := &file_test_full_showcase_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4737,7 +4862,7 @@ func (x *Config_NestedConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config_NestedConfig.ProtoReflect.Descriptor instead.
 func (*Config_NestedConfig) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{25, 19}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{27, 19}
 }
 
 func (x *Config_NestedConfig) GetKey() string {
@@ -4773,7 +4898,7 @@ type ComplexNested_Inner struct {
 
 func (x *ComplexNested_Inner) Reset() {
 	*x = ComplexNested_Inner{}
-	mi := &file_test_full_showcase_proto_msgTypes[91]
+	mi := &file_test_full_showcase_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4785,7 +4910,7 @@ func (x *ComplexNested_Inner) String() string {
 func (*ComplexNested_Inner) ProtoMessage() {}
 
 func (x *ComplexNested_Inner) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[91]
+	mi := &file_test_full_showcase_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4798,7 +4923,7 @@ func (x *ComplexNested_Inner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplexNested_Inner.ProtoReflect.Descriptor instead.
 func (*ComplexNested_Inner) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{37, 0}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{39, 0}
 }
 
 func (x *ComplexNested_Inner) GetValue() string {
@@ -4840,7 +4965,7 @@ type ComplexNested_Inner_DeepInner struct {
 
 func (x *ComplexNested_Inner_DeepInner) Reset() {
 	*x = ComplexNested_Inner_DeepInner{}
-	mi := &file_test_full_showcase_proto_msgTypes[93]
+	mi := &file_test_full_showcase_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4852,7 +4977,7 @@ func (x *ComplexNested_Inner_DeepInner) String() string {
 func (*ComplexNested_Inner_DeepInner) ProtoMessage() {}
 
 func (x *ComplexNested_Inner_DeepInner) ProtoReflect() protoreflect.Message {
-	mi := &file_test_full_showcase_proto_msgTypes[93]
+	mi := &file_test_full_showcase_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4865,7 +4990,7 @@ func (x *ComplexNested_Inner_DeepInner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplexNested_Inner_DeepInner.ProtoReflect.Descriptor instead.
 func (*ComplexNested_Inner_DeepInner) Descriptor() ([]byte, []int) {
-	return file_test_full_showcase_proto_rawDescGZIP(), []int{37, 0, 0}
+	return file_test_full_showcase_proto_rawDescGZIP(), []int{39, 0, 0}
 }
 
 func (x *ComplexNested_Inner_DeepInner) GetDeepValue() string {
@@ -4951,13 +5076,24 @@ const file_test_full_showcase_proto_rawDesc = "" +
 	"\x06Level1\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\x04body\x18\x02 \x01(\v2\f.full.Level2R\x04body\x12\"\n" +
-	"\x04meta\x18\x03 \x01(\v2\x0e.full.MetadataR\x04meta\"\x9d\x01\n" +
+	"\x04meta\x18\x03 \x01(\v2\x0e.full.MetadataR\x04meta\"\xcc\x01\n" +
 	"\aMetrics\x12\x1f\n" +
 	"\vduration_ns\x18\x01 \x01(\x03R\n" +
-	"durationNs\x12'\n" +
-	"\x0fbytes_processed\x18\x02 \x01(\x03R\x0ebytesProcessed\x12%\n" +
-	"\x0erequests_count\x18\x03 \x01(\x05R\rrequestsCount\x12!\n" +
-	"\fsuccess_rate\x18\x04 \x01(\x01R\vsuccessRate\"9\n" +
+	"durationNs\x12%\n" +
+	"\x0etimestamp_unix\x18\x02 \x01(\x03R\rtimestampUnix\x12'\n" +
+	"\x0fbytes_processed\x18\x03 \x01(\x03R\x0ebytesProcessed\x12%\n" +
+	"\x0erequests_count\x18\x04 \x01(\x05R\rrequestsCount\x12!\n" +
+	"\fsuccess_rate\x18\x05 \x01(\x01R\vsuccessRate:\x06\x82\xa6\x1d\x02\b\x01\"(\n" +
+	"\bMyString\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value:\x06\x82\xa6\x1d\x02\x10\x01\"\xa3\x01\n" +
+	"\vCustomTypes\x12<\n" +
+	"\braw_json\x18\x01 \x01(\fB!\x82\xa6\x1d\x1d\n" +
+	"\x1b\n" +
+	"\n" +
+	"RawMessage\x12\rencoding/jsonR\arawJson\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\x03R\x05count\x12$\n" +
+	"\x05label\x18\x04 \x01(\v2\x0e.full.MyStringR\x05label:\x06\x82\xa6\x1d\x02\b\x01\"9\n" +
 	"\vTextContent\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x16\n" +
 	"\x06format\x18\x02 \x01(\tR\x06format\"i\n" +
@@ -5571,11 +5707,11 @@ const file_test_full_showcase_proto_rawDesc = "" +
 	"\tDirection\x12\x12\n" +
 	"\x0eDIRECTION_NONE\x10\x00\x12\x15\n" +
 	"\x11DIRECTION_FORWARD\x10\x01\x12\x1f\n" +
-	"\x12DIRECTION_BACKWARD\x10\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01Bk\x82\xa6\x1d5\n" +
-	"1\n" +
-	"\x1d\n" +
-	"\x19.full.Metrics.duration_ns\x10\x03\x12\x10\n" +
-	"\bDuration\x12\x04time\x18\x01Z0github.com/yaroher/protoc-gen-go-plain/test/fullb\x06proto3"
+	"\x12DIRECTION_BACKWARD\x10\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01Bh\x82\xa6\x1d2\n" +
+	"0\n" +
+	"\x1c\n" +
+	"\x18full.Metrics.duration_ns\x10\x03\x12\x10\n" +
+	"\bDuration\x12\x04timeZ0github.com/yaroher/protoc-gen-go-plain/test/fullb\x06proto3"
 
 var (
 	file_test_full_showcase_proto_rawDescOnce sync.Once
@@ -5590,7 +5726,7 @@ func file_test_full_showcase_proto_rawDescGZIP() []byte {
 }
 
 var file_test_full_showcase_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_test_full_showcase_proto_msgTypes = make([]protoimpl.MessageInfo, 95)
+var file_test_full_showcase_proto_msgTypes = make([]protoimpl.MessageInfo, 97)
 var file_test_full_showcase_proto_goTypes = []any{
 	(Status)(0),                           // 0: full.Status
 	(Priority)(0),                         // 1: full.Priority
@@ -5610,269 +5746,272 @@ var file_test_full_showcase_proto_goTypes = []any{
 	(*Level2)(nil),                        // 15: full.Level2
 	(*Level1)(nil),                        // 16: full.Level1
 	(*Metrics)(nil),                       // 17: full.Metrics
-	(*TextContent)(nil),                   // 18: full.TextContent
-	(*ImageContent)(nil),                  // 19: full.ImageContent
-	(*VideoContent)(nil),                  // 20: full.VideoContent
-	(*CodeContent)(nil),                   // 21: full.CodeContent
-	(*TableContent)(nil),                  // 22: full.TableContent
-	(*Document)(nil),                      // 23: full.Document
-	(*TreeNode)(nil),                      // 24: full.TreeNode
-	(*UserCreatedEvent)(nil),              // 25: full.UserCreatedEvent
-	(*UserUpdatedEvent)(nil),              // 26: full.UserUpdatedEvent
-	(*UserDeletedEvent)(nil),              // 27: full.UserDeletedEvent
-	(*OrderCreatedEvent)(nil),             // 28: full.OrderCreatedEvent
-	(*OrderCompletedEvent)(nil),           // 29: full.OrderCompletedEvent
-	(*Event)(nil),                         // 30: full.Event
-	(*Config)(nil),                        // 31: full.Config
-	(*WellKnownTypes)(nil),                // 32: full.WellKnownTypes
-	(*MapShowcase)(nil),                   // 33: full.MapShowcase
-	(*OptionalShowcase)(nil),              // 34: full.OptionalShowcase
-	(*OneofShowcase)(nil),                 // 35: full.OneofShowcase
-	(*Heartbeat)(nil),                     // 36: full.Heartbeat
-	(*ProcessStarted)(nil),                // 37: full.ProcessStarted
-	(*ProcessExited)(nil),                 // 38: full.ProcessExited
-	(*NetworkEvent)(nil),                  // 39: full.NetworkEvent
-	(*PlatformEvent)(nil),                 // 40: full.PlatformEvent
-	(*DeprecatedShowcase)(nil),            // 41: full.DeprecatedShowcase
-	(*DefaultsShowcase)(nil),              // 42: full.DefaultsShowcase
-	(*ComplexNested)(nil),                 // 43: full.ComplexNested
-	nil,                                   // 44: full.Metadata.LabelsEntry
-	nil,                                   // 45: full.Level3.ChildrenEntry
-	nil,                                   // 46: full.Document.AttributesEntry
-	nil,                                   // 47: full.UserUpdatedEvent.ChangesEntry
-	nil,                                   // 48: full.Config.StringMapEntry
-	nil,                                   // 49: full.Config.IntMapEntry
-	nil,                                   // 50: full.Config.IntKeyMapEntry
-	nil,                                   // 51: full.Config.NestedMapEntry
-	nil,                                   // 52: full.Config.Int64KeyMapEntry
-	nil,                                   // 53: full.Config.Uint32KeyMapEntry
-	nil,                                   // 54: full.Config.Uint64KeyMapEntry
-	nil,                                   // 55: full.Config.Sint32KeyMapEntry
-	nil,                                   // 56: full.Config.Sint64KeyMapEntry
-	nil,                                   // 57: full.Config.Fixed32KeyMapEntry
-	nil,                                   // 58: full.Config.Fixed64KeyMapEntry
-	nil,                                   // 59: full.Config.Sfixed32KeyMapEntry
-	nil,                                   // 60: full.Config.Sfixed64KeyMapEntry
-	nil,                                   // 61: full.Config.BoolKeyMapEntry
-	nil,                                   // 62: full.Config.DoubleMapEntry
-	nil,                                   // 63: full.Config.BytesMapEntry
-	nil,                                   // 64: full.Config.BoolMapEntry
-	nil,                                   // 65: full.Config.FloatMapEntry
-	nil,                                   // 66: full.Config.StatusMapEntry
-	(*Config_NestedConfig)(nil),           // 67: full.Config.NestedConfig
-	nil,                                   // 68: full.Config.NestedConfigMapEntry
-	nil,                                   // 69: full.MapShowcase.StrStrEntry
-	nil,                                   // 70: full.MapShowcase.StrInt32Entry
-	nil,                                   // 71: full.MapShowcase.StrInt64Entry
-	nil,                                   // 72: full.MapShowcase.StrUint32Entry
-	nil,                                   // 73: full.MapShowcase.StrUint64Entry
-	nil,                                   // 74: full.MapShowcase.StrFloatEntry
-	nil,                                   // 75: full.MapShowcase.StrDoubleEntry
-	nil,                                   // 76: full.MapShowcase.StrBoolEntry
-	nil,                                   // 77: full.MapShowcase.StrBytesEntry
-	nil,                                   // 78: full.MapShowcase.Int32StrEntry
-	nil,                                   // 79: full.MapShowcase.Int64StrEntry
-	nil,                                   // 80: full.MapShowcase.Uint32StrEntry
-	nil,                                   // 81: full.MapShowcase.Uint64StrEntry
-	nil,                                   // 82: full.MapShowcase.Sint32StrEntry
-	nil,                                   // 83: full.MapShowcase.Sint64StrEntry
-	nil,                                   // 84: full.MapShowcase.Fixed32StrEntry
-	nil,                                   // 85: full.MapShowcase.Fixed64StrEntry
-	nil,                                   // 86: full.MapShowcase.Sfixed32StrEntry
-	nil,                                   // 87: full.MapShowcase.Sfixed64StrEntry
-	nil,                                   // 88: full.MapShowcase.BoolStrEntry
-	nil,                                   // 89: full.MapShowcase.StrMessageEntry
-	nil,                                   // 90: full.MapShowcase.Int32MessageEntry
-	nil,                                   // 91: full.MapShowcase.Int64MessageEntry
-	nil,                                   // 92: full.MapShowcase.StrEnumEntry
-	nil,                                   // 93: full.MapShowcase.Int32EnumEntry
-	nil,                                   // 94: full.MapShowcase.NestedEntry
-	nil,                                   // 95: full.PlatformEvent.LabelsEntry
-	nil,                                   // 96: full.DefaultsShowcase.EmptyMapEntry
-	(*ComplexNested_Inner)(nil),           // 97: full.ComplexNested.Inner
-	nil,                                   // 98: full.ComplexNested.InnerMapEntry
-	(*ComplexNested_Inner_DeepInner)(nil), // 99: full.ComplexNested.Inner.DeepInner
-	nil,                                   // 100: full.ComplexNested.Inner.DeepInner.ScoresEntry
-	(*timestamppb.Timestamp)(nil),         // 101: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),           // 102: google.protobuf.Duration
-	(*wrapperspb.StringValue)(nil),        // 103: google.protobuf.StringValue
-	(*wrapperspb.Int32Value)(nil),         // 104: google.protobuf.Int32Value
-	(*wrapperspb.Int64Value)(nil),         // 105: google.protobuf.Int64Value
-	(*wrapperspb.UInt32Value)(nil),        // 106: google.protobuf.UInt32Value
-	(*wrapperspb.UInt64Value)(nil),        // 107: google.protobuf.UInt64Value
-	(*wrapperspb.FloatValue)(nil),         // 108: google.protobuf.FloatValue
-	(*wrapperspb.DoubleValue)(nil),        // 109: google.protobuf.DoubleValue
-	(*wrapperspb.BoolValue)(nil),          // 110: google.protobuf.BoolValue
-	(*wrapperspb.BytesValue)(nil),         // 111: google.protobuf.BytesValue
-	(*structpb.Struct)(nil),               // 112: google.protobuf.Struct
-	(*structpb.Value)(nil),                // 113: google.protobuf.Value
-	(*structpb.ListValue)(nil),            // 114: google.protobuf.ListValue
-	(*anypb.Any)(nil),                     // 115: google.protobuf.Any
-	(*emptypb.Empty)(nil),                 // 116: google.protobuf.Empty
+	(*MyString)(nil),                      // 18: full.MyString
+	(*CustomTypes)(nil),                   // 19: full.CustomTypes
+	(*TextContent)(nil),                   // 20: full.TextContent
+	(*ImageContent)(nil),                  // 21: full.ImageContent
+	(*VideoContent)(nil),                  // 22: full.VideoContent
+	(*CodeContent)(nil),                   // 23: full.CodeContent
+	(*TableContent)(nil),                  // 24: full.TableContent
+	(*Document)(nil),                      // 25: full.Document
+	(*TreeNode)(nil),                      // 26: full.TreeNode
+	(*UserCreatedEvent)(nil),              // 27: full.UserCreatedEvent
+	(*UserUpdatedEvent)(nil),              // 28: full.UserUpdatedEvent
+	(*UserDeletedEvent)(nil),              // 29: full.UserDeletedEvent
+	(*OrderCreatedEvent)(nil),             // 30: full.OrderCreatedEvent
+	(*OrderCompletedEvent)(nil),           // 31: full.OrderCompletedEvent
+	(*Event)(nil),                         // 32: full.Event
+	(*Config)(nil),                        // 33: full.Config
+	(*WellKnownTypes)(nil),                // 34: full.WellKnownTypes
+	(*MapShowcase)(nil),                   // 35: full.MapShowcase
+	(*OptionalShowcase)(nil),              // 36: full.OptionalShowcase
+	(*OneofShowcase)(nil),                 // 37: full.OneofShowcase
+	(*Heartbeat)(nil),                     // 38: full.Heartbeat
+	(*ProcessStarted)(nil),                // 39: full.ProcessStarted
+	(*ProcessExited)(nil),                 // 40: full.ProcessExited
+	(*NetworkEvent)(nil),                  // 41: full.NetworkEvent
+	(*PlatformEvent)(nil),                 // 42: full.PlatformEvent
+	(*DeprecatedShowcase)(nil),            // 43: full.DeprecatedShowcase
+	(*DefaultsShowcase)(nil),              // 44: full.DefaultsShowcase
+	(*ComplexNested)(nil),                 // 45: full.ComplexNested
+	nil,                                   // 46: full.Metadata.LabelsEntry
+	nil,                                   // 47: full.Level3.ChildrenEntry
+	nil,                                   // 48: full.Document.AttributesEntry
+	nil,                                   // 49: full.UserUpdatedEvent.ChangesEntry
+	nil,                                   // 50: full.Config.StringMapEntry
+	nil,                                   // 51: full.Config.IntMapEntry
+	nil,                                   // 52: full.Config.IntKeyMapEntry
+	nil,                                   // 53: full.Config.NestedMapEntry
+	nil,                                   // 54: full.Config.Int64KeyMapEntry
+	nil,                                   // 55: full.Config.Uint32KeyMapEntry
+	nil,                                   // 56: full.Config.Uint64KeyMapEntry
+	nil,                                   // 57: full.Config.Sint32KeyMapEntry
+	nil,                                   // 58: full.Config.Sint64KeyMapEntry
+	nil,                                   // 59: full.Config.Fixed32KeyMapEntry
+	nil,                                   // 60: full.Config.Fixed64KeyMapEntry
+	nil,                                   // 61: full.Config.Sfixed32KeyMapEntry
+	nil,                                   // 62: full.Config.Sfixed64KeyMapEntry
+	nil,                                   // 63: full.Config.BoolKeyMapEntry
+	nil,                                   // 64: full.Config.DoubleMapEntry
+	nil,                                   // 65: full.Config.BytesMapEntry
+	nil,                                   // 66: full.Config.BoolMapEntry
+	nil,                                   // 67: full.Config.FloatMapEntry
+	nil,                                   // 68: full.Config.StatusMapEntry
+	(*Config_NestedConfig)(nil),           // 69: full.Config.NestedConfig
+	nil,                                   // 70: full.Config.NestedConfigMapEntry
+	nil,                                   // 71: full.MapShowcase.StrStrEntry
+	nil,                                   // 72: full.MapShowcase.StrInt32Entry
+	nil,                                   // 73: full.MapShowcase.StrInt64Entry
+	nil,                                   // 74: full.MapShowcase.StrUint32Entry
+	nil,                                   // 75: full.MapShowcase.StrUint64Entry
+	nil,                                   // 76: full.MapShowcase.StrFloatEntry
+	nil,                                   // 77: full.MapShowcase.StrDoubleEntry
+	nil,                                   // 78: full.MapShowcase.StrBoolEntry
+	nil,                                   // 79: full.MapShowcase.StrBytesEntry
+	nil,                                   // 80: full.MapShowcase.Int32StrEntry
+	nil,                                   // 81: full.MapShowcase.Int64StrEntry
+	nil,                                   // 82: full.MapShowcase.Uint32StrEntry
+	nil,                                   // 83: full.MapShowcase.Uint64StrEntry
+	nil,                                   // 84: full.MapShowcase.Sint32StrEntry
+	nil,                                   // 85: full.MapShowcase.Sint64StrEntry
+	nil,                                   // 86: full.MapShowcase.Fixed32StrEntry
+	nil,                                   // 87: full.MapShowcase.Fixed64StrEntry
+	nil,                                   // 88: full.MapShowcase.Sfixed32StrEntry
+	nil,                                   // 89: full.MapShowcase.Sfixed64StrEntry
+	nil,                                   // 90: full.MapShowcase.BoolStrEntry
+	nil,                                   // 91: full.MapShowcase.StrMessageEntry
+	nil,                                   // 92: full.MapShowcase.Int32MessageEntry
+	nil,                                   // 93: full.MapShowcase.Int64MessageEntry
+	nil,                                   // 94: full.MapShowcase.StrEnumEntry
+	nil,                                   // 95: full.MapShowcase.Int32EnumEntry
+	nil,                                   // 96: full.MapShowcase.NestedEntry
+	nil,                                   // 97: full.PlatformEvent.LabelsEntry
+	nil,                                   // 98: full.DefaultsShowcase.EmptyMapEntry
+	(*ComplexNested_Inner)(nil),           // 99: full.ComplexNested.Inner
+	nil,                                   // 100: full.ComplexNested.InnerMapEntry
+	(*ComplexNested_Inner_DeepInner)(nil), // 101: full.ComplexNested.Inner.DeepInner
+	nil,                                   // 102: full.ComplexNested.Inner.DeepInner.ScoresEntry
+	(*timestamppb.Timestamp)(nil),         // 103: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),           // 104: google.protobuf.Duration
+	(*wrapperspb.StringValue)(nil),        // 105: google.protobuf.StringValue
+	(*wrapperspb.Int32Value)(nil),         // 106: google.protobuf.Int32Value
+	(*wrapperspb.Int64Value)(nil),         // 107: google.protobuf.Int64Value
+	(*wrapperspb.UInt32Value)(nil),        // 108: google.protobuf.UInt32Value
+	(*wrapperspb.UInt64Value)(nil),        // 109: google.protobuf.UInt64Value
+	(*wrapperspb.FloatValue)(nil),         // 110: google.protobuf.FloatValue
+	(*wrapperspb.DoubleValue)(nil),        // 111: google.protobuf.DoubleValue
+	(*wrapperspb.BoolValue)(nil),          // 112: google.protobuf.BoolValue
+	(*wrapperspb.BytesValue)(nil),         // 113: google.protobuf.BytesValue
+	(*structpb.Struct)(nil),               // 114: google.protobuf.Struct
+	(*structpb.Value)(nil),                // 115: google.protobuf.Value
+	(*structpb.ListValue)(nil),            // 116: google.protobuf.ListValue
+	(*anypb.Any)(nil),                     // 117: google.protobuf.Any
+	(*emptypb.Empty)(nil),                 // 118: google.protobuf.Empty
 }
 var file_test_full_showcase_proto_depIdxs = []int32{
 	9,   // 0: full.ContactInfo.address:type_name -> full.Address
-	44,  // 1: full.Metadata.labels:type_name -> full.Metadata.LabelsEntry
+	46,  // 1: full.Metadata.labels:type_name -> full.Metadata.LabelsEntry
 	12,  // 2: full.Level4.deep:type_name -> full.Level5
 	12,  // 3: full.Level4.items:type_name -> full.Level5
 	13,  // 4: full.Level3.nested:type_name -> full.Level4
-	45,  // 5: full.Level3.children:type_name -> full.Level3.ChildrenEntry
+	47,  // 5: full.Level3.children:type_name -> full.Level3.ChildrenEntry
 	14,  // 6: full.Level2.content:type_name -> full.Level3
 	14,  // 7: full.Level2.sections:type_name -> full.Level3
 	15,  // 8: full.Level1.body:type_name -> full.Level2
 	11,  // 9: full.Level1.meta:type_name -> full.Metadata
-	0,   // 10: full.Document.status:type_name -> full.Status
-	1,   // 11: full.Document.priority:type_name -> full.Priority
-	6,   // 12: full.Document.description:type_name -> full.StringValue
-	7,   // 13: full.Document.version:type_name -> full.Int64Value
-	8,   // 14: full.Document.is_public:type_name -> full.BoolValue
-	10,  // 15: full.Document.author:type_name -> full.ContactInfo
-	11,  // 16: full.Document.metadata:type_name -> full.Metadata
-	17,  // 17: full.Document.performance:type_name -> full.Metrics
-	46,  // 18: full.Document.attributes:type_name -> full.Document.AttributesEntry
-	9,   // 19: full.Document.locations:type_name -> full.Address
-	16,  // 20: full.Document.structure:type_name -> full.Level1
-	18,  // 21: full.Document.text_content:type_name -> full.TextContent
-	19,  // 22: full.Document.image_content:type_name -> full.ImageContent
-	20,  // 23: full.Document.video_content:type_name -> full.VideoContent
-	21,  // 24: full.Document.code_content:type_name -> full.CodeContent
-	22,  // 25: full.Document.table_content:type_name -> full.TableContent
-	23,  // 26: full.Document.children:type_name -> full.Document
-	23,  // 27: full.Document.parent:type_name -> full.Document
-	24,  // 28: full.TreeNode.children:type_name -> full.TreeNode
-	24,  // 29: full.TreeNode.parent:type_name -> full.TreeNode
-	11,  // 30: full.TreeNode.info:type_name -> full.Metadata
-	18,  // 31: full.TreeNode.text:type_name -> full.TextContent
-	19,  // 32: full.TreeNode.image:type_name -> full.ImageContent
-	21,  // 33: full.TreeNode.code:type_name -> full.CodeContent
-	47,  // 34: full.UserUpdatedEvent.changes:type_name -> full.UserUpdatedEvent.ChangesEntry
-	11,  // 35: full.Event.meta:type_name -> full.Metadata
-	25,  // 36: full.Event.user_created:type_name -> full.UserCreatedEvent
-	26,  // 37: full.Event.user_updated:type_name -> full.UserUpdatedEvent
-	27,  // 38: full.Event.user_deleted:type_name -> full.UserDeletedEvent
-	28,  // 39: full.Event.order_created:type_name -> full.OrderCreatedEvent
-	29,  // 40: full.Event.order_completed:type_name -> full.OrderCompletedEvent
-	48,  // 41: full.Config.string_map:type_name -> full.Config.StringMapEntry
-	49,  // 42: full.Config.int_map:type_name -> full.Config.IntMapEntry
-	50,  // 43: full.Config.int_key_map:type_name -> full.Config.IntKeyMapEntry
-	51,  // 44: full.Config.nested_map:type_name -> full.Config.NestedMapEntry
-	52,  // 45: full.Config.int64_key_map:type_name -> full.Config.Int64KeyMapEntry
-	53,  // 46: full.Config.uint32_key_map:type_name -> full.Config.Uint32KeyMapEntry
-	54,  // 47: full.Config.uint64_key_map:type_name -> full.Config.Uint64KeyMapEntry
-	55,  // 48: full.Config.sint32_key_map:type_name -> full.Config.Sint32KeyMapEntry
-	56,  // 49: full.Config.sint64_key_map:type_name -> full.Config.Sint64KeyMapEntry
-	57,  // 50: full.Config.fixed32_key_map:type_name -> full.Config.Fixed32KeyMapEntry
-	58,  // 51: full.Config.fixed64_key_map:type_name -> full.Config.Fixed64KeyMapEntry
-	59,  // 52: full.Config.sfixed32_key_map:type_name -> full.Config.Sfixed32KeyMapEntry
-	60,  // 53: full.Config.sfixed64_key_map:type_name -> full.Config.Sfixed64KeyMapEntry
-	61,  // 54: full.Config.bool_key_map:type_name -> full.Config.BoolKeyMapEntry
-	62,  // 55: full.Config.double_map:type_name -> full.Config.DoubleMapEntry
-	63,  // 56: full.Config.bytes_map:type_name -> full.Config.BytesMapEntry
-	64,  // 57: full.Config.bool_map:type_name -> full.Config.BoolMapEntry
-	65,  // 58: full.Config.float_map:type_name -> full.Config.FloatMapEntry
-	0,   // 59: full.Config.status:type_name -> full.Status
-	0,   // 60: full.Config.status_list:type_name -> full.Status
-	66,  // 61: full.Config.status_map:type_name -> full.Config.StatusMapEntry
-	0,   // 62: full.Config.optional_status:type_name -> full.Status
-	4,   // 63: full.Config.nested_enum:type_name -> full.Config.NestedEnum
-	4,   // 64: full.Config.nested_enum_list:type_name -> full.Config.NestedEnum
-	67,  // 65: full.Config.nested_config:type_name -> full.Config.NestedConfig
-	67,  // 66: full.Config.nested_config_list:type_name -> full.Config.NestedConfig
-	68,  // 67: full.Config.nested_config_map:type_name -> full.Config.NestedConfigMapEntry
-	31,  // 68: full.Config.parent:type_name -> full.Config
-	31,  // 69: full.Config.children:type_name -> full.Config
-	101, // 70: full.WellKnownTypes.created_at:type_name -> google.protobuf.Timestamp
-	102, // 71: full.WellKnownTypes.ttl:type_name -> google.protobuf.Duration
-	101, // 72: full.WellKnownTypes.updated_at:type_name -> google.protobuf.Timestamp
-	102, // 73: full.WellKnownTypes.latency:type_name -> google.protobuf.Duration
-	103, // 74: full.WellKnownTypes.nullable_string:type_name -> google.protobuf.StringValue
-	104, // 75: full.WellKnownTypes.nullable_int32:type_name -> google.protobuf.Int32Value
-	105, // 76: full.WellKnownTypes.nullable_int64:type_name -> google.protobuf.Int64Value
-	106, // 77: full.WellKnownTypes.nullable_uint32:type_name -> google.protobuf.UInt32Value
-	107, // 78: full.WellKnownTypes.nullable_uint64:type_name -> google.protobuf.UInt64Value
-	108, // 79: full.WellKnownTypes.nullable_float:type_name -> google.protobuf.FloatValue
-	109, // 80: full.WellKnownTypes.nullable_double:type_name -> google.protobuf.DoubleValue
-	110, // 81: full.WellKnownTypes.nullable_bool:type_name -> google.protobuf.BoolValue
-	111, // 82: full.WellKnownTypes.nullable_bytes:type_name -> google.protobuf.BytesValue
-	112, // 83: full.WellKnownTypes.metadata:type_name -> google.protobuf.Struct
-	113, // 84: full.WellKnownTypes.dynamic_value:type_name -> google.protobuf.Value
-	114, // 85: full.WellKnownTypes.list_value:type_name -> google.protobuf.ListValue
-	115, // 86: full.WellKnownTypes.payload:type_name -> google.protobuf.Any
-	115, // 87: full.WellKnownTypes.payloads:type_name -> google.protobuf.Any
-	116, // 88: full.WellKnownTypes.empty:type_name -> google.protobuf.Empty
-	101, // 89: full.WellKnownTypes.timestamps:type_name -> google.protobuf.Timestamp
-	102, // 90: full.WellKnownTypes.durations:type_name -> google.protobuf.Duration
-	103, // 91: full.WellKnownTypes.strings:type_name -> google.protobuf.StringValue
-	69,  // 92: full.MapShowcase.str_str:type_name -> full.MapShowcase.StrStrEntry
-	70,  // 93: full.MapShowcase.str_int32:type_name -> full.MapShowcase.StrInt32Entry
-	71,  // 94: full.MapShowcase.str_int64:type_name -> full.MapShowcase.StrInt64Entry
-	72,  // 95: full.MapShowcase.str_uint32:type_name -> full.MapShowcase.StrUint32Entry
-	73,  // 96: full.MapShowcase.str_uint64:type_name -> full.MapShowcase.StrUint64Entry
-	74,  // 97: full.MapShowcase.str_float:type_name -> full.MapShowcase.StrFloatEntry
-	75,  // 98: full.MapShowcase.str_double:type_name -> full.MapShowcase.StrDoubleEntry
-	76,  // 99: full.MapShowcase.str_bool:type_name -> full.MapShowcase.StrBoolEntry
-	77,  // 100: full.MapShowcase.str_bytes:type_name -> full.MapShowcase.StrBytesEntry
-	78,  // 101: full.MapShowcase.int32_str:type_name -> full.MapShowcase.Int32StrEntry
-	79,  // 102: full.MapShowcase.int64_str:type_name -> full.MapShowcase.Int64StrEntry
-	80,  // 103: full.MapShowcase.uint32_str:type_name -> full.MapShowcase.Uint32StrEntry
-	81,  // 104: full.MapShowcase.uint64_str:type_name -> full.MapShowcase.Uint64StrEntry
-	82,  // 105: full.MapShowcase.sint32_str:type_name -> full.MapShowcase.Sint32StrEntry
-	83,  // 106: full.MapShowcase.sint64_str:type_name -> full.MapShowcase.Sint64StrEntry
-	84,  // 107: full.MapShowcase.fixed32_str:type_name -> full.MapShowcase.Fixed32StrEntry
-	85,  // 108: full.MapShowcase.fixed64_str:type_name -> full.MapShowcase.Fixed64StrEntry
-	86,  // 109: full.MapShowcase.sfixed32_str:type_name -> full.MapShowcase.Sfixed32StrEntry
-	87,  // 110: full.MapShowcase.sfixed64_str:type_name -> full.MapShowcase.Sfixed64StrEntry
-	88,  // 111: full.MapShowcase.bool_str:type_name -> full.MapShowcase.BoolStrEntry
-	89,  // 112: full.MapShowcase.str_message:type_name -> full.MapShowcase.StrMessageEntry
-	90,  // 113: full.MapShowcase.int32_message:type_name -> full.MapShowcase.Int32MessageEntry
-	91,  // 114: full.MapShowcase.int64_message:type_name -> full.MapShowcase.Int64MessageEntry
-	92,  // 115: full.MapShowcase.str_enum:type_name -> full.MapShowcase.StrEnumEntry
-	93,  // 116: full.MapShowcase.int32_enum:type_name -> full.MapShowcase.Int32EnumEntry
-	94,  // 117: full.MapShowcase.nested:type_name -> full.MapShowcase.NestedEntry
-	0,   // 118: full.OptionalShowcase.opt_status:type_name -> full.Status
-	1,   // 119: full.OptionalShowcase.opt_priority:type_name -> full.Priority
-	9,   // 120: full.OneofShowcase.address:type_name -> full.Address
-	10,  // 121: full.OneofShowcase.contact:type_name -> full.ContactInfo
-	11,  // 122: full.OneofShowcase.metadata:type_name -> full.Metadata
-	0,   // 123: full.OneofShowcase.status:type_name -> full.Status
-	1,   // 124: full.OneofShowcase.priority:type_name -> full.Priority
-	2,   // 125: full.OneofShowcase.error:type_name -> full.ErrorCode
-	18,  // 126: full.OneofShowcase.text:type_name -> full.TextContent
-	19,  // 127: full.OneofShowcase.image:type_name -> full.ImageContent
-	21,  // 128: full.OneofShowcase.code:type_name -> full.CodeContent
-	36,  // 129: full.PlatformEvent.heartbeat:type_name -> full.Heartbeat
-	37,  // 130: full.PlatformEvent.process_started:type_name -> full.ProcessStarted
-	38,  // 131: full.PlatformEvent.process_exited:type_name -> full.ProcessExited
-	39,  // 132: full.PlatformEvent.network_event:type_name -> full.NetworkEvent
-	95,  // 133: full.PlatformEvent.labels:type_name -> full.PlatformEvent.LabelsEntry
-	0,   // 134: full.DefaultsShowcase.zero_enum:type_name -> full.Status
-	96,  // 135: full.DefaultsShowcase.empty_map:type_name -> full.DefaultsShowcase.EmptyMapEntry
-	9,   // 136: full.DefaultsShowcase.nil_message:type_name -> full.Address
-	97,  // 137: full.ComplexNested.inner:type_name -> full.ComplexNested.Inner
-	97,  // 138: full.ComplexNested.inner_list:type_name -> full.ComplexNested.Inner
-	98,  // 139: full.ComplexNested.inner_map:type_name -> full.ComplexNested.InnerMapEntry
-	5,   // 140: full.ComplexNested.inner_enum:type_name -> full.ComplexNested.InnerEnum
-	5,   // 141: full.ComplexNested.inner_enum_list:type_name -> full.ComplexNested.InnerEnum
-	97,  // 142: full.ComplexNested.choice_inner:type_name -> full.ComplexNested.Inner
-	13,  // 143: full.Level3.ChildrenEntry.value:type_name -> full.Level4
-	31,  // 144: full.Config.NestedMapEntry.value:type_name -> full.Config
-	0,   // 145: full.Config.StatusMapEntry.value:type_name -> full.Status
-	67,  // 146: full.Config.NestedConfigMapEntry.value:type_name -> full.Config.NestedConfig
-	9,   // 147: full.MapShowcase.StrMessageEntry.value:type_name -> full.Address
-	9,   // 148: full.MapShowcase.Int32MessageEntry.value:type_name -> full.Address
-	11,  // 149: full.MapShowcase.Int64MessageEntry.value:type_name -> full.Metadata
-	0,   // 150: full.MapShowcase.StrEnumEntry.value:type_name -> full.Status
-	1,   // 151: full.MapShowcase.Int32EnumEntry.value:type_name -> full.Priority
-	31,  // 152: full.MapShowcase.NestedEntry.value:type_name -> full.Config
-	99,  // 153: full.ComplexNested.Inner.deep:type_name -> full.ComplexNested.Inner.DeepInner
-	99,  // 154: full.ComplexNested.Inner.deep_list:type_name -> full.ComplexNested.Inner.DeepInner
-	97,  // 155: full.ComplexNested.InnerMapEntry.value:type_name -> full.ComplexNested.Inner
-	100, // 156: full.ComplexNested.Inner.DeepInner.scores:type_name -> full.ComplexNested.Inner.DeepInner.ScoresEntry
-	157, // [157:157] is the sub-list for method output_type
-	157, // [157:157] is the sub-list for method input_type
-	157, // [157:157] is the sub-list for extension type_name
-	157, // [157:157] is the sub-list for extension extendee
-	0,   // [0:157] is the sub-list for field type_name
+	18,  // 10: full.CustomTypes.label:type_name -> full.MyString
+	0,   // 11: full.Document.status:type_name -> full.Status
+	1,   // 12: full.Document.priority:type_name -> full.Priority
+	6,   // 13: full.Document.description:type_name -> full.StringValue
+	7,   // 14: full.Document.version:type_name -> full.Int64Value
+	8,   // 15: full.Document.is_public:type_name -> full.BoolValue
+	10,  // 16: full.Document.author:type_name -> full.ContactInfo
+	11,  // 17: full.Document.metadata:type_name -> full.Metadata
+	17,  // 18: full.Document.performance:type_name -> full.Metrics
+	48,  // 19: full.Document.attributes:type_name -> full.Document.AttributesEntry
+	9,   // 20: full.Document.locations:type_name -> full.Address
+	16,  // 21: full.Document.structure:type_name -> full.Level1
+	20,  // 22: full.Document.text_content:type_name -> full.TextContent
+	21,  // 23: full.Document.image_content:type_name -> full.ImageContent
+	22,  // 24: full.Document.video_content:type_name -> full.VideoContent
+	23,  // 25: full.Document.code_content:type_name -> full.CodeContent
+	24,  // 26: full.Document.table_content:type_name -> full.TableContent
+	25,  // 27: full.Document.children:type_name -> full.Document
+	25,  // 28: full.Document.parent:type_name -> full.Document
+	26,  // 29: full.TreeNode.children:type_name -> full.TreeNode
+	26,  // 30: full.TreeNode.parent:type_name -> full.TreeNode
+	11,  // 31: full.TreeNode.info:type_name -> full.Metadata
+	20,  // 32: full.TreeNode.text:type_name -> full.TextContent
+	21,  // 33: full.TreeNode.image:type_name -> full.ImageContent
+	23,  // 34: full.TreeNode.code:type_name -> full.CodeContent
+	49,  // 35: full.UserUpdatedEvent.changes:type_name -> full.UserUpdatedEvent.ChangesEntry
+	11,  // 36: full.Event.meta:type_name -> full.Metadata
+	27,  // 37: full.Event.user_created:type_name -> full.UserCreatedEvent
+	28,  // 38: full.Event.user_updated:type_name -> full.UserUpdatedEvent
+	29,  // 39: full.Event.user_deleted:type_name -> full.UserDeletedEvent
+	30,  // 40: full.Event.order_created:type_name -> full.OrderCreatedEvent
+	31,  // 41: full.Event.order_completed:type_name -> full.OrderCompletedEvent
+	50,  // 42: full.Config.string_map:type_name -> full.Config.StringMapEntry
+	51,  // 43: full.Config.int_map:type_name -> full.Config.IntMapEntry
+	52,  // 44: full.Config.int_key_map:type_name -> full.Config.IntKeyMapEntry
+	53,  // 45: full.Config.nested_map:type_name -> full.Config.NestedMapEntry
+	54,  // 46: full.Config.int64_key_map:type_name -> full.Config.Int64KeyMapEntry
+	55,  // 47: full.Config.uint32_key_map:type_name -> full.Config.Uint32KeyMapEntry
+	56,  // 48: full.Config.uint64_key_map:type_name -> full.Config.Uint64KeyMapEntry
+	57,  // 49: full.Config.sint32_key_map:type_name -> full.Config.Sint32KeyMapEntry
+	58,  // 50: full.Config.sint64_key_map:type_name -> full.Config.Sint64KeyMapEntry
+	59,  // 51: full.Config.fixed32_key_map:type_name -> full.Config.Fixed32KeyMapEntry
+	60,  // 52: full.Config.fixed64_key_map:type_name -> full.Config.Fixed64KeyMapEntry
+	61,  // 53: full.Config.sfixed32_key_map:type_name -> full.Config.Sfixed32KeyMapEntry
+	62,  // 54: full.Config.sfixed64_key_map:type_name -> full.Config.Sfixed64KeyMapEntry
+	63,  // 55: full.Config.bool_key_map:type_name -> full.Config.BoolKeyMapEntry
+	64,  // 56: full.Config.double_map:type_name -> full.Config.DoubleMapEntry
+	65,  // 57: full.Config.bytes_map:type_name -> full.Config.BytesMapEntry
+	66,  // 58: full.Config.bool_map:type_name -> full.Config.BoolMapEntry
+	67,  // 59: full.Config.float_map:type_name -> full.Config.FloatMapEntry
+	0,   // 60: full.Config.status:type_name -> full.Status
+	0,   // 61: full.Config.status_list:type_name -> full.Status
+	68,  // 62: full.Config.status_map:type_name -> full.Config.StatusMapEntry
+	0,   // 63: full.Config.optional_status:type_name -> full.Status
+	4,   // 64: full.Config.nested_enum:type_name -> full.Config.NestedEnum
+	4,   // 65: full.Config.nested_enum_list:type_name -> full.Config.NestedEnum
+	69,  // 66: full.Config.nested_config:type_name -> full.Config.NestedConfig
+	69,  // 67: full.Config.nested_config_list:type_name -> full.Config.NestedConfig
+	70,  // 68: full.Config.nested_config_map:type_name -> full.Config.NestedConfigMapEntry
+	33,  // 69: full.Config.parent:type_name -> full.Config
+	33,  // 70: full.Config.children:type_name -> full.Config
+	103, // 71: full.WellKnownTypes.created_at:type_name -> google.protobuf.Timestamp
+	104, // 72: full.WellKnownTypes.ttl:type_name -> google.protobuf.Duration
+	103, // 73: full.WellKnownTypes.updated_at:type_name -> google.protobuf.Timestamp
+	104, // 74: full.WellKnownTypes.latency:type_name -> google.protobuf.Duration
+	105, // 75: full.WellKnownTypes.nullable_string:type_name -> google.protobuf.StringValue
+	106, // 76: full.WellKnownTypes.nullable_int32:type_name -> google.protobuf.Int32Value
+	107, // 77: full.WellKnownTypes.nullable_int64:type_name -> google.protobuf.Int64Value
+	108, // 78: full.WellKnownTypes.nullable_uint32:type_name -> google.protobuf.UInt32Value
+	109, // 79: full.WellKnownTypes.nullable_uint64:type_name -> google.protobuf.UInt64Value
+	110, // 80: full.WellKnownTypes.nullable_float:type_name -> google.protobuf.FloatValue
+	111, // 81: full.WellKnownTypes.nullable_double:type_name -> google.protobuf.DoubleValue
+	112, // 82: full.WellKnownTypes.nullable_bool:type_name -> google.protobuf.BoolValue
+	113, // 83: full.WellKnownTypes.nullable_bytes:type_name -> google.protobuf.BytesValue
+	114, // 84: full.WellKnownTypes.metadata:type_name -> google.protobuf.Struct
+	115, // 85: full.WellKnownTypes.dynamic_value:type_name -> google.protobuf.Value
+	116, // 86: full.WellKnownTypes.list_value:type_name -> google.protobuf.ListValue
+	117, // 87: full.WellKnownTypes.payload:type_name -> google.protobuf.Any
+	117, // 88: full.WellKnownTypes.payloads:type_name -> google.protobuf.Any
+	118, // 89: full.WellKnownTypes.empty:type_name -> google.protobuf.Empty
+	103, // 90: full.WellKnownTypes.timestamps:type_name -> google.protobuf.Timestamp
+	104, // 91: full.WellKnownTypes.durations:type_name -> google.protobuf.Duration
+	105, // 92: full.WellKnownTypes.strings:type_name -> google.protobuf.StringValue
+	71,  // 93: full.MapShowcase.str_str:type_name -> full.MapShowcase.StrStrEntry
+	72,  // 94: full.MapShowcase.str_int32:type_name -> full.MapShowcase.StrInt32Entry
+	73,  // 95: full.MapShowcase.str_int64:type_name -> full.MapShowcase.StrInt64Entry
+	74,  // 96: full.MapShowcase.str_uint32:type_name -> full.MapShowcase.StrUint32Entry
+	75,  // 97: full.MapShowcase.str_uint64:type_name -> full.MapShowcase.StrUint64Entry
+	76,  // 98: full.MapShowcase.str_float:type_name -> full.MapShowcase.StrFloatEntry
+	77,  // 99: full.MapShowcase.str_double:type_name -> full.MapShowcase.StrDoubleEntry
+	78,  // 100: full.MapShowcase.str_bool:type_name -> full.MapShowcase.StrBoolEntry
+	79,  // 101: full.MapShowcase.str_bytes:type_name -> full.MapShowcase.StrBytesEntry
+	80,  // 102: full.MapShowcase.int32_str:type_name -> full.MapShowcase.Int32StrEntry
+	81,  // 103: full.MapShowcase.int64_str:type_name -> full.MapShowcase.Int64StrEntry
+	82,  // 104: full.MapShowcase.uint32_str:type_name -> full.MapShowcase.Uint32StrEntry
+	83,  // 105: full.MapShowcase.uint64_str:type_name -> full.MapShowcase.Uint64StrEntry
+	84,  // 106: full.MapShowcase.sint32_str:type_name -> full.MapShowcase.Sint32StrEntry
+	85,  // 107: full.MapShowcase.sint64_str:type_name -> full.MapShowcase.Sint64StrEntry
+	86,  // 108: full.MapShowcase.fixed32_str:type_name -> full.MapShowcase.Fixed32StrEntry
+	87,  // 109: full.MapShowcase.fixed64_str:type_name -> full.MapShowcase.Fixed64StrEntry
+	88,  // 110: full.MapShowcase.sfixed32_str:type_name -> full.MapShowcase.Sfixed32StrEntry
+	89,  // 111: full.MapShowcase.sfixed64_str:type_name -> full.MapShowcase.Sfixed64StrEntry
+	90,  // 112: full.MapShowcase.bool_str:type_name -> full.MapShowcase.BoolStrEntry
+	91,  // 113: full.MapShowcase.str_message:type_name -> full.MapShowcase.StrMessageEntry
+	92,  // 114: full.MapShowcase.int32_message:type_name -> full.MapShowcase.Int32MessageEntry
+	93,  // 115: full.MapShowcase.int64_message:type_name -> full.MapShowcase.Int64MessageEntry
+	94,  // 116: full.MapShowcase.str_enum:type_name -> full.MapShowcase.StrEnumEntry
+	95,  // 117: full.MapShowcase.int32_enum:type_name -> full.MapShowcase.Int32EnumEntry
+	96,  // 118: full.MapShowcase.nested:type_name -> full.MapShowcase.NestedEntry
+	0,   // 119: full.OptionalShowcase.opt_status:type_name -> full.Status
+	1,   // 120: full.OptionalShowcase.opt_priority:type_name -> full.Priority
+	9,   // 121: full.OneofShowcase.address:type_name -> full.Address
+	10,  // 122: full.OneofShowcase.contact:type_name -> full.ContactInfo
+	11,  // 123: full.OneofShowcase.metadata:type_name -> full.Metadata
+	0,   // 124: full.OneofShowcase.status:type_name -> full.Status
+	1,   // 125: full.OneofShowcase.priority:type_name -> full.Priority
+	2,   // 126: full.OneofShowcase.error:type_name -> full.ErrorCode
+	20,  // 127: full.OneofShowcase.text:type_name -> full.TextContent
+	21,  // 128: full.OneofShowcase.image:type_name -> full.ImageContent
+	23,  // 129: full.OneofShowcase.code:type_name -> full.CodeContent
+	38,  // 130: full.PlatformEvent.heartbeat:type_name -> full.Heartbeat
+	39,  // 131: full.PlatformEvent.process_started:type_name -> full.ProcessStarted
+	40,  // 132: full.PlatformEvent.process_exited:type_name -> full.ProcessExited
+	41,  // 133: full.PlatformEvent.network_event:type_name -> full.NetworkEvent
+	97,  // 134: full.PlatformEvent.labels:type_name -> full.PlatformEvent.LabelsEntry
+	0,   // 135: full.DefaultsShowcase.zero_enum:type_name -> full.Status
+	98,  // 136: full.DefaultsShowcase.empty_map:type_name -> full.DefaultsShowcase.EmptyMapEntry
+	9,   // 137: full.DefaultsShowcase.nil_message:type_name -> full.Address
+	99,  // 138: full.ComplexNested.inner:type_name -> full.ComplexNested.Inner
+	99,  // 139: full.ComplexNested.inner_list:type_name -> full.ComplexNested.Inner
+	100, // 140: full.ComplexNested.inner_map:type_name -> full.ComplexNested.InnerMapEntry
+	5,   // 141: full.ComplexNested.inner_enum:type_name -> full.ComplexNested.InnerEnum
+	5,   // 142: full.ComplexNested.inner_enum_list:type_name -> full.ComplexNested.InnerEnum
+	99,  // 143: full.ComplexNested.choice_inner:type_name -> full.ComplexNested.Inner
+	13,  // 144: full.Level3.ChildrenEntry.value:type_name -> full.Level4
+	33,  // 145: full.Config.NestedMapEntry.value:type_name -> full.Config
+	0,   // 146: full.Config.StatusMapEntry.value:type_name -> full.Status
+	69,  // 147: full.Config.NestedConfigMapEntry.value:type_name -> full.Config.NestedConfig
+	9,   // 148: full.MapShowcase.StrMessageEntry.value:type_name -> full.Address
+	9,   // 149: full.MapShowcase.Int32MessageEntry.value:type_name -> full.Address
+	11,  // 150: full.MapShowcase.Int64MessageEntry.value:type_name -> full.Metadata
+	0,   // 151: full.MapShowcase.StrEnumEntry.value:type_name -> full.Status
+	1,   // 152: full.MapShowcase.Int32EnumEntry.value:type_name -> full.Priority
+	33,  // 153: full.MapShowcase.NestedEntry.value:type_name -> full.Config
+	101, // 154: full.ComplexNested.Inner.deep:type_name -> full.ComplexNested.Inner.DeepInner
+	101, // 155: full.ComplexNested.Inner.deep_list:type_name -> full.ComplexNested.Inner.DeepInner
+	99,  // 156: full.ComplexNested.InnerMapEntry.value:type_name -> full.ComplexNested.Inner
+	102, // 157: full.ComplexNested.Inner.DeepInner.scores:type_name -> full.ComplexNested.Inner.DeepInner.ScoresEntry
+	158, // [158:158] is the sub-list for method output_type
+	158, // [158:158] is the sub-list for method input_type
+	158, // [158:158] is the sub-list for extension type_name
+	158, // [158:158] is the sub-list for extension extendee
+	0,   // [0:158] is the sub-list for field type_name
 }
 
 func init() { file_test_full_showcase_proto_init() }
@@ -5880,7 +6019,7 @@ func file_test_full_showcase_proto_init() {
 	if File_test_full_showcase_proto != nil {
 		return
 	}
-	file_test_full_showcase_proto_msgTypes[17].OneofWrappers = []any{
+	file_test_full_showcase_proto_msgTypes[19].OneofWrappers = []any{
 		(*Document_TextContent)(nil),
 		(*Document_ImageContent)(nil),
 		(*Document_VideoContent)(nil),
@@ -5890,21 +6029,21 @@ func file_test_full_showcase_proto_init() {
 		(*Document_FilePath)(nil),
 		(*Document_RawData)(nil),
 	}
-	file_test_full_showcase_proto_msgTypes[18].OneofWrappers = []any{
+	file_test_full_showcase_proto_msgTypes[20].OneofWrappers = []any{
 		(*TreeNode_Text)(nil),
 		(*TreeNode_Image)(nil),
 		(*TreeNode_Code)(nil),
 	}
-	file_test_full_showcase_proto_msgTypes[24].OneofWrappers = []any{
+	file_test_full_showcase_proto_msgTypes[26].OneofWrappers = []any{
 		(*Event_UserCreated)(nil),
 		(*Event_UserUpdated)(nil),
 		(*Event_UserDeleted)(nil),
 		(*Event_OrderCreated)(nil),
 		(*Event_OrderCompleted)(nil),
 	}
-	file_test_full_showcase_proto_msgTypes[25].OneofWrappers = []any{}
-	file_test_full_showcase_proto_msgTypes[28].OneofWrappers = []any{}
-	file_test_full_showcase_proto_msgTypes[29].OneofWrappers = []any{
+	file_test_full_showcase_proto_msgTypes[27].OneofWrappers = []any{}
+	file_test_full_showcase_proto_msgTypes[30].OneofWrappers = []any{}
+	file_test_full_showcase_proto_msgTypes[31].OneofWrappers = []any{
 		(*OneofShowcase_StrVal)(nil),
 		(*OneofShowcase_IntVal)(nil),
 		(*OneofShowcase_LongVal)(nil),
@@ -5925,13 +6064,13 @@ func file_test_full_showcase_proto_init() {
 		(*OneofShowcase_DestUrl)(nil),
 		(*OneofShowcase_DestPath)(nil),
 	}
-	file_test_full_showcase_proto_msgTypes[34].OneofWrappers = []any{
+	file_test_full_showcase_proto_msgTypes[36].OneofWrappers = []any{
 		(*PlatformEvent_Heartbeat)(nil),
 		(*PlatformEvent_ProcessStarted)(nil),
 		(*PlatformEvent_ProcessExited)(nil),
 		(*PlatformEvent_NetworkEvent)(nil),
 	}
-	file_test_full_showcase_proto_msgTypes[37].OneofWrappers = []any{
+	file_test_full_showcase_proto_msgTypes[39].OneofWrappers = []any{
 		(*ComplexNested_ChoiceInner)(nil),
 		(*ComplexNested_ChoiceString)(nil),
 	}
@@ -5941,7 +6080,7 @@ func file_test_full_showcase_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_full_showcase_proto_rawDesc), len(file_test_full_showcase_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   95,
+			NumMessages:   97,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

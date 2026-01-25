@@ -16,9 +16,13 @@ import "google/protobuf/empty.proto";
 // ============================================================================
 // File-level options
 // ============================================================================
-option (goplain.file).casters_as_struct = true;
+// Note: casters_as_struct is now a global plugin flag, not file option
+
+// go_types_overrides: File-level type overrides with selectors
+// This override converts int64 duration_ns field to time.Duration
+// (time.Duration is int64 under the hood, so no caster needed)
 option (goplain.file).go_types_overrides = {
-  selector: { field_kind: TYPE_INT64, target_full_path: ".full.Metrics.duration_ns" }
+  selector: { field_kind: TYPE_INT64, target_full_path: "full.Metrics.duration_ns" }
   target_go_type: { name: "Duration", import_path: "time" }
 };
 
@@ -148,10 +152,40 @@ message Level1 {
 // ============================================================================
 
 message Metrics {
-  int64 duration_ns = 1;  // Will be time.Duration in Plain
-  int64 bytes_processed = 2;
-  int32 requests_count = 3;
-  double success_rate = 4;
+  option (goplain.message).generate = true;
+  int64 duration_ns = 1;     // Will be time.Duration in Plain (via go_types_overrides)
+  int64 timestamp_unix = 2;  // Regular int64 (unix timestamp)
+  int64 bytes_processed = 3;
+  int32 requests_count = 4;
+  double success_rate = 5;
+}
+
+// ============================================================================
+// 5b. Field-level override_type demonstration
+// ============================================================================
+
+// Type alias for custom string type
+message MyString {
+  option (goplain.message).type_alias = true;
+  string value = 1;
+}
+
+message CustomTypes {
+  option (goplain.message).generate = true;
+  
+  // Field-level type override: bytes -> json.RawMessage (compatible types)
+  // RawMessage is []byte under the hood, so no caster needed
+  bytes raw_json = 1 [(goplain.field).override_type = {
+    name: "RawMessage",
+    import_path: "encoding/json"
+  }];
+  
+  // Regular fields for comparison
+  string name = 2;
+  int64 count = 3;
+  
+  // Using type alias message
+  MyString label = 4;
 }
 
 // ============================================================================

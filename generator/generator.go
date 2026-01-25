@@ -170,8 +170,8 @@ func (g *Generator) generateFile(f *protogen.File, irFile *IRFile) error {
 	filename := f.GeneratedFilenamePrefix + "_plain.pb.go"
 	gf := g.Plugin.NewGeneratedFile(filename, f.GoImportPath)
 
-	// Set casters mode for this file
-	g.castersAsStruct = irFile.CastersAsStruct
+	// Set casters mode from plugin settings (global flag)
+	g.castersAsStruct = g.Settings.CastersAsStruct
 
 	logger.Debug("generating file", zap.String("filename", filename))
 

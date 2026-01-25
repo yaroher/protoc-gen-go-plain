@@ -18,8 +18,6 @@ type IRBuilder struct {
 	Suffix string
 	// GlobalOverrides — глобальные переопределения типов
 	GlobalOverrides []*goplain.TypeOverride
-	// CastersAsStruct — передавать кастеры как структуру (true) или как отдельные аргументы (false)
-	CastersAsStruct bool
 	// Collisions — найденные коллизии
 	Collisions []Collision
 	// Errors — ошибки валидации
@@ -45,18 +43,15 @@ func NewIRBuilder(suffix string) *IRBuilder {
 // BuildFile строит IRFile из protogen.File
 func (b *IRBuilder) BuildFile(f *protogen.File) (*IRFile, error) {
 	irFile := &IRFile{
-		Source:          f,
-		Messages:        make([]*IRMessage, 0),
-		Imports:         make([]GoImport, 0),
-		CastersAsStruct: true, // по умолчанию используем структуру
+		Source:   f,
+		Messages: make([]*IRMessage, 0),
+		Imports:  make([]GoImport, 0),
 	}
 
 	// Получаем file-level опции
 	fileOpts := b.getFileOptions(f)
 	if fileOpts != nil {
 		b.GlobalOverrides = append(b.GlobalOverrides, fileOpts.GoTypesOverrides...)
-		b.CastersAsStruct = fileOpts.CastersAsStruct
-		irFile.CastersAsStruct = fileOpts.CastersAsStruct
 
 		// Обрабатываем virtual_types
 		for _, vt := range fileOpts.VirtualTypes {

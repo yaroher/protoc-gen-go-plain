@@ -661,6 +661,10 @@ func (p *Metrics) MarshalJX(e *jx.Encoder) {
 		e.FieldStart("durationNs")
 		e.Int64(p.GetDurationNs())
 	}
+	if p.GetTimestampUnix() != 0 {
+		e.FieldStart("timestampUnix")
+		e.Int64(p.GetTimestampUnix())
+	}
 	if p.GetBytesProcessed() != 0 {
 		e.FieldStart("bytesProcessed")
 		e.Int64(p.GetBytesProcessed())
@@ -690,6 +694,12 @@ func (p *Metrics) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.DurationNs = v
+		case "timestampUnix":
+			v, err := d.Int64()
+			if err != nil {
+				return err
+			}
+			p.TimestampUnix = v
 		case "bytesProcessed":
 			v, err := d.Int64()
 			if err != nil {
@@ -708,6 +718,107 @@ func (p *Metrics) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.SuccessRate = v
+		default:
+			return d.Skip()
+		}
+		return nil
+	})
+}
+
+// MarshalJX encodes MyString to JSON using jx.Encoder
+func (p *MyString) MarshalJX(e *jx.Encoder) {
+	if p == nil {
+		e.Null()
+		return
+	}
+
+	e.ObjStart()
+	if p.GetValue() != "" {
+		e.FieldStart("value")
+		e.Str(p.GetValue())
+	}
+	e.ObjEnd()
+}
+
+// UnmarshalJX decodes MyString from JSON using jx.Decoder
+func (p *MyString) UnmarshalJX(d *jx.Decoder) error {
+	if p == nil {
+		return nil
+	}
+
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "value":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			p.Value = v
+		default:
+			return d.Skip()
+		}
+		return nil
+	})
+}
+
+// MarshalJX encodes CustomTypes to JSON using jx.Encoder
+func (p *CustomTypes) MarshalJX(e *jx.Encoder) {
+	if p == nil {
+		e.Null()
+		return
+	}
+
+	e.ObjStart()
+	if len(p.GetRawJson()) > 0 {
+		e.FieldStart("rawJson")
+		e.Base64(p.GetRawJson())
+	}
+	if p.GetName() != "" {
+		e.FieldStart("name")
+		e.Str(p.GetName())
+	}
+	if p.GetCount() != 0 {
+		e.FieldStart("count")
+		e.Int64(p.GetCount())
+	}
+	if p.GetLabel() != nil {
+		e.FieldStart("label")
+		p.GetLabel().MarshalJX(e)
+	}
+	e.ObjEnd()
+}
+
+// UnmarshalJX decodes CustomTypes from JSON using jx.Decoder
+func (p *CustomTypes) UnmarshalJX(d *jx.Decoder) error {
+	if p == nil {
+		return nil
+	}
+
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		switch key {
+		case "rawJson":
+			v, err := d.Base64()
+			if err != nil {
+				return err
+			}
+			p.RawJson = v
+		case "name":
+			v, err := d.Str()
+			if err != nil {
+				return err
+			}
+			p.Name = v
+		case "count":
+			v, err := d.Int64()
+			if err != nil {
+				return err
+			}
+			p.Count = v
+		case "label":
+			p.Label = &MyString{}
+			if err := p.Label.UnmarshalJX(d); err != nil {
+				return err
+			}
 		default:
 			return d.Skip()
 		}
