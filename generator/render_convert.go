@@ -420,6 +420,9 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 			} else {
 				gf.P("\t\t", dstField, " = ", getterChain, ".IntoPlain()")
 			}
+		} else if field.NeedsCaster {
+			// Message with type override (e.g., Timestamp -> time.Time)
+			gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, getterChain, true))
 		} else {
 			// Protobuf type - check if slice element types match
 			if field.IsRepeated && !field.GoType.IsPointer && leafField != nil && leafField.Message != nil {
@@ -433,6 +436,9 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 				gf.P("\t\t", dstField, " = ", getterChain)
 			}
 		}
+	} else if field.NeedsCaster {
+		// Scalar with type override
+		gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, getterChain, true))
 	} else {
 		// Scalar, enum, bytes - direct assignment
 		// Note: protobuf getters always return values (not pointers) for scalars
@@ -756,7 +762,14 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 			gf.P("\t}")
 			gf.P("\t// TODO: complete repeated field assignment")
 			return
+		} else if field.NeedsCaster {
+			// Message with type override (e.g., time.Time -> Timestamp)
+			valueExpr = g.casterCallWithImport(gf, field, srcField, false)
+			valueIsPointer = true // Caster returns pointer for Timestamp
 		}
+	} else if field.NeedsCaster {
+		// Scalar with type override
+		valueExpr = g.casterCallWithImport(gf, field, srcField, false)
 	} else if protoIsPointer && !plainIsPointer {
 		// Proto wants pointer, plain has value - take address
 		valueExpr = "&" + srcField
@@ -767,7 +780,9 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 	initCode, assignCode := pathInfo.BuildSetterCode(gf, "pb", valueExpr, valueIsPointer)
 
 	// Generate nil check for source value (with case check for oneof fields)
-	if field.GoType.IsPointer || (field.Kind == KindMessage && !field.IsRepeated) {
+	// For overridden types (e.g., time.Time from Timestamp), don't check nil if GoType is not pointer
+	needsNilCheck := field.GoType.IsPointer || (field.Kind == KindMessage && !field.IsRepeated && !field.NeedsCaster)
+	if needsNilCheck {
 		gf.P("\tif ", srcField, " != nil", caseCheck, " {")
 		if initCode != "" {
 			gf.P(initCode)
