@@ -259,10 +259,6 @@ func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, 
 		gf.P("\t", eo.CaseFieldName, " string `json:\"", eo.JSONName, ",omitempty\"`")
 	}
 
-	// Generate _src field for sparse serialization (indices of populated fields)
-	gf.P("\t// Src_ contains indices of populated fields for sparse serialization")
-	gf.P("\tSrc_ []uint16 `json:\"_src,omitempty\"`")
-
 	gf.P("}")
 	gf.P()
 

@@ -15,9 +15,7 @@ func (g *Generator) generatePoolMethods(gf *protogen.GeneratedFile, msg *IRMessa
 	gf.P("// ", poolVar, " is a sync.Pool for ", plainType, " objects")
 	gf.P("var ", poolVar, " = ", gf.QualifiedGoIdent(syncPkg.Ident("Pool")), "{")
 	gf.P("\tNew: func() interface{} {")
-	gf.P("\t\treturn &", plainType, "{")
-	gf.P("\t\t\tSrc_: make([]uint16, 0, 32),")
-	gf.P("\t\t}")
+	gf.P("\t\treturn &", plainType, "{}")
 	gf.P("\t},")
 	gf.P("}")
 	gf.P()
@@ -53,10 +51,6 @@ func (g *Generator) generateResetMethod(gf *protogen.GeneratedFile, msg *IRMessa
 	gf.P("\tif p == nil {")
 	gf.P("\t\treturn")
 	gf.P("\t}")
-	gf.P()
-
-	// Reset Src_ - keep capacity but clear length
-	gf.P("\tp.Src_ = p.Src_[:0]")
 	gf.P()
 
 	// Reset embedded oneof case fields

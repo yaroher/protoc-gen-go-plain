@@ -132,6 +132,9 @@ message FieldOptions {
     bool embed_with_prefix = 5;
     bool enum_as_string = 7;
     bool enum_as_int = 8;
+    // If true, write field to JSON even if it has default/zero value
+    // Default behavior (false): omit fields with default values from JSON
+    bool write_default = 9;
 }
 
 extend google.protobuf.FieldOptions {

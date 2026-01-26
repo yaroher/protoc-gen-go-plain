@@ -394,8 +394,11 @@ type FieldOptions struct {
 	EmbedWithPrefix bool `protobuf:"varint,5,opt,name=embed_with_prefix,json=embedWithPrefix,proto3" json:"embed_with_prefix,omitempty"`
 	EnumAsString    bool `protobuf:"varint,7,opt,name=enum_as_string,json=enumAsString,proto3" json:"enum_as_string,omitempty"`
 	EnumAsInt       bool `protobuf:"varint,8,opt,name=enum_as_int,json=enumAsInt,proto3" json:"enum_as_int,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// If true, write field to JSON even if it has default/zero value
+	// Default behavior (false): omit fields with default values from JSON
+	WriteDefault  bool `protobuf:"varint,9,opt,name=write_default,json=writeDefault,proto3" json:"write_default,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FieldOptions) Reset() {
@@ -466,6 +469,13 @@ func (x *FieldOptions) GetEnumAsString() bool {
 func (x *FieldOptions) GetEnumAsInt() bool {
 	if x != nil {
 		return x.EnumAsInt
+	}
+	return false
+}
+
+func (x *FieldOptions) GetWriteDefault() bool {
+	if x != nil {
+		return x.WriteDefault
 	}
 	return false
 }
@@ -635,14 +645,15 @@ const file_goplain_proto_rawDesc = "" +
 	"\x0evirtual_fields\x18\x04 \x03(\v2\x16.google.protobuf.FieldR\rvirtualFields\"\x8e\x01\n" +
 	"\vFileOptions\x12C\n" +
 	"\x12go_types_overrides\x18\x01 \x03(\v2\x15.goplain.TypeOverrideR\x10goTypesOverrides\x12:\n" +
-	"\rvirtual_types\x18\x02 \x03(\v2\x15.google.protobuf.TypeR\fvirtualTypes\"\xeb\x01\n" +
+	"\rvirtual_types\x18\x02 \x03(\v2\x15.google.protobuf.TypeR\fvirtualTypes\"\x90\x02\n" +
 	"\fFieldOptions\x125\n" +
 	"\roverride_type\x18\x01 \x01(\v2\x10.goplain.GoIdentR\foverrideType\x12\x1c\n" +
 	"\tserialize\x18\x02 \x01(\bR\tserialize\x12\x14\n" +
 	"\x05embed\x18\x04 \x01(\bR\x05embed\x12*\n" +
 	"\x11embed_with_prefix\x18\x05 \x01(\bR\x0fembedWithPrefix\x12$\n" +
 	"\x0eenum_as_string\x18\a \x01(\bR\fenumAsString\x12\x1e\n" +
-	"\venum_as_int\x18\b \x01(\bR\tenumAsInt\"P\n" +
+	"\venum_as_int\x18\b \x01(\bR\tenumAsInt\x12#\n" +
+	"\rwrite_default\x18\t \x01(\bR\fwriteDefault\"P\n" +
 	"\fOneofOptions\x12\x14\n" +
 	"\x05embed\x18\x01 \x01(\bR\x05embed\x12*\n" +
 	"\x11embed_with_prefix\x18\x02 \x01(\bR\x0fembedWithPrefix:H\n" +

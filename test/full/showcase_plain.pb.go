@@ -27,8 +27,6 @@ type MetricsPlain struct {
 	BytesProcessed int64         `json:"bytesProcessed"`
 	RequestsCount  int32         `json:"requestsCount"`
 	SuccessRate    float64       `json:"successRate"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // MetricsPlainCasters contains type casters for MetricsPlain
@@ -45,15 +43,10 @@ func (pb *Metrics) IntoPlain(c *MetricsPlainCasters) *MetricsPlain {
 	p := &MetricsPlain{}
 
 	p.DurationNs = c.DurationNsToPlain.Cast(pb.DurationNs)
-	p.Src_ = append(p.Src_, 0)
 	p.TimestampUnix = pb.TimestampUnix
-	p.Src_ = append(p.Src_, 1)
 	p.BytesProcessed = pb.BytesProcessed
-	p.Src_ = append(p.Src_, 2)
 	p.RequestsCount = pb.RequestsCount
-	p.Src_ = append(p.Src_, 3)
 	p.SuccessRate = pb.SuccessRate
-	p.Src_ = append(p.Src_, 4)
 	return p
 }
 
@@ -111,7 +104,6 @@ func (p *MetricsPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes MetricsPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *MetricsPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -119,50 +111,36 @@ func (p *MetricsPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "durationNs":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.DurationNs = time.Duration(v)
-			p.Src_ = append(p.Src_, 0)
 		case "timestampUnix":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.TimestampUnix = v
-			p.Src_ = append(p.Src_, 1)
 		case "bytesProcessed":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.BytesProcessed = v
-			p.Src_ = append(p.Src_, 2)
 		case "requestsCount":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.RequestsCount = v
-			p.Src_ = append(p.Src_, 3)
 		case "successRate":
 			v, err := d.Float64()
 			if err != nil {
 				return err
 			}
 			p.SuccessRate = v
-			p.Src_ = append(p.Src_, 4)
 		default:
 			return d.Skip()
 		}
@@ -179,9 +157,7 @@ func (p *MetricsPlain) UnmarshalJSON(data []byte) error {
 // metricsPlainPool is a sync.Pool for MetricsPlain objects
 var metricsPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &MetricsPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &MetricsPlain{}
 	},
 }
 
@@ -205,8 +181,6 @@ func (p *MetricsPlain) Reset() {
 		return
 	}
 
-	p.Src_ = p.Src_[:0]
-
 	p.DurationNs = 0
 	p.TimestampUnix = 0
 	p.BytesProcessed = 0
@@ -219,8 +193,6 @@ type CustomTypesPlain struct {
 	Name    string          `json:"name"`
 	Count   int64           `json:"count"`
 	Label   string          `json:"label"` // origin: type_alias, empath: label
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -231,15 +203,11 @@ func (pb *CustomTypes) IntoPlain() *CustomTypesPlain {
 	p := &CustomTypesPlain{}
 
 	p.RawJson = json.RawMessage(pb.RawJson)
-	p.Src_ = append(p.Src_, 0)
 	p.Name = pb.Name
-	p.Src_ = append(p.Src_, 1)
 	p.Count = pb.Count
-	p.Src_ = append(p.Src_, 2)
 	// Label type alias from label
 	if pb.GetLabel() != nil {
 		p.Label = pb.GetLabel().GetValue()
-		p.Src_ = append(p.Src_, 3)
 	}
 	return p
 }
@@ -270,15 +238,11 @@ func (pb *CustomTypes) IntoPlainReuse(p *CustomTypesPlain) {
 	p.Reset()
 
 	p.RawJson = json.RawMessage(pb.RawJson)
-	p.Src_ = append(p.Src_, 0)
 	p.Name = pb.Name
-	p.Src_ = append(p.Src_, 1)
 	p.Count = pb.Count
-	p.Src_ = append(p.Src_, 2)
 	// Label type alias from label
 	if pb.GetLabel() != nil {
 		p.Label = pb.GetLabel().GetValue()
-		p.Src_ = append(p.Src_, 3)
 	}
 }
 
@@ -318,7 +282,6 @@ func (p *CustomTypesPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes CustomTypesPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *CustomTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -326,39 +289,26 @@ func (p *CustomTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "rawJson":
 			return d.Skip()
-			p.Src_ = append(p.Src_, 0)
 		case "name":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Name = v
-			p.Src_ = append(p.Src_, 1)
 		case "count":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.Count = v
-			p.Src_ = append(p.Src_, 2)
 		case "label":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Label = v
-			p.Src_ = append(p.Src_, 3)
 		default:
 			return d.Skip()
 		}
@@ -375,9 +325,7 @@ func (p *CustomTypesPlain) UnmarshalJSON(data []byte) error {
 // customTypesPlainPool is a sync.Pool for CustomTypesPlain objects
 var customTypesPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &CustomTypesPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &CustomTypesPlain{}
 	},
 }
 
@@ -400,8 +348,6 @@ func (p *CustomTypesPlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.RawJson = nil
 	p.Name = ""
@@ -437,8 +383,6 @@ type DocumentPlain struct {
 	IsValid                  bool              `json:"isValid"`                  // origin: virtual, empath: virtual
 	// ContentCase indicates which variant of content oneof is set
 	ContentCase string `json:"content_case,omitempty"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -463,60 +407,44 @@ func (pb *Document) IntoPlain() *DocumentPlain {
 	}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Title = pb.Title
-	p.Src_ = append(p.Src_, 1)
 	p.Status = pb.Status
-	p.Src_ = append(p.Src_, 2)
 	p.Priority = pb.Priority
-	p.Src_ = append(p.Src_, 3)
 	// Description type alias from description
 	if pb.GetDescription() != nil {
 		p.Description = pb.GetDescription().GetValue()
-		p.Src_ = append(p.Src_, 4)
 	}
 	// Version type alias from version
 	if pb.GetVersion() != nil {
 		p.Version = pb.GetVersion().GetValue()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// IsPublic type alias from is_public
 	if pb.GetIsPublic() != nil {
 		p.IsPublic = pb.GetIsPublic().GetValue()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// Email from
 	if pb.GetAuthor() != nil {
 		p.Email = pb.GetAuthor().GetEmail()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// Phone from
 	if pb.GetAuthor() != nil {
 		p.Phone = pb.GetAuthor().GetPhone()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// Address from
 	if pb.GetAuthor() != nil && pb.GetAuthor().GetAddress() != nil {
 		p.Address = pb.GetAuthor().GetAddress()
-		p.Src_ = append(p.Src_, 9)
 	}
 	p.Metadata = pb.Metadata
-	p.Src_ = append(p.Src_, 10)
 	// Performance serialized from performance
 	if pb.Performance != nil {
 		if data, err := proto.Marshal(pb.Performance); err == nil {
 			p.Performance = data
-			p.Src_ = append(p.Src_, 11)
 		}
 	}
 	p.Keywords = pb.Keywords
-	p.Src_ = append(p.Src_, 12)
 	p.Attributes = pb.Attributes
-	p.Src_ = append(p.Src_, 13)
 	p.Locations = pb.Locations
-	p.Src_ = append(p.Src_, 14)
 	p.Structure = pb.Structure
-	p.Src_ = append(p.Src_, 15)
 	if len(pb.Children) > 0 {
 		p.Children = make([]DocumentPlain, len(pb.Children))
 		for i, v := range pb.Children {
@@ -524,36 +452,29 @@ func (pb *Document) IntoPlain() *DocumentPlain {
 				p.Children[i] = *v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 16)
 	}
 	if pb.Parent != nil {
 		p.Parent = pb.Parent.IntoPlain()
-		p.Src_ = append(p.Src_, 17)
 	}
 	// TextContentTextContent from text_content.text_content
 	if pb.GetTextContent() != nil {
 		p.TextContentTextContent = pb.GetTextContent()
-		p.Src_ = append(p.Src_, 18)
 	}
 	// ImageContentImageContent from image_content.image_content
 	if pb.GetImageContent() != nil {
 		p.ImageContentImageContent = pb.GetImageContent()
-		p.Src_ = append(p.Src_, 19)
 	}
 	// VideoContentVideoContent from video_content.video_content
 	if pb.GetVideoContent() != nil {
 		p.VideoContentVideoContent = pb.GetVideoContent()
-		p.Src_ = append(p.Src_, 20)
 	}
 	// CodeContentCodeContent from code_content.code_content
 	if pb.GetCodeContent() != nil {
 		p.CodeContentCodeContent = pb.GetCodeContent()
-		p.Src_ = append(p.Src_, 21)
 	}
 	// TableContentTableContent from table_content.table_content
 	if pb.GetTableContent() != nil {
 		p.TableContentTableContent = pb.GetTableContent()
-		p.Src_ = append(p.Src_, 22)
 	}
 	// ComputedHash is virtual, no source in protobuf
 	// IsValid is virtual, no source in protobuf
@@ -674,60 +595,44 @@ func (pb *Document) IntoPlainReuse(p *DocumentPlain) {
 	}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Title = pb.Title
-	p.Src_ = append(p.Src_, 1)
 	p.Status = pb.Status
-	p.Src_ = append(p.Src_, 2)
 	p.Priority = pb.Priority
-	p.Src_ = append(p.Src_, 3)
 	// Description type alias from description
 	if pb.GetDescription() != nil {
 		p.Description = pb.GetDescription().GetValue()
-		p.Src_ = append(p.Src_, 4)
 	}
 	// Version type alias from version
 	if pb.GetVersion() != nil {
 		p.Version = pb.GetVersion().GetValue()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// IsPublic type alias from is_public
 	if pb.GetIsPublic() != nil {
 		p.IsPublic = pb.GetIsPublic().GetValue()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// Email from
 	if pb.GetAuthor() != nil {
 		p.Email = pb.GetAuthor().GetEmail()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// Phone from
 	if pb.GetAuthor() != nil {
 		p.Phone = pb.GetAuthor().GetPhone()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// Address from
 	if pb.GetAuthor() != nil && pb.GetAuthor().GetAddress() != nil {
 		p.Address = pb.GetAuthor().GetAddress()
-		p.Src_ = append(p.Src_, 9)
 	}
 	p.Metadata = pb.Metadata
-	p.Src_ = append(p.Src_, 10)
 	// Performance serialized from performance
 	if pb.Performance != nil {
 		if data, err := proto.Marshal(pb.Performance); err == nil {
 			p.Performance = data
-			p.Src_ = append(p.Src_, 11)
 		}
 	}
 	p.Keywords = pb.Keywords
-	p.Src_ = append(p.Src_, 12)
 	p.Attributes = pb.Attributes
-	p.Src_ = append(p.Src_, 13)
 	p.Locations = pb.Locations
-	p.Src_ = append(p.Src_, 14)
 	p.Structure = pb.Structure
-	p.Src_ = append(p.Src_, 15)
 	if len(pb.Children) > 0 {
 		p.Children = make([]DocumentPlain, len(pb.Children))
 		for i, v := range pb.Children {
@@ -735,36 +640,29 @@ func (pb *Document) IntoPlainReuse(p *DocumentPlain) {
 				p.Children[i] = *v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 16)
 	}
 	if pb.Parent != nil {
 		p.Parent = pb.Parent.IntoPlain()
-		p.Src_ = append(p.Src_, 17)
 	}
 	// TextContentTextContent from text_content.text_content
 	if pb.GetTextContent() != nil {
 		p.TextContentTextContent = pb.GetTextContent()
-		p.Src_ = append(p.Src_, 18)
 	}
 	// ImageContentImageContent from image_content.image_content
 	if pb.GetImageContent() != nil {
 		p.ImageContentImageContent = pb.GetImageContent()
-		p.Src_ = append(p.Src_, 19)
 	}
 	// VideoContentVideoContent from video_content.video_content
 	if pb.GetVideoContent() != nil {
 		p.VideoContentVideoContent = pb.GetVideoContent()
-		p.Src_ = append(p.Src_, 20)
 	}
 	// CodeContentCodeContent from code_content.code_content
 	if pb.GetCodeContent() != nil {
 		p.CodeContentCodeContent = pb.GetCodeContent()
-		p.Src_ = append(p.Src_, 21)
 	}
 	// TableContentTableContent from table_content.table_content
 	if pb.GetTableContent() != nil {
 		p.TableContentTableContent = pb.GetTableContent()
-		p.Src_ = append(p.Src_, 22)
 	}
 	// ComputedHash is virtual, no source in protobuf
 	// IsValid is virtual, no source in protobuf
@@ -906,7 +804,6 @@ func (p *DocumentPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes DocumentPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -914,15 +811,6 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "content_case":
 			v, err := d.Str()
 			if err != nil {
@@ -935,82 +823,70 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.Id = v
-			p.Src_ = append(p.Src_, 0)
 		case "title":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Title = v
-			p.Src_ = append(p.Src_, 1)
 		case "status":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.Status = Status(v)
-			p.Src_ = append(p.Src_, 2)
 		case "priority":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.Priority = Priority(v)
-			p.Src_ = append(p.Src_, 3)
 		case "description":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Description = v
-			p.Src_ = append(p.Src_, 4)
 		case "version":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.Version = v
-			p.Src_ = append(p.Src_, 5)
 		case "isPublic":
 			v, err := d.Bool()
 			if err != nil {
 				return err
 			}
 			p.IsPublic = v
-			p.Src_ = append(p.Src_, 6)
 		case "email":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Email = v
-			p.Src_ = append(p.Src_, 7)
 		case "phone":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Phone = v
-			p.Src_ = append(p.Src_, 8)
 		case "address":
 			p.Address = &Address{}
 			if err := p.Address.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 9)
 		case "metadata":
 			p.Metadata = &Metadata{}
 			if err := p.Metadata.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 10)
 		case "performance":
 			v, err := d.Base64()
 			if err != nil {
 				return err
 			}
 			p.Performance = v
-			p.Src_ = append(p.Src_, 11)
 		case "keywords":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Str()
@@ -1022,7 +898,6 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 12)
 		case "attributes":
 			if p.Attributes == nil {
 				p.Attributes = make(map[string]string)
@@ -1035,7 +910,6 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Attributes[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 13)
 		case "locations":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				var v Address
@@ -1047,13 +921,11 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 14)
 		case "structure":
 			p.Structure = &Level1{}
 			if err := p.Structure.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 15)
 		case "children":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				var v DocumentPlain
@@ -1065,57 +937,48 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 16)
 		case "parent":
 			p.Parent = &DocumentPlain{}
 			if err := p.Parent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 17)
 		case "textContentTextContent":
 			p.TextContentTextContent = &TextContent{}
 			if err := p.TextContentTextContent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 18)
 		case "imageContentImageContent":
 			p.ImageContentImageContent = &ImageContent{}
 			if err := p.ImageContentImageContent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 19)
 		case "videoContentVideoContent":
 			p.VideoContentVideoContent = &VideoContent{}
 			if err := p.VideoContentVideoContent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 20)
 		case "codeContentCodeContent":
 			p.CodeContentCodeContent = &CodeContent{}
 			if err := p.CodeContentCodeContent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 21)
 		case "tableContentTableContent":
 			p.TableContentTableContent = &TableContent{}
 			if err := p.TableContentTableContent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 22)
 		case "computedHash":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.ComputedHash = v
-			p.Src_ = append(p.Src_, 23)
 		case "isValid":
 			v, err := d.Bool()
 			if err != nil {
 				return err
 			}
 			p.IsValid = v
-			p.Src_ = append(p.Src_, 24)
 		default:
 			return d.Skip()
 		}
@@ -1132,9 +995,7 @@ func (p *DocumentPlain) UnmarshalJSON(data []byte) error {
 // documentPlainPool is a sync.Pool for DocumentPlain objects
 var documentPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &DocumentPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &DocumentPlain{}
 	},
 }
 
@@ -1157,8 +1018,6 @@ func (p *DocumentPlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.ContentCase = ""
 	p.Id = ""
@@ -1207,8 +1066,6 @@ type TreeNodePlain struct {
 	CodeCode   *CodeContent      `json:"codeCode"`   // origin: oneof_embed, empath: code.code
 	// PayloadCase indicates which variant of payload oneof is set
 	PayloadCase string `json:"payload_case,omitempty"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -1229,11 +1086,8 @@ func (pb *TreeNode) IntoPlain() *TreeNodePlain {
 	}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Name = pb.Name
-	p.Src_ = append(p.Src_, 1)
 	p.Type = pb.Type
-	p.Src_ = append(p.Src_, 2)
 	if len(pb.Children) > 0 {
 		p.Children = make([]TreeNodePlain, len(pb.Children))
 		for i, v := range pb.Children {
@@ -1241,56 +1095,45 @@ func (pb *TreeNode) IntoPlain() *TreeNodePlain {
 				p.Children[i] = *v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 3)
 	}
 	if pb.Parent != nil {
 		p.Parent = pb.Parent.IntoPlain()
-		p.Src_ = append(p.Src_, 4)
 	}
 	// CreatedBy from
 	if pb.GetInfo() != nil {
 		p.CreatedBy = pb.GetInfo().GetCreatedBy()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// CreatedAt from
 	if pb.GetInfo() != nil {
 		p.CreatedAt = pb.GetInfo().GetCreatedAt()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// ModifiedBy from
 	if pb.GetInfo() != nil {
 		p.ModifiedBy = pb.GetInfo().GetModifiedBy()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// ModifiedAt from
 	if pb.GetInfo() != nil {
 		p.ModifiedAt = pb.GetInfo().GetModifiedAt()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// Labels from
 	if pb.GetInfo() != nil && pb.GetInfo().GetLabels() != nil {
 		p.Labels = pb.GetInfo().GetLabels()
-		p.Src_ = append(p.Src_, 9)
 	}
 	// Tags from
 	if pb.GetInfo() != nil {
 		p.Tags = pb.GetInfo().GetTags()
-		p.Src_ = append(p.Src_, 10)
 	}
 	// TextText from text.text
 	if pb.GetText() != nil {
 		p.TextText = pb.GetText()
-		p.Src_ = append(p.Src_, 11)
 	}
 	// ImageImage from image.image
 	if pb.GetImage() != nil {
 		p.ImageImage = pb.GetImage()
-		p.Src_ = append(p.Src_, 12)
 	}
 	// CodeCode from code.code
 	if pb.GetCode() != nil {
 		p.CodeCode = pb.GetCode()
-		p.Src_ = append(p.Src_, 13)
 	}
 	return p
 }
@@ -1384,11 +1227,8 @@ func (pb *TreeNode) IntoPlainReuse(p *TreeNodePlain) {
 	}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Name = pb.Name
-	p.Src_ = append(p.Src_, 1)
 	p.Type = pb.Type
-	p.Src_ = append(p.Src_, 2)
 	if len(pb.Children) > 0 {
 		p.Children = make([]TreeNodePlain, len(pb.Children))
 		for i, v := range pb.Children {
@@ -1396,56 +1236,45 @@ func (pb *TreeNode) IntoPlainReuse(p *TreeNodePlain) {
 				p.Children[i] = *v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 3)
 	}
 	if pb.Parent != nil {
 		p.Parent = pb.Parent.IntoPlain()
-		p.Src_ = append(p.Src_, 4)
 	}
 	// CreatedBy from
 	if pb.GetInfo() != nil {
 		p.CreatedBy = pb.GetInfo().GetCreatedBy()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// CreatedAt from
 	if pb.GetInfo() != nil {
 		p.CreatedAt = pb.GetInfo().GetCreatedAt()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// ModifiedBy from
 	if pb.GetInfo() != nil {
 		p.ModifiedBy = pb.GetInfo().GetModifiedBy()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// ModifiedAt from
 	if pb.GetInfo() != nil {
 		p.ModifiedAt = pb.GetInfo().GetModifiedAt()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// Labels from
 	if pb.GetInfo() != nil && pb.GetInfo().GetLabels() != nil {
 		p.Labels = pb.GetInfo().GetLabels()
-		p.Src_ = append(p.Src_, 9)
 	}
 	// Tags from
 	if pb.GetInfo() != nil {
 		p.Tags = pb.GetInfo().GetTags()
-		p.Src_ = append(p.Src_, 10)
 	}
 	// TextText from text.text
 	if pb.GetText() != nil {
 		p.TextText = pb.GetText()
-		p.Src_ = append(p.Src_, 11)
 	}
 	// ImageImage from image.image
 	if pb.GetImage() != nil {
 		p.ImageImage = pb.GetImage()
-		p.Src_ = append(p.Src_, 12)
 	}
 	// CodeCode from code.code
 	if pb.GetCode() != nil {
 		p.CodeCode = pb.GetCode()
-		p.Src_ = append(p.Src_, 13)
 	}
 }
 
@@ -1541,7 +1370,6 @@ func (p *TreeNodePlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes TreeNodePlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -1549,15 +1377,6 @@ func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "payload_case":
 			v, err := d.Str()
 			if err != nil {
@@ -1570,21 +1389,18 @@ func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.Id = v
-			p.Src_ = append(p.Src_, 0)
 		case "name":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Name = v
-			p.Src_ = append(p.Src_, 1)
 		case "type":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Type = v
-			p.Src_ = append(p.Src_, 2)
 		case "children":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				var v TreeNodePlain
@@ -1596,41 +1412,35 @@ func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 3)
 		case "parent":
 			p.Parent = &TreeNodePlain{}
 			if err := p.Parent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 4)
 		case "createdBy":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.CreatedBy = v
-			p.Src_ = append(p.Src_, 5)
 		case "createdAt":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.CreatedAt = v
-			p.Src_ = append(p.Src_, 6)
 		case "modifiedBy":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.ModifiedBy = v
-			p.Src_ = append(p.Src_, 7)
 		case "modifiedAt":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.ModifiedAt = v
-			p.Src_ = append(p.Src_, 8)
 		case "labels":
 			if p.Labels == nil {
 				p.Labels = make(map[string]string)
@@ -1643,7 +1453,6 @@ func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Labels[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 9)
 		case "tags":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Str()
@@ -1655,25 +1464,21 @@ func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 10)
 		case "textText":
 			p.TextText = &TextContent{}
 			if err := p.TextText.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 11)
 		case "imageImage":
 			p.ImageImage = &ImageContent{}
 			if err := p.ImageImage.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 12)
 		case "codeCode":
 			p.CodeCode = &CodeContent{}
 			if err := p.CodeCode.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 13)
 		default:
 			return d.Skip()
 		}
@@ -1690,9 +1495,7 @@ func (p *TreeNodePlain) UnmarshalJSON(data []byte) error {
 // treeNodePlainPool is a sync.Pool for TreeNodePlain objects
 var treeNodePlainPool = sync.Pool{
 	New: func() interface{} {
-		return &TreeNodePlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &TreeNodePlain{}
 	},
 }
 
@@ -1715,8 +1518,6 @@ func (p *TreeNodePlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.PayloadCase = ""
 	p.Id = ""
@@ -1750,8 +1551,6 @@ type EventPlain struct {
 	OrderCompletedOrderCompleted *OrderCompletedEvent `json:"orderCompletedOrderCompleted"` // origin: oneof_embed, empath: order_completed.order_completed
 	// PayloadCase indicates which variant of payload oneof is set
 	PayloadCase string `json:"payload_case,omitempty"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -1776,39 +1575,29 @@ func (pb *Event) IntoPlain() *EventPlain {
 	}
 
 	p.EventId = pb.EventId
-	p.Src_ = append(p.Src_, 0)
 	p.EventType = pb.EventType
-	p.Src_ = append(p.Src_, 1)
 	p.Timestamp = pb.Timestamp
-	p.Src_ = append(p.Src_, 2)
 	p.Source = pb.Source
-	p.Src_ = append(p.Src_, 3)
 	p.Meta = pb.Meta
-	p.Src_ = append(p.Src_, 4)
 	// UserCreatedUserCreated from user_created.user_created
 	if pb.GetUserCreated() != nil {
 		p.UserCreatedUserCreated = pb.GetUserCreated()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// UserUpdatedUserUpdated from user_updated.user_updated
 	if pb.GetUserUpdated() != nil {
 		p.UserUpdatedUserUpdated = pb.GetUserUpdated()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// UserDeletedUserDeleted from user_deleted.user_deleted
 	if pb.GetUserDeleted() != nil {
 		p.UserDeletedUserDeleted = pb.GetUserDeleted()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// OrderCreatedOrderCreated from order_created.order_created
 	if pb.GetOrderCreated() != nil {
 		p.OrderCreatedOrderCreated = pb.GetOrderCreated()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// OrderCompletedOrderCompleted from order_completed.order_completed
 	if pb.GetOrderCompleted() != nil {
 		p.OrderCompletedOrderCompleted = pb.GetOrderCompleted()
-		p.Src_ = append(p.Src_, 9)
 	}
 	return p
 }
@@ -1871,39 +1660,29 @@ func (pb *Event) IntoPlainReuse(p *EventPlain) {
 	}
 
 	p.EventId = pb.EventId
-	p.Src_ = append(p.Src_, 0)
 	p.EventType = pb.EventType
-	p.Src_ = append(p.Src_, 1)
 	p.Timestamp = pb.Timestamp
-	p.Src_ = append(p.Src_, 2)
 	p.Source = pb.Source
-	p.Src_ = append(p.Src_, 3)
 	p.Meta = pb.Meta
-	p.Src_ = append(p.Src_, 4)
 	// UserCreatedUserCreated from user_created.user_created
 	if pb.GetUserCreated() != nil {
 		p.UserCreatedUserCreated = pb.GetUserCreated()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// UserUpdatedUserUpdated from user_updated.user_updated
 	if pb.GetUserUpdated() != nil {
 		p.UserUpdatedUserUpdated = pb.GetUserUpdated()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// UserDeletedUserDeleted from user_deleted.user_deleted
 	if pb.GetUserDeleted() != nil {
 		p.UserDeletedUserDeleted = pb.GetUserDeleted()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// OrderCreatedOrderCreated from order_created.order_created
 	if pb.GetOrderCreated() != nil {
 		p.OrderCreatedOrderCreated = pb.GetOrderCreated()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// OrderCompletedOrderCompleted from order_completed.order_completed
 	if pb.GetOrderCompleted() != nil {
 		p.OrderCompletedOrderCompleted = pb.GetOrderCompleted()
-		p.Src_ = append(p.Src_, 9)
 	}
 }
 
@@ -1972,7 +1751,6 @@ func (p *EventPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes EventPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *EventPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -1980,15 +1758,6 @@ func (p *EventPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "payload_case":
 			v, err := d.Str()
 			if err != nil {
@@ -2001,64 +1770,54 @@ func (p *EventPlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.EventId = v
-			p.Src_ = append(p.Src_, 0)
 		case "eventType":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.EventType = v
-			p.Src_ = append(p.Src_, 1)
 		case "timestamp":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.Timestamp = v
-			p.Src_ = append(p.Src_, 2)
 		case "source":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Source = v
-			p.Src_ = append(p.Src_, 3)
 		case "meta":
 			p.Meta = &Metadata{}
 			if err := p.Meta.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 4)
 		case "userCreatedUserCreated":
 			p.UserCreatedUserCreated = &UserCreatedEvent{}
 			if err := p.UserCreatedUserCreated.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 5)
 		case "userUpdatedUserUpdated":
 			p.UserUpdatedUserUpdated = &UserUpdatedEvent{}
 			if err := p.UserUpdatedUserUpdated.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 6)
 		case "userDeletedUserDeleted":
 			p.UserDeletedUserDeleted = &UserDeletedEvent{}
 			if err := p.UserDeletedUserDeleted.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 7)
 		case "orderCreatedOrderCreated":
 			p.OrderCreatedOrderCreated = &OrderCreatedEvent{}
 			if err := p.OrderCreatedOrderCreated.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 8)
 		case "orderCompletedOrderCompleted":
 			p.OrderCompletedOrderCompleted = &OrderCompletedEvent{}
 			if err := p.OrderCompletedOrderCompleted.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 9)
 		default:
 			return d.Skip()
 		}
@@ -2075,9 +1834,7 @@ func (p *EventPlain) UnmarshalJSON(data []byte) error {
 // eventPlainPool is a sync.Pool for EventPlain objects
 var eventPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &EventPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &EventPlain{}
 	},
 }
 
@@ -2100,8 +1857,6 @@ func (p *EventPlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.PayloadCase = ""
 	p.EventId = ""
@@ -2175,8 +1930,6 @@ type ConfigPlain struct {
 	NestedConfigMap  map[string]*Config_NestedConfig `json:"nestedConfigMap"`
 	Parent           *ConfigPlain                    `json:"parent"`
 	Children         []ConfigPlain                   `json:"children"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -2187,77 +1940,45 @@ func (pb *Config) IntoPlain() *ConfigPlain {
 	p := &ConfigPlain{}
 
 	p.DoubleVal = pb.DoubleVal
-	p.Src_ = append(p.Src_, 0)
 	p.FloatVal = pb.FloatVal
-	p.Src_ = append(p.Src_, 1)
 	p.Int32Val = pb.Int32Val
-	p.Src_ = append(p.Src_, 2)
 	p.Int64Val = pb.Int64Val
-	p.Src_ = append(p.Src_, 3)
 	p.Uint32Val = pb.Uint32Val
-	p.Src_ = append(p.Src_, 4)
 	p.Uint64Val = pb.Uint64Val
-	p.Src_ = append(p.Src_, 5)
 	p.Sint32Val = pb.Sint32Val
-	p.Src_ = append(p.Src_, 6)
 	p.Sint64Val = pb.Sint64Val
-	p.Src_ = append(p.Src_, 7)
 	p.Fixed32Val = pb.Fixed32Val
-	p.Src_ = append(p.Src_, 8)
 	p.Fixed64Val = pb.Fixed64Val
-	p.Src_ = append(p.Src_, 9)
 	p.Sfixed32Val = pb.Sfixed32Val
-	p.Src_ = append(p.Src_, 10)
 	p.Sfixed64Val = pb.Sfixed64Val
-	p.Src_ = append(p.Src_, 11)
 	p.BoolVal = pb.BoolVal
-	p.Src_ = append(p.Src_, 12)
 	p.StringVal = pb.StringVal
-	p.Src_ = append(p.Src_, 13)
 	p.BytesVal = pb.BytesVal
-	p.Src_ = append(p.Src_, 14)
 	if pb.OptionalString != nil {
 		p.OptionalString = *pb.OptionalString
-		p.Src_ = append(p.Src_, 15)
 	}
 	if pb.OptionalInt != nil {
 		p.OptionalInt = *pb.OptionalInt
-		p.Src_ = append(p.Src_, 16)
 	}
 	if pb.OptionalBool != nil {
 		p.OptionalBool = *pb.OptionalBool
-		p.Src_ = append(p.Src_, 17)
 	}
 	if pb.OptionalDouble != nil {
 		p.OptionalDouble = *pb.OptionalDouble
-		p.Src_ = append(p.Src_, 18)
 	}
 	p.OptionalBytes = pb.OptionalBytes
-	p.Src_ = append(p.Src_, 19)
 	p.StringList = pb.StringList
-	p.Src_ = append(p.Src_, 20)
 	p.IntList = pb.IntList
-	p.Src_ = append(p.Src_, 21)
 	p.DoubleList = pb.DoubleList
-	p.Src_ = append(p.Src_, 22)
 	p.BytesList = pb.BytesList
-	p.Src_ = append(p.Src_, 23)
 	p.BoolList = pb.BoolList
-	p.Src_ = append(p.Src_, 24)
 	p.FloatList = pb.FloatList
-	p.Src_ = append(p.Src_, 25)
 	p.Int64List = pb.Int64List
-	p.Src_ = append(p.Src_, 26)
 	p.Uint32List = pb.Uint32List
-	p.Src_ = append(p.Src_, 27)
 	p.Uint64List = pb.Uint64List
-	p.Src_ = append(p.Src_, 28)
 	p.StringMap = pb.StringMap
-	p.Src_ = append(p.Src_, 29)
 	p.IntMap = pb.IntMap
-	p.Src_ = append(p.Src_, 30)
 	p.IntKeyMap = pb.IntKeyMap
-	p.Src_ = append(p.Src_, 31)
 	if len(pb.NestedMap) > 0 {
 		p.NestedMap = make(map[string]*ConfigPlain, len(pb.NestedMap))
 		for k, v := range pb.NestedMap {
@@ -2265,59 +1986,34 @@ func (pb *Config) IntoPlain() *ConfigPlain {
 				p.NestedMap[k] = v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 32)
 	}
 	p.Int64KeyMap = pb.Int64KeyMap
-	p.Src_ = append(p.Src_, 33)
 	p.Uint32KeyMap = pb.Uint32KeyMap
-	p.Src_ = append(p.Src_, 34)
 	p.Uint64KeyMap = pb.Uint64KeyMap
-	p.Src_ = append(p.Src_, 35)
 	p.Sint32KeyMap = pb.Sint32KeyMap
-	p.Src_ = append(p.Src_, 36)
 	p.Sint64KeyMap = pb.Sint64KeyMap
-	p.Src_ = append(p.Src_, 37)
 	p.Fixed32KeyMap = pb.Fixed32KeyMap
-	p.Src_ = append(p.Src_, 38)
 	p.Fixed64KeyMap = pb.Fixed64KeyMap
-	p.Src_ = append(p.Src_, 39)
 	p.Sfixed32KeyMap = pb.Sfixed32KeyMap
-	p.Src_ = append(p.Src_, 40)
 	p.Sfixed64KeyMap = pb.Sfixed64KeyMap
-	p.Src_ = append(p.Src_, 41)
 	p.BoolKeyMap = pb.BoolKeyMap
-	p.Src_ = append(p.Src_, 42)
 	p.DoubleMap = pb.DoubleMap
-	p.Src_ = append(p.Src_, 43)
 	p.BytesMap = pb.BytesMap
-	p.Src_ = append(p.Src_, 44)
 	p.BoolMap = pb.BoolMap
-	p.Src_ = append(p.Src_, 45)
 	p.FloatMap = pb.FloatMap
-	p.Src_ = append(p.Src_, 46)
 	p.Status = pb.Status
-	p.Src_ = append(p.Src_, 47)
 	p.StatusList = pb.StatusList
-	p.Src_ = append(p.Src_, 48)
 	p.StatusMap = pb.StatusMap
-	p.Src_ = append(p.Src_, 49)
 	if pb.OptionalStatus != nil {
 		p.OptionalStatus = *pb.OptionalStatus
-		p.Src_ = append(p.Src_, 50)
 	}
 	p.NestedEnum = pb.NestedEnum
-	p.Src_ = append(p.Src_, 51)
 	p.NestedEnumList = pb.NestedEnumList
-	p.Src_ = append(p.Src_, 52)
 	p.NestedConfig = pb.NestedConfig
-	p.Src_ = append(p.Src_, 53)
 	p.NestedConfigList = pb.NestedConfigList
-	p.Src_ = append(p.Src_, 54)
 	p.NestedConfigMap = pb.NestedConfigMap
-	p.Src_ = append(p.Src_, 55)
 	if pb.Parent != nil {
 		p.Parent = pb.Parent.IntoPlain()
-		p.Src_ = append(p.Src_, 56)
 	}
 	if len(pb.Children) > 0 {
 		p.Children = make([]ConfigPlain, len(pb.Children))
@@ -2326,7 +2022,6 @@ func (pb *Config) IntoPlain() *ConfigPlain {
 				p.Children[i] = *v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 57)
 	}
 	return p
 }
@@ -2424,77 +2119,45 @@ func (pb *Config) IntoPlainReuse(p *ConfigPlain) {
 	p.Reset()
 
 	p.DoubleVal = pb.DoubleVal
-	p.Src_ = append(p.Src_, 0)
 	p.FloatVal = pb.FloatVal
-	p.Src_ = append(p.Src_, 1)
 	p.Int32Val = pb.Int32Val
-	p.Src_ = append(p.Src_, 2)
 	p.Int64Val = pb.Int64Val
-	p.Src_ = append(p.Src_, 3)
 	p.Uint32Val = pb.Uint32Val
-	p.Src_ = append(p.Src_, 4)
 	p.Uint64Val = pb.Uint64Val
-	p.Src_ = append(p.Src_, 5)
 	p.Sint32Val = pb.Sint32Val
-	p.Src_ = append(p.Src_, 6)
 	p.Sint64Val = pb.Sint64Val
-	p.Src_ = append(p.Src_, 7)
 	p.Fixed32Val = pb.Fixed32Val
-	p.Src_ = append(p.Src_, 8)
 	p.Fixed64Val = pb.Fixed64Val
-	p.Src_ = append(p.Src_, 9)
 	p.Sfixed32Val = pb.Sfixed32Val
-	p.Src_ = append(p.Src_, 10)
 	p.Sfixed64Val = pb.Sfixed64Val
-	p.Src_ = append(p.Src_, 11)
 	p.BoolVal = pb.BoolVal
-	p.Src_ = append(p.Src_, 12)
 	p.StringVal = pb.StringVal
-	p.Src_ = append(p.Src_, 13)
 	p.BytesVal = pb.BytesVal
-	p.Src_ = append(p.Src_, 14)
 	if pb.OptionalString != nil {
 		p.OptionalString = *pb.OptionalString
-		p.Src_ = append(p.Src_, 15)
 	}
 	if pb.OptionalInt != nil {
 		p.OptionalInt = *pb.OptionalInt
-		p.Src_ = append(p.Src_, 16)
 	}
 	if pb.OptionalBool != nil {
 		p.OptionalBool = *pb.OptionalBool
-		p.Src_ = append(p.Src_, 17)
 	}
 	if pb.OptionalDouble != nil {
 		p.OptionalDouble = *pb.OptionalDouble
-		p.Src_ = append(p.Src_, 18)
 	}
 	p.OptionalBytes = pb.OptionalBytes
-	p.Src_ = append(p.Src_, 19)
 	p.StringList = pb.StringList
-	p.Src_ = append(p.Src_, 20)
 	p.IntList = pb.IntList
-	p.Src_ = append(p.Src_, 21)
 	p.DoubleList = pb.DoubleList
-	p.Src_ = append(p.Src_, 22)
 	p.BytesList = pb.BytesList
-	p.Src_ = append(p.Src_, 23)
 	p.BoolList = pb.BoolList
-	p.Src_ = append(p.Src_, 24)
 	p.FloatList = pb.FloatList
-	p.Src_ = append(p.Src_, 25)
 	p.Int64List = pb.Int64List
-	p.Src_ = append(p.Src_, 26)
 	p.Uint32List = pb.Uint32List
-	p.Src_ = append(p.Src_, 27)
 	p.Uint64List = pb.Uint64List
-	p.Src_ = append(p.Src_, 28)
 	p.StringMap = pb.StringMap
-	p.Src_ = append(p.Src_, 29)
 	p.IntMap = pb.IntMap
-	p.Src_ = append(p.Src_, 30)
 	p.IntKeyMap = pb.IntKeyMap
-	p.Src_ = append(p.Src_, 31)
 	if len(pb.NestedMap) > 0 {
 		p.NestedMap = make(map[string]*ConfigPlain, len(pb.NestedMap))
 		for k, v := range pb.NestedMap {
@@ -2502,59 +2165,34 @@ func (pb *Config) IntoPlainReuse(p *ConfigPlain) {
 				p.NestedMap[k] = v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 32)
 	}
 	p.Int64KeyMap = pb.Int64KeyMap
-	p.Src_ = append(p.Src_, 33)
 	p.Uint32KeyMap = pb.Uint32KeyMap
-	p.Src_ = append(p.Src_, 34)
 	p.Uint64KeyMap = pb.Uint64KeyMap
-	p.Src_ = append(p.Src_, 35)
 	p.Sint32KeyMap = pb.Sint32KeyMap
-	p.Src_ = append(p.Src_, 36)
 	p.Sint64KeyMap = pb.Sint64KeyMap
-	p.Src_ = append(p.Src_, 37)
 	p.Fixed32KeyMap = pb.Fixed32KeyMap
-	p.Src_ = append(p.Src_, 38)
 	p.Fixed64KeyMap = pb.Fixed64KeyMap
-	p.Src_ = append(p.Src_, 39)
 	p.Sfixed32KeyMap = pb.Sfixed32KeyMap
-	p.Src_ = append(p.Src_, 40)
 	p.Sfixed64KeyMap = pb.Sfixed64KeyMap
-	p.Src_ = append(p.Src_, 41)
 	p.BoolKeyMap = pb.BoolKeyMap
-	p.Src_ = append(p.Src_, 42)
 	p.DoubleMap = pb.DoubleMap
-	p.Src_ = append(p.Src_, 43)
 	p.BytesMap = pb.BytesMap
-	p.Src_ = append(p.Src_, 44)
 	p.BoolMap = pb.BoolMap
-	p.Src_ = append(p.Src_, 45)
 	p.FloatMap = pb.FloatMap
-	p.Src_ = append(p.Src_, 46)
 	p.Status = pb.Status
-	p.Src_ = append(p.Src_, 47)
 	p.StatusList = pb.StatusList
-	p.Src_ = append(p.Src_, 48)
 	p.StatusMap = pb.StatusMap
-	p.Src_ = append(p.Src_, 49)
 	if pb.OptionalStatus != nil {
 		p.OptionalStatus = *pb.OptionalStatus
-		p.Src_ = append(p.Src_, 50)
 	}
 	p.NestedEnum = pb.NestedEnum
-	p.Src_ = append(p.Src_, 51)
 	p.NestedEnumList = pb.NestedEnumList
-	p.Src_ = append(p.Src_, 52)
 	p.NestedConfig = pb.NestedConfig
-	p.Src_ = append(p.Src_, 53)
 	p.NestedConfigList = pb.NestedConfigList
-	p.Src_ = append(p.Src_, 54)
 	p.NestedConfigMap = pb.NestedConfigMap
-	p.Src_ = append(p.Src_, 55)
 	if pb.Parent != nil {
 		p.Parent = pb.Parent.IntoPlain()
-		p.Src_ = append(p.Src_, 56)
 	}
 	if len(pb.Children) > 0 {
 		p.Children = make([]ConfigPlain, len(pb.Children))
@@ -2563,7 +2201,6 @@ func (pb *Config) IntoPlainReuse(p *ConfigPlain) {
 				p.Children[i] = *v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 57)
 	}
 }
 
@@ -2926,7 +2563,6 @@ func (p *ConfigPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes ConfigPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -2934,155 +2570,126 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "doubleVal":
 			v, err := d.Float64()
 			if err != nil {
 				return err
 			}
 			p.DoubleVal = v
-			p.Src_ = append(p.Src_, 0)
 		case "floatVal":
 			v, err := d.Float32()
 			if err != nil {
 				return err
 			}
 			p.FloatVal = v
-			p.Src_ = append(p.Src_, 1)
 		case "int32Val":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.Int32Val = v
-			p.Src_ = append(p.Src_, 2)
 		case "int64Val":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.Int64Val = v
-			p.Src_ = append(p.Src_, 3)
 		case "uint32Val":
 			v, err := d.UInt32()
 			if err != nil {
 				return err
 			}
 			p.Uint32Val = v
-			p.Src_ = append(p.Src_, 4)
 		case "uint64Val":
 			v, err := d.UInt64()
 			if err != nil {
 				return err
 			}
 			p.Uint64Val = v
-			p.Src_ = append(p.Src_, 5)
 		case "sint32Val":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.Sint32Val = v
-			p.Src_ = append(p.Src_, 6)
 		case "sint64Val":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.Sint64Val = v
-			p.Src_ = append(p.Src_, 7)
 		case "fixed32Val":
 			v, err := d.UInt32()
 			if err != nil {
 				return err
 			}
 			p.Fixed32Val = v
-			p.Src_ = append(p.Src_, 8)
 		case "fixed64Val":
 			v, err := d.UInt64()
 			if err != nil {
 				return err
 			}
 			p.Fixed64Val = v
-			p.Src_ = append(p.Src_, 9)
 		case "sfixed32Val":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.Sfixed32Val = v
-			p.Src_ = append(p.Src_, 10)
 		case "sfixed64Val":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.Sfixed64Val = v
-			p.Src_ = append(p.Src_, 11)
 		case "boolVal":
 			v, err := d.Bool()
 			if err != nil {
 				return err
 			}
 			p.BoolVal = v
-			p.Src_ = append(p.Src_, 12)
 		case "stringVal":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.StringVal = v
-			p.Src_ = append(p.Src_, 13)
 		case "bytesVal":
 			v, err := d.Base64()
 			if err != nil {
 				return err
 			}
 			p.BytesVal = v
-			p.Src_ = append(p.Src_, 14)
 		case "optionalString":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.OptionalString = v
-			p.Src_ = append(p.Src_, 15)
 		case "optionalInt":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.OptionalInt = v
-			p.Src_ = append(p.Src_, 16)
 		case "optionalBool":
 			v, err := d.Bool()
 			if err != nil {
 				return err
 			}
 			p.OptionalBool = v
-			p.Src_ = append(p.Src_, 17)
 		case "optionalDouble":
 			v, err := d.Float64()
 			if err != nil {
 				return err
 			}
 			p.OptionalDouble = v
-			p.Src_ = append(p.Src_, 18)
 		case "optionalBytes":
 			v, err := d.Base64()
 			if err != nil {
 				return err
 			}
 			p.OptionalBytes = v
-			p.Src_ = append(p.Src_, 19)
 		case "stringList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Str()
@@ -3094,7 +2701,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 20)
 		case "intList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Int32()
@@ -3106,7 +2712,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 21)
 		case "doubleList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Float64()
@@ -3118,7 +2723,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 22)
 		case "bytesList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Base64()
@@ -3130,7 +2734,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 23)
 		case "boolList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Bool()
@@ -3142,7 +2745,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 24)
 		case "floatList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Float32()
@@ -3154,7 +2756,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 25)
 		case "int64List":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Int64()
@@ -3166,7 +2767,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 26)
 		case "uint32List":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.UInt32()
@@ -3178,7 +2778,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 27)
 		case "uint64List":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.UInt64()
@@ -3190,7 +2789,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 28)
 		case "stringMap":
 			if p.StringMap == nil {
 				p.StringMap = make(map[string]string)
@@ -3203,7 +2801,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StringMap[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 29)
 		case "intMap":
 			if p.IntMap == nil {
 				p.IntMap = make(map[string]int32)
@@ -3216,7 +2813,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.IntMap[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 30)
 		case "intKeyMap":
 			if p.IntKeyMap == nil {
 				p.IntKeyMap = make(map[int32]string)
@@ -3234,7 +2830,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.IntKeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 31)
 		case "nestedMap":
 			if p.NestedMap == nil {
 				p.NestedMap = make(map[string]*ConfigPlain)
@@ -3246,7 +2841,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				}
 				return nil
 			})
-			p.Src_ = append(p.Src_, 32)
 		case "int64KeyMap":
 			if p.Int64KeyMap == nil {
 				p.Int64KeyMap = make(map[int64]string)
@@ -3263,7 +2857,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Int64KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 33)
 		case "uint32KeyMap":
 			if p.Uint32KeyMap == nil {
 				p.Uint32KeyMap = make(map[uint32]string)
@@ -3281,7 +2874,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Uint32KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 34)
 		case "uint64KeyMap":
 			if p.Uint64KeyMap == nil {
 				p.Uint64KeyMap = make(map[uint64]string)
@@ -3298,7 +2890,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Uint64KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 35)
 		case "sint32KeyMap":
 			if p.Sint32KeyMap == nil {
 				p.Sint32KeyMap = make(map[int32]string)
@@ -3316,7 +2907,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sint32KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 36)
 		case "sint64KeyMap":
 			if p.Sint64KeyMap == nil {
 				p.Sint64KeyMap = make(map[int64]string)
@@ -3333,7 +2923,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sint64KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 37)
 		case "fixed32KeyMap":
 			if p.Fixed32KeyMap == nil {
 				p.Fixed32KeyMap = make(map[uint32]string)
@@ -3351,7 +2940,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Fixed32KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 38)
 		case "fixed64KeyMap":
 			if p.Fixed64KeyMap == nil {
 				p.Fixed64KeyMap = make(map[uint64]string)
@@ -3368,7 +2956,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Fixed64KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 39)
 		case "sfixed32KeyMap":
 			if p.Sfixed32KeyMap == nil {
 				p.Sfixed32KeyMap = make(map[int32]string)
@@ -3386,7 +2973,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sfixed32KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 40)
 		case "sfixed64KeyMap":
 			if p.Sfixed64KeyMap == nil {
 				p.Sfixed64KeyMap = make(map[int64]string)
@@ -3403,7 +2989,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sfixed64KeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 41)
 		case "boolKeyMap":
 			if p.BoolKeyMap == nil {
 				p.BoolKeyMap = make(map[bool]string)
@@ -3420,7 +3005,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.BoolKeyMap[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 42)
 		case "doubleMap":
 			if p.DoubleMap == nil {
 				p.DoubleMap = make(map[string]float64)
@@ -3433,7 +3017,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.DoubleMap[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 43)
 		case "bytesMap":
 			if p.BytesMap == nil {
 				p.BytesMap = make(map[string][]byte)
@@ -3446,7 +3029,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.BytesMap[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 44)
 		case "boolMap":
 			if p.BoolMap == nil {
 				p.BoolMap = make(map[string]bool)
@@ -3459,7 +3041,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.BoolMap[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 45)
 		case "floatMap":
 			if p.FloatMap == nil {
 				p.FloatMap = make(map[string]float32)
@@ -3472,14 +3053,12 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.FloatMap[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 46)
 		case "status":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.Status = Status(v)
-			p.Src_ = append(p.Src_, 47)
 		case "statusList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Int32()
@@ -3491,7 +3070,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 48)
 		case "statusMap":
 			if p.StatusMap == nil {
 				p.StatusMap = make(map[string]Status)
@@ -3504,21 +3082,18 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StatusMap[key] = Status(v)
 				return nil
 			})
-			p.Src_ = append(p.Src_, 49)
 		case "optionalStatus":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.OptionalStatus = Status(v)
-			p.Src_ = append(p.Src_, 50)
 		case "nestedEnum":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.NestedEnum = Config_NestedEnum(v)
-			p.Src_ = append(p.Src_, 51)
 		case "nestedEnumList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Int32()
@@ -3530,13 +3105,11 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 52)
 		case "nestedConfig":
 			p.NestedConfig = &Config_NestedConfig{}
 			if err := p.NestedConfig.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 53)
 		case "nestedConfigList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				var v Config_NestedConfig
@@ -3548,7 +3121,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 54)
 		case "nestedConfigMap":
 			if p.NestedConfigMap == nil {
 				p.NestedConfigMap = make(map[string]*Config_NestedConfig)
@@ -3560,13 +3132,11 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 				}
 				return nil
 			})
-			p.Src_ = append(p.Src_, 55)
 		case "parent":
 			p.Parent = &ConfigPlain{}
 			if err := p.Parent.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 56)
 		case "children":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				var v ConfigPlain
@@ -3578,7 +3148,6 @@ func (p *ConfigPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 57)
 		default:
 			return d.Skip()
 		}
@@ -3595,9 +3164,7 @@ func (p *ConfigPlain) UnmarshalJSON(data []byte) error {
 // configPlainPool is a sync.Pool for ConfigPlain objects
 var configPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &ConfigPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &ConfigPlain{}
 	},
 }
 
@@ -3620,8 +3187,6 @@ func (p *ConfigPlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.DoubleVal = 0
 	p.FloatVal = 0
@@ -3746,8 +3311,6 @@ type WellKnownTypesPlain struct {
 	Timestamps     []*timestamppb.Timestamp  `json:"timestamps"`
 	Durations      []*durationpb.Duration    `json:"durations"`
 	Strings        []*wrapperspb.StringValue `json:"strings"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -3758,49 +3321,27 @@ func (pb *WellKnownTypes) IntoPlain() *WellKnownTypesPlain {
 	p := &WellKnownTypesPlain{}
 
 	p.CreatedAt = pb.CreatedAt
-	p.Src_ = append(p.Src_, 0)
 	p.Ttl = pb.Ttl
-	p.Src_ = append(p.Src_, 1)
 	p.UpdatedAt = pb.UpdatedAt
-	p.Src_ = append(p.Src_, 2)
 	p.Latency = pb.Latency
-	p.Src_ = append(p.Src_, 3)
 	p.NullableString = pb.NullableString
-	p.Src_ = append(p.Src_, 4)
 	p.NullableInt32 = pb.NullableInt32
-	p.Src_ = append(p.Src_, 5)
 	p.NullableInt64 = pb.NullableInt64
-	p.Src_ = append(p.Src_, 6)
 	p.NullableUint32 = pb.NullableUint32
-	p.Src_ = append(p.Src_, 7)
 	p.NullableUint64 = pb.NullableUint64
-	p.Src_ = append(p.Src_, 8)
 	p.NullableFloat = pb.NullableFloat
-	p.Src_ = append(p.Src_, 9)
 	p.NullableDouble = pb.NullableDouble
-	p.Src_ = append(p.Src_, 10)
 	p.NullableBool = pb.NullableBool
-	p.Src_ = append(p.Src_, 11)
 	p.NullableBytes = pb.NullableBytes
-	p.Src_ = append(p.Src_, 12)
 	p.Metadata = pb.Metadata
-	p.Src_ = append(p.Src_, 13)
 	p.DynamicValue = pb.DynamicValue
-	p.Src_ = append(p.Src_, 14)
 	p.ListValue = pb.ListValue
-	p.Src_ = append(p.Src_, 15)
 	p.Payload = pb.Payload
-	p.Src_ = append(p.Src_, 16)
 	p.Payloads = pb.Payloads
-	p.Src_ = append(p.Src_, 17)
 	p.Empty = pb.Empty
-	p.Src_ = append(p.Src_, 18)
 	p.Timestamps = pb.Timestamps
-	p.Src_ = append(p.Src_, 19)
 	p.Durations = pb.Durations
-	p.Src_ = append(p.Src_, 20)
 	p.Strings = pb.Strings
-	p.Src_ = append(p.Src_, 21)
 	return p
 }
 
@@ -3845,49 +3386,27 @@ func (pb *WellKnownTypes) IntoPlainReuse(p *WellKnownTypesPlain) {
 	p.Reset()
 
 	p.CreatedAt = pb.CreatedAt
-	p.Src_ = append(p.Src_, 0)
 	p.Ttl = pb.Ttl
-	p.Src_ = append(p.Src_, 1)
 	p.UpdatedAt = pb.UpdatedAt
-	p.Src_ = append(p.Src_, 2)
 	p.Latency = pb.Latency
-	p.Src_ = append(p.Src_, 3)
 	p.NullableString = pb.NullableString
-	p.Src_ = append(p.Src_, 4)
 	p.NullableInt32 = pb.NullableInt32
-	p.Src_ = append(p.Src_, 5)
 	p.NullableInt64 = pb.NullableInt64
-	p.Src_ = append(p.Src_, 6)
 	p.NullableUint32 = pb.NullableUint32
-	p.Src_ = append(p.Src_, 7)
 	p.NullableUint64 = pb.NullableUint64
-	p.Src_ = append(p.Src_, 8)
 	p.NullableFloat = pb.NullableFloat
-	p.Src_ = append(p.Src_, 9)
 	p.NullableDouble = pb.NullableDouble
-	p.Src_ = append(p.Src_, 10)
 	p.NullableBool = pb.NullableBool
-	p.Src_ = append(p.Src_, 11)
 	p.NullableBytes = pb.NullableBytes
-	p.Src_ = append(p.Src_, 12)
 	p.Metadata = pb.Metadata
-	p.Src_ = append(p.Src_, 13)
 	p.DynamicValue = pb.DynamicValue
-	p.Src_ = append(p.Src_, 14)
 	p.ListValue = pb.ListValue
-	p.Src_ = append(p.Src_, 15)
 	p.Payload = pb.Payload
-	p.Src_ = append(p.Src_, 16)
 	p.Payloads = pb.Payloads
-	p.Src_ = append(p.Src_, 17)
 	p.Empty = pb.Empty
-	p.Src_ = append(p.Src_, 18)
 	p.Timestamps = pb.Timestamps
-	p.Src_ = append(p.Src_, 19)
 	p.Durations = pb.Durations
-	p.Src_ = append(p.Src_, 20)
 	p.Strings = pb.Strings
-	p.Src_ = append(p.Src_, 21)
 }
 
 // MarshalJX encodes WellKnownTypesPlain to JSON using jx.Encoder
@@ -4103,7 +3622,6 @@ func (p *WellKnownTypesPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes WellKnownTypesPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -4111,15 +3629,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "createdAt":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4129,7 +3638,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.CreatedAt); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 0)
 		case "ttl":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4139,7 +3647,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.Ttl); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 1)
 		case "updatedAt":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4149,7 +3656,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.UpdatedAt); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 2)
 		case "latency":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4159,7 +3665,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.Latency); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 3)
 		case "nullableString":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4169,7 +3674,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableString); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 4)
 		case "nullableInt32":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4179,7 +3683,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableInt32); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 5)
 		case "nullableInt64":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4189,7 +3692,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableInt64); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 6)
 		case "nullableUint32":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4199,7 +3701,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableUint32); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 7)
 		case "nullableUint64":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4209,7 +3710,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableUint64); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 8)
 		case "nullableFloat":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4219,7 +3719,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableFloat); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 9)
 		case "nullableDouble":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4229,7 +3728,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableDouble); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 10)
 		case "nullableBool":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4239,7 +3737,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableBool); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 11)
 		case "nullableBytes":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4249,7 +3746,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.NullableBytes); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 12)
 		case "metadata":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4259,7 +3755,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.Metadata); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 13)
 		case "dynamicValue":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4269,7 +3764,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.DynamicValue); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 14)
 		case "listValue":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4279,7 +3773,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.ListValue); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 15)
 		case "payload":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4289,7 +3782,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.Payload); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 16)
 		case "payloads":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				raw, err := d.Raw()
@@ -4305,7 +3797,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 17)
 		case "empty":
 			raw, err := d.Raw()
 			if err != nil {
@@ -4315,7 +3806,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			if err := protojson.Unmarshal(raw, p.Empty); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 18)
 		case "timestamps":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				raw, err := d.Raw()
@@ -4331,7 +3821,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 19)
 		case "durations":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				raw, err := d.Raw()
@@ -4347,7 +3836,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 20)
 		case "strings":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				raw, err := d.Raw()
@@ -4363,7 +3851,6 @@ func (p *WellKnownTypesPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 21)
 		default:
 			return d.Skip()
 		}
@@ -4380,9 +3867,7 @@ func (p *WellKnownTypesPlain) UnmarshalJSON(data []byte) error {
 // wellKnownTypesPlainPool is a sync.Pool for WellKnownTypesPlain objects
 var wellKnownTypesPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &WellKnownTypesPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &WellKnownTypesPlain{}
 	},
 }
 
@@ -4405,8 +3890,6 @@ func (p *WellKnownTypesPlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.CreatedAt = nil
 	p.Ttl = nil
@@ -4459,8 +3942,6 @@ type MapShowcasePlain struct {
 	StrEnum      map[string]Status       `json:"strEnum"`
 	Int32Enum    map[int32]Priority      `json:"int32Enum"`
 	Nested       map[string]*ConfigPlain `json:"nested"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -4471,55 +3952,30 @@ func (pb *MapShowcase) IntoPlain() *MapShowcasePlain {
 	p := &MapShowcasePlain{}
 
 	p.StrStr = pb.StrStr
-	p.Src_ = append(p.Src_, 0)
 	p.StrInt32 = pb.StrInt32
-	p.Src_ = append(p.Src_, 1)
 	p.StrInt64 = pb.StrInt64
-	p.Src_ = append(p.Src_, 2)
 	p.StrUint32 = pb.StrUint32
-	p.Src_ = append(p.Src_, 3)
 	p.StrUint64 = pb.StrUint64
-	p.Src_ = append(p.Src_, 4)
 	p.StrFloat = pb.StrFloat
-	p.Src_ = append(p.Src_, 5)
 	p.StrDouble = pb.StrDouble
-	p.Src_ = append(p.Src_, 6)
 	p.StrBool = pb.StrBool
-	p.Src_ = append(p.Src_, 7)
 	p.StrBytes = pb.StrBytes
-	p.Src_ = append(p.Src_, 8)
 	p.Int32Str = pb.Int32Str
-	p.Src_ = append(p.Src_, 9)
 	p.Int64Str = pb.Int64Str
-	p.Src_ = append(p.Src_, 10)
 	p.Uint32Str = pb.Uint32Str
-	p.Src_ = append(p.Src_, 11)
 	p.Uint64Str = pb.Uint64Str
-	p.Src_ = append(p.Src_, 12)
 	p.Sint32Str = pb.Sint32Str
-	p.Src_ = append(p.Src_, 13)
 	p.Sint64Str = pb.Sint64Str
-	p.Src_ = append(p.Src_, 14)
 	p.Fixed32Str = pb.Fixed32Str
-	p.Src_ = append(p.Src_, 15)
 	p.Fixed64Str = pb.Fixed64Str
-	p.Src_ = append(p.Src_, 16)
 	p.Sfixed32Str = pb.Sfixed32Str
-	p.Src_ = append(p.Src_, 17)
 	p.Sfixed64Str = pb.Sfixed64Str
-	p.Src_ = append(p.Src_, 18)
 	p.BoolStr = pb.BoolStr
-	p.Src_ = append(p.Src_, 19)
 	p.StrMessage = pb.StrMessage
-	p.Src_ = append(p.Src_, 20)
 	p.Int32Message = pb.Int32Message
-	p.Src_ = append(p.Src_, 21)
 	p.Int64Message = pb.Int64Message
-	p.Src_ = append(p.Src_, 22)
 	p.StrEnum = pb.StrEnum
-	p.Src_ = append(p.Src_, 23)
 	p.Int32Enum = pb.Int32Enum
-	p.Src_ = append(p.Src_, 24)
 	if len(pb.Nested) > 0 {
 		p.Nested = make(map[string]*ConfigPlain, len(pb.Nested))
 		for k, v := range pb.Nested {
@@ -4527,7 +3983,6 @@ func (pb *MapShowcase) IntoPlain() *MapShowcasePlain {
 				p.Nested[k] = v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 25)
 	}
 	return p
 }
@@ -4584,55 +4039,30 @@ func (pb *MapShowcase) IntoPlainReuse(p *MapShowcasePlain) {
 	p.Reset()
 
 	p.StrStr = pb.StrStr
-	p.Src_ = append(p.Src_, 0)
 	p.StrInt32 = pb.StrInt32
-	p.Src_ = append(p.Src_, 1)
 	p.StrInt64 = pb.StrInt64
-	p.Src_ = append(p.Src_, 2)
 	p.StrUint32 = pb.StrUint32
-	p.Src_ = append(p.Src_, 3)
 	p.StrUint64 = pb.StrUint64
-	p.Src_ = append(p.Src_, 4)
 	p.StrFloat = pb.StrFloat
-	p.Src_ = append(p.Src_, 5)
 	p.StrDouble = pb.StrDouble
-	p.Src_ = append(p.Src_, 6)
 	p.StrBool = pb.StrBool
-	p.Src_ = append(p.Src_, 7)
 	p.StrBytes = pb.StrBytes
-	p.Src_ = append(p.Src_, 8)
 	p.Int32Str = pb.Int32Str
-	p.Src_ = append(p.Src_, 9)
 	p.Int64Str = pb.Int64Str
-	p.Src_ = append(p.Src_, 10)
 	p.Uint32Str = pb.Uint32Str
-	p.Src_ = append(p.Src_, 11)
 	p.Uint64Str = pb.Uint64Str
-	p.Src_ = append(p.Src_, 12)
 	p.Sint32Str = pb.Sint32Str
-	p.Src_ = append(p.Src_, 13)
 	p.Sint64Str = pb.Sint64Str
-	p.Src_ = append(p.Src_, 14)
 	p.Fixed32Str = pb.Fixed32Str
-	p.Src_ = append(p.Src_, 15)
 	p.Fixed64Str = pb.Fixed64Str
-	p.Src_ = append(p.Src_, 16)
 	p.Sfixed32Str = pb.Sfixed32Str
-	p.Src_ = append(p.Src_, 17)
 	p.Sfixed64Str = pb.Sfixed64Str
-	p.Src_ = append(p.Src_, 18)
 	p.BoolStr = pb.BoolStr
-	p.Src_ = append(p.Src_, 19)
 	p.StrMessage = pb.StrMessage
-	p.Src_ = append(p.Src_, 20)
 	p.Int32Message = pb.Int32Message
-	p.Src_ = append(p.Src_, 21)
 	p.Int64Message = pb.Int64Message
-	p.Src_ = append(p.Src_, 22)
 	p.StrEnum = pb.StrEnum
-	p.Src_ = append(p.Src_, 23)
 	p.Int32Enum = pb.Int32Enum
-	p.Src_ = append(p.Src_, 24)
 	if len(pb.Nested) > 0 {
 		p.Nested = make(map[string]*ConfigPlain, len(pb.Nested))
 		for k, v := range pb.Nested {
@@ -4640,7 +4070,6 @@ func (pb *MapShowcase) IntoPlainReuse(p *MapShowcasePlain) {
 				p.Nested[k] = v.IntoPlain()
 			}
 		}
-		p.Src_ = append(p.Src_, 25)
 	}
 }
 
@@ -4847,7 +4276,6 @@ func (p *MapShowcasePlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes MapShowcasePlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -4855,15 +4283,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "strStr":
 			if p.StrStr == nil {
 				p.StrStr = make(map[string]string)
@@ -4876,7 +4295,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrStr[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 0)
 		case "strInt32":
 			if p.StrInt32 == nil {
 				p.StrInt32 = make(map[string]int32)
@@ -4889,7 +4307,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrInt32[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 1)
 		case "strInt64":
 			if p.StrInt64 == nil {
 				p.StrInt64 = make(map[string]int64)
@@ -4902,7 +4319,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrInt64[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 2)
 		case "strUint32":
 			if p.StrUint32 == nil {
 				p.StrUint32 = make(map[string]uint32)
@@ -4915,7 +4331,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrUint32[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 3)
 		case "strUint64":
 			if p.StrUint64 == nil {
 				p.StrUint64 = make(map[string]uint64)
@@ -4928,7 +4343,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrUint64[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 4)
 		case "strFloat":
 			if p.StrFloat == nil {
 				p.StrFloat = make(map[string]float32)
@@ -4941,7 +4355,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrFloat[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 5)
 		case "strDouble":
 			if p.StrDouble == nil {
 				p.StrDouble = make(map[string]float64)
@@ -4954,7 +4367,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrDouble[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 6)
 		case "strBool":
 			if p.StrBool == nil {
 				p.StrBool = make(map[string]bool)
@@ -4967,7 +4379,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrBool[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 7)
 		case "strBytes":
 			if p.StrBytes == nil {
 				p.StrBytes = make(map[string][]byte)
@@ -4980,7 +4391,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrBytes[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 8)
 		case "int32Str":
 			if p.Int32Str == nil {
 				p.Int32Str = make(map[int32]string)
@@ -4998,7 +4408,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Int32Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 9)
 		case "int64Str":
 			if p.Int64Str == nil {
 				p.Int64Str = make(map[int64]string)
@@ -5015,7 +4424,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Int64Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 10)
 		case "uint32Str":
 			if p.Uint32Str == nil {
 				p.Uint32Str = make(map[uint32]string)
@@ -5033,7 +4441,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Uint32Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 11)
 		case "uint64Str":
 			if p.Uint64Str == nil {
 				p.Uint64Str = make(map[uint64]string)
@@ -5050,7 +4457,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Uint64Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 12)
 		case "sint32Str":
 			if p.Sint32Str == nil {
 				p.Sint32Str = make(map[int32]string)
@@ -5068,7 +4474,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sint32Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 13)
 		case "sint64Str":
 			if p.Sint64Str == nil {
 				p.Sint64Str = make(map[int64]string)
@@ -5085,7 +4490,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sint64Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 14)
 		case "fixed32Str":
 			if p.Fixed32Str == nil {
 				p.Fixed32Str = make(map[uint32]string)
@@ -5103,7 +4507,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Fixed32Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 15)
 		case "fixed64Str":
 			if p.Fixed64Str == nil {
 				p.Fixed64Str = make(map[uint64]string)
@@ -5120,7 +4523,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Fixed64Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 16)
 		case "sfixed32Str":
 			if p.Sfixed32Str == nil {
 				p.Sfixed32Str = make(map[int32]string)
@@ -5138,7 +4540,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sfixed32Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 17)
 		case "sfixed64Str":
 			if p.Sfixed64Str == nil {
 				p.Sfixed64Str = make(map[int64]string)
@@ -5155,7 +4556,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Sfixed64Str[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 18)
 		case "boolStr":
 			if p.BoolStr == nil {
 				p.BoolStr = make(map[bool]string)
@@ -5172,7 +4572,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.BoolStr[_mapKey] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 19)
 		case "strMessage":
 			if p.StrMessage == nil {
 				p.StrMessage = make(map[string]*Address)
@@ -5184,7 +4583,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				}
 				return nil
 			})
-			p.Src_ = append(p.Src_, 20)
 		case "int32Message":
 			if p.Int32Message == nil {
 				p.Int32Message = make(map[int32]*Address)
@@ -5201,7 +4599,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				}
 				return nil
 			})
-			p.Src_ = append(p.Src_, 21)
 		case "int64Message":
 			if p.Int64Message == nil {
 				p.Int64Message = make(map[int64]*Metadata)
@@ -5217,7 +4614,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				}
 				return nil
 			})
-			p.Src_ = append(p.Src_, 22)
 		case "strEnum":
 			if p.StrEnum == nil {
 				p.StrEnum = make(map[string]Status)
@@ -5230,7 +4626,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.StrEnum[key] = Status(v)
 				return nil
 			})
-			p.Src_ = append(p.Src_, 23)
 		case "int32Enum":
 			if p.Int32Enum == nil {
 				p.Int32Enum = make(map[int32]Priority)
@@ -5248,7 +4643,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Int32Enum[_mapKey] = Priority(v)
 				return nil
 			})
-			p.Src_ = append(p.Src_, 24)
 		case "nested":
 			if p.Nested == nil {
 				p.Nested = make(map[string]*ConfigPlain)
@@ -5260,7 +4654,6 @@ func (p *MapShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				}
 				return nil
 			})
-			p.Src_ = append(p.Src_, 25)
 		default:
 			return d.Skip()
 		}
@@ -5277,9 +4670,7 @@ func (p *MapShowcasePlain) UnmarshalJSON(data []byte) error {
 // mapShowcasePlainPool is a sync.Pool for MapShowcasePlain objects
 var mapShowcasePlainPool = sync.Pool{
 	New: func() interface{} {
-		return &MapShowcasePlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &MapShowcasePlain{}
 	},
 }
 
@@ -5302,8 +4693,6 @@ func (p *MapShowcasePlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	for k := range p.StrStr {
 		delete(p.StrStr, k)
@@ -5406,8 +4795,6 @@ type OptionalShowcasePlain struct {
 	RegularDouble float64  `json:"regularDouble"`
 	RegularString string   `json:"regularString"`
 	RegularBool   bool     `json:"regularBool"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -5419,76 +4806,56 @@ func (pb *OptionalShowcase) IntoPlain() *OptionalShowcasePlain {
 
 	if pb.OptDouble != nil {
 		p.OptDouble = *pb.OptDouble
-		p.Src_ = append(p.Src_, 0)
 	}
 	if pb.OptFloat != nil {
 		p.OptFloat = *pb.OptFloat
-		p.Src_ = append(p.Src_, 1)
 	}
 	if pb.OptInt32 != nil {
 		p.OptInt32 = *pb.OptInt32
-		p.Src_ = append(p.Src_, 2)
 	}
 	if pb.OptInt64 != nil {
 		p.OptInt64 = *pb.OptInt64
-		p.Src_ = append(p.Src_, 3)
 	}
 	if pb.OptUint32 != nil {
 		p.OptUint32 = *pb.OptUint32
-		p.Src_ = append(p.Src_, 4)
 	}
 	if pb.OptUint64 != nil {
 		p.OptUint64 = *pb.OptUint64
-		p.Src_ = append(p.Src_, 5)
 	}
 	if pb.OptSint32 != nil {
 		p.OptSint32 = *pb.OptSint32
-		p.Src_ = append(p.Src_, 6)
 	}
 	if pb.OptSint64 != nil {
 		p.OptSint64 = *pb.OptSint64
-		p.Src_ = append(p.Src_, 7)
 	}
 	if pb.OptFixed32 != nil {
 		p.OptFixed32 = *pb.OptFixed32
-		p.Src_ = append(p.Src_, 8)
 	}
 	if pb.OptFixed64 != nil {
 		p.OptFixed64 = *pb.OptFixed64
-		p.Src_ = append(p.Src_, 9)
 	}
 	if pb.OptSfixed32 != nil {
 		p.OptSfixed32 = *pb.OptSfixed32
-		p.Src_ = append(p.Src_, 10)
 	}
 	if pb.OptSfixed64 != nil {
 		p.OptSfixed64 = *pb.OptSfixed64
-		p.Src_ = append(p.Src_, 11)
 	}
 	if pb.OptBool != nil {
 		p.OptBool = *pb.OptBool
-		p.Src_ = append(p.Src_, 12)
 	}
 	if pb.OptString != nil {
 		p.OptString = *pb.OptString
-		p.Src_ = append(p.Src_, 13)
 	}
 	p.OptBytes = pb.OptBytes
-	p.Src_ = append(p.Src_, 14)
 	if pb.OptStatus != nil {
 		p.OptStatus = *pb.OptStatus
-		p.Src_ = append(p.Src_, 15)
 	}
 	if pb.OptPriority != nil {
 		p.OptPriority = *pb.OptPriority
-		p.Src_ = append(p.Src_, 16)
 	}
 	p.RegularDouble = pb.RegularDouble
-	p.Src_ = append(p.Src_, 17)
 	p.RegularString = pb.RegularString
-	p.Src_ = append(p.Src_, 18)
 	p.RegularBool = pb.RegularBool
-	p.Src_ = append(p.Src_, 19)
 	return p
 }
 
@@ -5534,76 +4901,56 @@ func (pb *OptionalShowcase) IntoPlainReuse(p *OptionalShowcasePlain) {
 
 	if pb.OptDouble != nil {
 		p.OptDouble = *pb.OptDouble
-		p.Src_ = append(p.Src_, 0)
 	}
 	if pb.OptFloat != nil {
 		p.OptFloat = *pb.OptFloat
-		p.Src_ = append(p.Src_, 1)
 	}
 	if pb.OptInt32 != nil {
 		p.OptInt32 = *pb.OptInt32
-		p.Src_ = append(p.Src_, 2)
 	}
 	if pb.OptInt64 != nil {
 		p.OptInt64 = *pb.OptInt64
-		p.Src_ = append(p.Src_, 3)
 	}
 	if pb.OptUint32 != nil {
 		p.OptUint32 = *pb.OptUint32
-		p.Src_ = append(p.Src_, 4)
 	}
 	if pb.OptUint64 != nil {
 		p.OptUint64 = *pb.OptUint64
-		p.Src_ = append(p.Src_, 5)
 	}
 	if pb.OptSint32 != nil {
 		p.OptSint32 = *pb.OptSint32
-		p.Src_ = append(p.Src_, 6)
 	}
 	if pb.OptSint64 != nil {
 		p.OptSint64 = *pb.OptSint64
-		p.Src_ = append(p.Src_, 7)
 	}
 	if pb.OptFixed32 != nil {
 		p.OptFixed32 = *pb.OptFixed32
-		p.Src_ = append(p.Src_, 8)
 	}
 	if pb.OptFixed64 != nil {
 		p.OptFixed64 = *pb.OptFixed64
-		p.Src_ = append(p.Src_, 9)
 	}
 	if pb.OptSfixed32 != nil {
 		p.OptSfixed32 = *pb.OptSfixed32
-		p.Src_ = append(p.Src_, 10)
 	}
 	if pb.OptSfixed64 != nil {
 		p.OptSfixed64 = *pb.OptSfixed64
-		p.Src_ = append(p.Src_, 11)
 	}
 	if pb.OptBool != nil {
 		p.OptBool = *pb.OptBool
-		p.Src_ = append(p.Src_, 12)
 	}
 	if pb.OptString != nil {
 		p.OptString = *pb.OptString
-		p.Src_ = append(p.Src_, 13)
 	}
 	p.OptBytes = pb.OptBytes
-	p.Src_ = append(p.Src_, 14)
 	if pb.OptStatus != nil {
 		p.OptStatus = *pb.OptStatus
-		p.Src_ = append(p.Src_, 15)
 	}
 	if pb.OptPriority != nil {
 		p.OptPriority = *pb.OptPriority
-		p.Src_ = append(p.Src_, 16)
 	}
 	p.RegularDouble = pb.RegularDouble
-	p.Src_ = append(p.Src_, 17)
 	p.RegularString = pb.RegularString
-	p.Src_ = append(p.Src_, 18)
 	p.RegularBool = pb.RegularBool
-	p.Src_ = append(p.Src_, 19)
 }
 
 // MarshalJX encodes OptionalShowcasePlain to JSON using jx.Encoder
@@ -5703,7 +5050,6 @@ func (p *OptionalShowcasePlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes OptionalShowcasePlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *OptionalShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -5711,155 +5057,126 @@ func (p *OptionalShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "optDouble":
 			v, err := d.Float64()
 			if err != nil {
 				return err
 			}
 			p.OptDouble = v
-			p.Src_ = append(p.Src_, 0)
 		case "optFloat":
 			v, err := d.Float32()
 			if err != nil {
 				return err
 			}
 			p.OptFloat = v
-			p.Src_ = append(p.Src_, 1)
 		case "optInt32":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.OptInt32 = v
-			p.Src_ = append(p.Src_, 2)
 		case "optInt64":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.OptInt64 = v
-			p.Src_ = append(p.Src_, 3)
 		case "optUint32":
 			v, err := d.UInt32()
 			if err != nil {
 				return err
 			}
 			p.OptUint32 = v
-			p.Src_ = append(p.Src_, 4)
 		case "optUint64":
 			v, err := d.UInt64()
 			if err != nil {
 				return err
 			}
 			p.OptUint64 = v
-			p.Src_ = append(p.Src_, 5)
 		case "optSint32":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.OptSint32 = v
-			p.Src_ = append(p.Src_, 6)
 		case "optSint64":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.OptSint64 = v
-			p.Src_ = append(p.Src_, 7)
 		case "optFixed32":
 			v, err := d.UInt32()
 			if err != nil {
 				return err
 			}
 			p.OptFixed32 = v
-			p.Src_ = append(p.Src_, 8)
 		case "optFixed64":
 			v, err := d.UInt64()
 			if err != nil {
 				return err
 			}
 			p.OptFixed64 = v
-			p.Src_ = append(p.Src_, 9)
 		case "optSfixed32":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.OptSfixed32 = v
-			p.Src_ = append(p.Src_, 10)
 		case "optSfixed64":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.OptSfixed64 = v
-			p.Src_ = append(p.Src_, 11)
 		case "optBool":
 			v, err := d.Bool()
 			if err != nil {
 				return err
 			}
 			p.OptBool = v
-			p.Src_ = append(p.Src_, 12)
 		case "optString":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.OptString = v
-			p.Src_ = append(p.Src_, 13)
 		case "optBytes":
 			v, err := d.Base64()
 			if err != nil {
 				return err
 			}
 			p.OptBytes = v
-			p.Src_ = append(p.Src_, 14)
 		case "optStatus":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.OptStatus = Status(v)
-			p.Src_ = append(p.Src_, 15)
 		case "optPriority":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.OptPriority = Priority(v)
-			p.Src_ = append(p.Src_, 16)
 		case "regularDouble":
 			v, err := d.Float64()
 			if err != nil {
 				return err
 			}
 			p.RegularDouble = v
-			p.Src_ = append(p.Src_, 17)
 		case "regularString":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.RegularString = v
-			p.Src_ = append(p.Src_, 18)
 		case "regularBool":
 			v, err := d.Bool()
 			if err != nil {
 				return err
 			}
 			p.RegularBool = v
-			p.Src_ = append(p.Src_, 19)
 		default:
 			return d.Skip()
 		}
@@ -5876,9 +5193,7 @@ func (p *OptionalShowcasePlain) UnmarshalJSON(data []byte) error {
 // optionalShowcasePlainPool is a sync.Pool for OptionalShowcasePlain objects
 var optionalShowcasePlainPool = sync.Pool{
 	New: func() interface{} {
-		return &OptionalShowcasePlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &OptionalShowcasePlain{}
 	},
 }
 
@@ -5901,8 +5216,6 @@ func (p *OptionalShowcasePlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.OptDouble = 0
 	p.OptFloat = 0
@@ -5933,8 +5246,6 @@ type OneofShowcasePlain struct {
 	CodeCode   *CodeContent  `json:"codeCode"`   // origin: oneof_embed, empath: code.code
 	// ContentCase indicates which variant of content oneof is set
 	ContentCase string `json:"content_case,omitempty"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -5955,21 +5266,17 @@ func (pb *OneofShowcase) IntoPlain() *OneofShowcasePlain {
 	}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	// TextText from text.text
 	if pb.GetText() != nil {
 		p.TextText = pb.GetText()
-		p.Src_ = append(p.Src_, 1)
 	}
 	// ImageImage from image.image
 	if pb.GetImage() != nil {
 		p.ImageImage = pb.GetImage()
-		p.Src_ = append(p.Src_, 2)
 	}
 	// CodeCode from code.code
 	if pb.GetCode() != nil {
 		p.CodeCode = pb.GetCode()
-		p.Src_ = append(p.Src_, 3)
 	}
 	return p
 }
@@ -6016,21 +5323,17 @@ func (pb *OneofShowcase) IntoPlainReuse(p *OneofShowcasePlain) {
 	}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	// TextText from text.text
 	if pb.GetText() != nil {
 		p.TextText = pb.GetText()
-		p.Src_ = append(p.Src_, 1)
 	}
 	// ImageImage from image.image
 	if pb.GetImage() != nil {
 		p.ImageImage = pb.GetImage()
-		p.Src_ = append(p.Src_, 2)
 	}
 	// CodeCode from code.code
 	if pb.GetCode() != nil {
 		p.CodeCode = pb.GetCode()
-		p.Src_ = append(p.Src_, 3)
 	}
 }
 
@@ -6075,7 +5378,6 @@ func (p *OneofShowcasePlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes OneofShowcasePlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *OneofShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -6083,15 +5385,6 @@ func (p *OneofShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "content_case":
 			v, err := d.Str()
 			if err != nil {
@@ -6104,25 +5397,21 @@ func (p *OneofShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.Id = v
-			p.Src_ = append(p.Src_, 0)
 		case "textText":
 			p.TextText = &TextContent{}
 			if err := p.TextText.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 1)
 		case "imageImage":
 			p.ImageImage = &ImageContent{}
 			if err := p.ImageImage.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 2)
 		case "codeCode":
 			p.CodeCode = &CodeContent{}
 			if err := p.CodeCode.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 3)
 		default:
 			return d.Skip()
 		}
@@ -6139,9 +5428,7 @@ func (p *OneofShowcasePlain) UnmarshalJSON(data []byte) error {
 // oneofShowcasePlainPool is a sync.Pool for OneofShowcasePlain objects
 var oneofShowcasePlainPool = sync.Pool{
 	New: func() interface{} {
-		return &OneofShowcasePlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &OneofShowcasePlain{}
 	},
 }
 
@@ -6164,8 +5451,6 @@ func (p *OneofShowcasePlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.ContentCase = ""
 	p.Id = ""
@@ -6203,8 +5488,6 @@ type PlatformEventPlain struct {
 	NetworkEventBytesReceived int64             `json:"networkEventBytesReceived"` // origin: oneof_embed, empath: network_event.bytes_received
 	// PlatformEventCase indicates which variant of platform_event oneof is set
 	PlatformEventCase string `json:"platform_event_case,omitempty"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -6227,102 +5510,80 @@ func (pb *PlatformEvent) IntoPlain() *PlatformEventPlain {
 	}
 
 	p.EventId = pb.EventId
-	p.Src_ = append(p.Src_, 0)
 	p.EventTime = pb.EventTime
-	p.Src_ = append(p.Src_, 1)
 	p.Source = pb.Source
-	p.Src_ = append(p.Src_, 2)
 	p.Labels = pb.Labels
-	p.Src_ = append(p.Src_, 3)
 	// HeartbeatTimestamp from heartbeat.timestamp
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatTimestamp = pb.GetHeartbeat().GetTimestamp()
-		p.Src_ = append(p.Src_, 4)
 	}
 	// HeartbeatNodeId from heartbeat.node_id
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatNodeId = pb.GetHeartbeat().GetNodeId()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// HeartbeatCpuPercent from heartbeat.cpu_percent
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatCpuPercent = pb.GetHeartbeat().GetCpuPercent()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// HeartbeatMemoryBytes from heartbeat.memory_bytes
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatMemoryBytes = pb.GetHeartbeat().GetMemoryBytes()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// ProcessStartedProcessId from process_started.process_id
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedProcessId = pb.GetProcessStarted().GetProcessId()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// ProcessStartedCommand from process_started.command
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedCommand = pb.GetProcessStarted().GetCommand()
-		p.Src_ = append(p.Src_, 9)
 	}
 	// ProcessStartedArgs from process_started.args
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedArgs = pb.GetProcessStarted().GetArgs()
-		p.Src_ = append(p.Src_, 10)
 	}
 	// ProcessStartedStartTime from process_started.start_time
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedStartTime = pb.GetProcessStarted().GetStartTime()
-		p.Src_ = append(p.Src_, 11)
 	}
 	// ProcessExitedProcessId from process_exited.process_id
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedProcessId = pb.GetProcessExited().GetProcessId()
-		p.Src_ = append(p.Src_, 12)
 	}
 	// ProcessExitedExitCode from process_exited.exit_code
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedExitCode = pb.GetProcessExited().GetExitCode()
-		p.Src_ = append(p.Src_, 13)
 	}
 	// ProcessExitedExitTime from process_exited.exit_time
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedExitTime = pb.GetProcessExited().GetExitTime()
-		p.Src_ = append(p.Src_, 14)
 	}
 	// ProcessExitedSignal from process_exited.signal
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedSignal = pb.GetProcessExited().GetSignal()
-		p.Src_ = append(p.Src_, 15)
 	}
 	// NetworkEventInterfaceName from network_event.interface_name
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventInterfaceName = pb.GetNetworkEvent().GetInterfaceName()
-		p.Src_ = append(p.Src_, 16)
 	}
 	// NetworkEventRemoteAddr from network_event.remote_addr
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventRemoteAddr = pb.GetNetworkEvent().GetRemoteAddr()
-		p.Src_ = append(p.Src_, 17)
 	}
 	// NetworkEventRemotePort from network_event.remote_port
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventRemotePort = pb.GetNetworkEvent().GetRemotePort()
-		p.Src_ = append(p.Src_, 18)
 	}
 	// NetworkEventProtocol from network_event.protocol
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventProtocol = pb.GetNetworkEvent().GetProtocol()
-		p.Src_ = append(p.Src_, 19)
 	}
 	// NetworkEventBytesSent from network_event.bytes_sent
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventBytesSent = pb.GetNetworkEvent().GetBytesSent()
-		p.Src_ = append(p.Src_, 20)
 	}
 	// NetworkEventBytesReceived from network_event.bytes_received
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventBytesReceived = pb.GetNetworkEvent().GetBytesReceived()
-		p.Src_ = append(p.Src_, 21)
 	}
 	return p
 }
@@ -6488,102 +5749,80 @@ func (pb *PlatformEvent) IntoPlainReuse(p *PlatformEventPlain) {
 	}
 
 	p.EventId = pb.EventId
-	p.Src_ = append(p.Src_, 0)
 	p.EventTime = pb.EventTime
-	p.Src_ = append(p.Src_, 1)
 	p.Source = pb.Source
-	p.Src_ = append(p.Src_, 2)
 	p.Labels = pb.Labels
-	p.Src_ = append(p.Src_, 3)
 	// HeartbeatTimestamp from heartbeat.timestamp
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatTimestamp = pb.GetHeartbeat().GetTimestamp()
-		p.Src_ = append(p.Src_, 4)
 	}
 	// HeartbeatNodeId from heartbeat.node_id
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatNodeId = pb.GetHeartbeat().GetNodeId()
-		p.Src_ = append(p.Src_, 5)
 	}
 	// HeartbeatCpuPercent from heartbeat.cpu_percent
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatCpuPercent = pb.GetHeartbeat().GetCpuPercent()
-		p.Src_ = append(p.Src_, 6)
 	}
 	// HeartbeatMemoryBytes from heartbeat.memory_bytes
 	if pb.GetHeartbeat() != nil {
 		p.HeartbeatMemoryBytes = pb.GetHeartbeat().GetMemoryBytes()
-		p.Src_ = append(p.Src_, 7)
 	}
 	// ProcessStartedProcessId from process_started.process_id
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedProcessId = pb.GetProcessStarted().GetProcessId()
-		p.Src_ = append(p.Src_, 8)
 	}
 	// ProcessStartedCommand from process_started.command
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedCommand = pb.GetProcessStarted().GetCommand()
-		p.Src_ = append(p.Src_, 9)
 	}
 	// ProcessStartedArgs from process_started.args
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedArgs = pb.GetProcessStarted().GetArgs()
-		p.Src_ = append(p.Src_, 10)
 	}
 	// ProcessStartedStartTime from process_started.start_time
 	if pb.GetProcessStarted() != nil {
 		p.ProcessStartedStartTime = pb.GetProcessStarted().GetStartTime()
-		p.Src_ = append(p.Src_, 11)
 	}
 	// ProcessExitedProcessId from process_exited.process_id
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedProcessId = pb.GetProcessExited().GetProcessId()
-		p.Src_ = append(p.Src_, 12)
 	}
 	// ProcessExitedExitCode from process_exited.exit_code
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedExitCode = pb.GetProcessExited().GetExitCode()
-		p.Src_ = append(p.Src_, 13)
 	}
 	// ProcessExitedExitTime from process_exited.exit_time
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedExitTime = pb.GetProcessExited().GetExitTime()
-		p.Src_ = append(p.Src_, 14)
 	}
 	// ProcessExitedSignal from process_exited.signal
 	if pb.GetProcessExited() != nil {
 		p.ProcessExitedSignal = pb.GetProcessExited().GetSignal()
-		p.Src_ = append(p.Src_, 15)
 	}
 	// NetworkEventInterfaceName from network_event.interface_name
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventInterfaceName = pb.GetNetworkEvent().GetInterfaceName()
-		p.Src_ = append(p.Src_, 16)
 	}
 	// NetworkEventRemoteAddr from network_event.remote_addr
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventRemoteAddr = pb.GetNetworkEvent().GetRemoteAddr()
-		p.Src_ = append(p.Src_, 17)
 	}
 	// NetworkEventRemotePort from network_event.remote_port
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventRemotePort = pb.GetNetworkEvent().GetRemotePort()
-		p.Src_ = append(p.Src_, 18)
 	}
 	// NetworkEventProtocol from network_event.protocol
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventProtocol = pb.GetNetworkEvent().GetProtocol()
-		p.Src_ = append(p.Src_, 19)
 	}
 	// NetworkEventBytesSent from network_event.bytes_sent
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventBytesSent = pb.GetNetworkEvent().GetBytesSent()
-		p.Src_ = append(p.Src_, 20)
 	}
 	// NetworkEventBytesReceived from network_event.bytes_received
 	if pb.GetNetworkEvent() != nil {
 		p.NetworkEventBytesReceived = pb.GetNetworkEvent().GetBytesReceived()
-		p.Src_ = append(p.Src_, 21)
 	}
 }
 
@@ -6707,7 +5946,6 @@ func (p *PlatformEventPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes PlatformEventPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *PlatformEventPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -6715,15 +5953,6 @@ func (p *PlatformEventPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "platform_event_case":
 			v, err := d.Str()
 			if err != nil {
@@ -6736,21 +5965,18 @@ func (p *PlatformEventPlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.EventId = v
-			p.Src_ = append(p.Src_, 0)
 		case "eventTime":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.EventTime = v
-			p.Src_ = append(p.Src_, 1)
 		case "source":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Source = v
-			p.Src_ = append(p.Src_, 2)
 		case "labels":
 			if p.Labels == nil {
 				p.Labels = make(map[string]string)
@@ -6763,49 +5989,42 @@ func (p *PlatformEventPlain) UnmarshalJX(d *jx.Decoder) error {
 				p.Labels[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 3)
 		case "heartbeatTimestamp":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.HeartbeatTimestamp = v
-			p.Src_ = append(p.Src_, 4)
 		case "heartbeatNodeId":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.HeartbeatNodeId = v
-			p.Src_ = append(p.Src_, 5)
 		case "heartbeatCpuPercent":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.HeartbeatCpuPercent = v
-			p.Src_ = append(p.Src_, 6)
 		case "heartbeatMemoryBytes":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.HeartbeatMemoryBytes = v
-			p.Src_ = append(p.Src_, 7)
 		case "processStartedProcessId":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.ProcessStartedProcessId = v
-			p.Src_ = append(p.Src_, 8)
 		case "processStartedCommand":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.ProcessStartedCommand = v
-			p.Src_ = append(p.Src_, 9)
 		case "processStartedArgs":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Str()
@@ -6817,84 +6036,72 @@ func (p *PlatformEventPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 10)
 		case "processStartedStartTime":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.ProcessStartedStartTime = v
-			p.Src_ = append(p.Src_, 11)
 		case "processExitedProcessId":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.ProcessExitedProcessId = v
-			p.Src_ = append(p.Src_, 12)
 		case "processExitedExitCode":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.ProcessExitedExitCode = v
-			p.Src_ = append(p.Src_, 13)
 		case "processExitedExitTime":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.ProcessExitedExitTime = v
-			p.Src_ = append(p.Src_, 14)
 		case "processExitedSignal":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.ProcessExitedSignal = v
-			p.Src_ = append(p.Src_, 15)
 		case "networkEventInterfaceName":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.NetworkEventInterfaceName = v
-			p.Src_ = append(p.Src_, 16)
 		case "networkEventRemoteAddr":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.NetworkEventRemoteAddr = v
-			p.Src_ = append(p.Src_, 17)
 		case "networkEventRemotePort":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.NetworkEventRemotePort = v
-			p.Src_ = append(p.Src_, 18)
 		case "networkEventProtocol":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.NetworkEventProtocol = v
-			p.Src_ = append(p.Src_, 19)
 		case "networkEventBytesSent":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.NetworkEventBytesSent = v
-			p.Src_ = append(p.Src_, 20)
 		case "networkEventBytesReceived":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.NetworkEventBytesReceived = v
-			p.Src_ = append(p.Src_, 21)
 		default:
 			return d.Skip()
 		}
@@ -6911,9 +6118,7 @@ func (p *PlatformEventPlain) UnmarshalJSON(data []byte) error {
 // platformEventPlainPool is a sync.Pool for PlatformEventPlain objects
 var platformEventPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &PlatformEventPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &PlatformEventPlain{}
 	},
 }
 
@@ -6936,8 +6141,6 @@ func (p *PlatformEventPlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.PlatformEventCase = ""
 	p.EventId = ""
@@ -6972,8 +6175,6 @@ type DeprecatedShowcasePlain struct {
 	OldField    string `json:"oldField"`
 	LegacyCount int32  `json:"legacyCount"`
 	NewField    string `json:"newField"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -6984,15 +6185,10 @@ func (pb *DeprecatedShowcase) IntoPlain() *DeprecatedShowcasePlain {
 	p := &DeprecatedShowcasePlain{}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Name = pb.Name
-	p.Src_ = append(p.Src_, 1)
 	p.OldField = pb.OldField
-	p.Src_ = append(p.Src_, 2)
 	p.LegacyCount = pb.LegacyCount
-	p.Src_ = append(p.Src_, 3)
 	p.NewField = pb.NewField
-	p.Src_ = append(p.Src_, 4)
 	return p
 }
 
@@ -7020,15 +6216,10 @@ func (pb *DeprecatedShowcase) IntoPlainReuse(p *DeprecatedShowcasePlain) {
 	p.Reset()
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Name = pb.Name
-	p.Src_ = append(p.Src_, 1)
 	p.OldField = pb.OldField
-	p.Src_ = append(p.Src_, 2)
 	p.LegacyCount = pb.LegacyCount
-	p.Src_ = append(p.Src_, 3)
 	p.NewField = pb.NewField
-	p.Src_ = append(p.Src_, 4)
 }
 
 // MarshalJX encodes DeprecatedShowcasePlain to JSON using jx.Encoder
@@ -7072,7 +6263,6 @@ func (p *DeprecatedShowcasePlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes DeprecatedShowcasePlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *DeprecatedShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -7080,50 +6270,36 @@ func (p *DeprecatedShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "id":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Id = v
-			p.Src_ = append(p.Src_, 0)
 		case "name":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Name = v
-			p.Src_ = append(p.Src_, 1)
 		case "oldField":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.OldField = v
-			p.Src_ = append(p.Src_, 2)
 		case "legacyCount":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.LegacyCount = v
-			p.Src_ = append(p.Src_, 3)
 		case "newField":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.NewField = v
-			p.Src_ = append(p.Src_, 4)
 		default:
 			return d.Skip()
 		}
@@ -7140,9 +6316,7 @@ func (p *DeprecatedShowcasePlain) UnmarshalJSON(data []byte) error {
 // deprecatedShowcasePlainPool is a sync.Pool for DeprecatedShowcasePlain objects
 var deprecatedShowcasePlainPool = sync.Pool{
 	New: func() interface{} {
-		return &DeprecatedShowcasePlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &DeprecatedShowcasePlain{}
 	},
 }
 
@@ -7166,8 +6340,6 @@ func (p *DeprecatedShowcasePlain) Reset() {
 		return
 	}
 
-	p.Src_ = p.Src_[:0]
-
 	p.Id = ""
 	p.Name = ""
 	p.OldField = ""
@@ -7187,8 +6359,6 @@ type DefaultsShowcasePlain struct {
 	EmptyIntList []int32           `json:"emptyIntList"`
 	EmptyMap     map[string]string `json:"emptyMap"`
 	NilMessage   *Address          `json:"nilMessage"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -7199,27 +6369,16 @@ func (pb *DefaultsShowcase) IntoPlain() *DefaultsShowcasePlain {
 	p := &DefaultsShowcasePlain{}
 
 	p.EmptyString = pb.EmptyString
-	p.Src_ = append(p.Src_, 0)
 	p.ZeroInt = pb.ZeroInt
-	p.Src_ = append(p.Src_, 1)
 	p.ZeroLong = pb.ZeroLong
-	p.Src_ = append(p.Src_, 2)
 	p.ZeroDouble = pb.ZeroDouble
-	p.Src_ = append(p.Src_, 3)
 	p.FalseBool = pb.FalseBool
-	p.Src_ = append(p.Src_, 4)
 	p.EmptyBytes = pb.EmptyBytes
-	p.Src_ = append(p.Src_, 5)
 	p.ZeroEnum = pb.ZeroEnum
-	p.Src_ = append(p.Src_, 6)
 	p.EmptyList = pb.EmptyList
-	p.Src_ = append(p.Src_, 7)
 	p.EmptyIntList = pb.EmptyIntList
-	p.Src_ = append(p.Src_, 8)
 	p.EmptyMap = pb.EmptyMap
-	p.Src_ = append(p.Src_, 9)
 	p.NilMessage = pb.NilMessage
-	p.Src_ = append(p.Src_, 10)
 	return p
 }
 
@@ -7253,27 +6412,16 @@ func (pb *DefaultsShowcase) IntoPlainReuse(p *DefaultsShowcasePlain) {
 	p.Reset()
 
 	p.EmptyString = pb.EmptyString
-	p.Src_ = append(p.Src_, 0)
 	p.ZeroInt = pb.ZeroInt
-	p.Src_ = append(p.Src_, 1)
 	p.ZeroLong = pb.ZeroLong
-	p.Src_ = append(p.Src_, 2)
 	p.ZeroDouble = pb.ZeroDouble
-	p.Src_ = append(p.Src_, 3)
 	p.FalseBool = pb.FalseBool
-	p.Src_ = append(p.Src_, 4)
 	p.EmptyBytes = pb.EmptyBytes
-	p.Src_ = append(p.Src_, 5)
 	p.ZeroEnum = pb.ZeroEnum
-	p.Src_ = append(p.Src_, 6)
 	p.EmptyList = pb.EmptyList
-	p.Src_ = append(p.Src_, 7)
 	p.EmptyIntList = pb.EmptyIntList
-	p.Src_ = append(p.Src_, 8)
 	p.EmptyMap = pb.EmptyMap
-	p.Src_ = append(p.Src_, 9)
 	p.NilMessage = pb.NilMessage
-	p.Src_ = append(p.Src_, 10)
 }
 
 // MarshalJX encodes DefaultsShowcasePlain to JSON using jx.Encoder
@@ -7350,7 +6498,6 @@ func (p *DefaultsShowcasePlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes DefaultsShowcasePlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *DefaultsShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -7358,64 +6505,48 @@ func (p *DefaultsShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "emptyString":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.EmptyString = v
-			p.Src_ = append(p.Src_, 0)
 		case "zeroInt":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.ZeroInt = v
-			p.Src_ = append(p.Src_, 1)
 		case "zeroLong":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
 			p.ZeroLong = v
-			p.Src_ = append(p.Src_, 2)
 		case "zeroDouble":
 			v, err := d.Float64()
 			if err != nil {
 				return err
 			}
 			p.ZeroDouble = v
-			p.Src_ = append(p.Src_, 3)
 		case "falseBool":
 			v, err := d.Bool()
 			if err != nil {
 				return err
 			}
 			p.FalseBool = v
-			p.Src_ = append(p.Src_, 4)
 		case "emptyBytes":
 			v, err := d.Base64()
 			if err != nil {
 				return err
 			}
 			p.EmptyBytes = v
-			p.Src_ = append(p.Src_, 5)
 		case "zeroEnum":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.ZeroEnum = Status(v)
-			p.Src_ = append(p.Src_, 6)
 		case "emptyList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Str()
@@ -7427,7 +6558,6 @@ func (p *DefaultsShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 7)
 		case "emptyIntList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Int32()
@@ -7439,7 +6569,6 @@ func (p *DefaultsShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 8)
 		case "emptyMap":
 			if p.EmptyMap == nil {
 				p.EmptyMap = make(map[string]string)
@@ -7452,13 +6581,11 @@ func (p *DefaultsShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 				p.EmptyMap[key] = v
 				return nil
 			})
-			p.Src_ = append(p.Src_, 9)
 		case "nilMessage":
 			p.NilMessage = &Address{}
 			if err := p.NilMessage.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 10)
 		default:
 			return d.Skip()
 		}
@@ -7475,9 +6602,7 @@ func (p *DefaultsShowcasePlain) UnmarshalJSON(data []byte) error {
 // defaultsShowcasePlainPool is a sync.Pool for DefaultsShowcasePlain objects
 var defaultsShowcasePlainPool = sync.Pool{
 	New: func() interface{} {
-		return &DefaultsShowcasePlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &DefaultsShowcasePlain{}
 	},
 }
 
@@ -7501,8 +6626,6 @@ func (p *DefaultsShowcasePlain) Reset() {
 		return
 	}
 
-	p.Src_ = p.Src_[:0]
-
 	p.EmptyString = ""
 	p.ZeroInt = 0
 	p.ZeroLong = 0
@@ -7525,8 +6648,6 @@ type ComplexNestedPlain struct {
 	InnerMap      map[string]*ComplexNested_Inner `json:"innerMap"`
 	InnerEnum     ComplexNested_InnerEnum         `json:"innerEnum"`
 	InnerEnumList []ComplexNested_InnerEnum       `json:"innerEnumList"`
-	// Src_ contains indices of populated fields for sparse serialization
-	Src_ []uint16 `json:"_src,omitempty"`
 }
 
 // IntoPlain converts protobuf message to plain struct
@@ -7537,17 +6658,11 @@ func (pb *ComplexNested) IntoPlain() *ComplexNestedPlain {
 	p := &ComplexNestedPlain{}
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Inner = pb.Inner
-	p.Src_ = append(p.Src_, 1)
 	p.InnerList = pb.InnerList
-	p.Src_ = append(p.Src_, 2)
 	p.InnerMap = pb.InnerMap
-	p.Src_ = append(p.Src_, 3)
 	p.InnerEnum = pb.InnerEnum
-	p.Src_ = append(p.Src_, 4)
 	p.InnerEnumList = pb.InnerEnumList
-	p.Src_ = append(p.Src_, 5)
 	return p
 }
 
@@ -7576,17 +6691,11 @@ func (pb *ComplexNested) IntoPlainReuse(p *ComplexNestedPlain) {
 	p.Reset()
 
 	p.Id = pb.Id
-	p.Src_ = append(p.Src_, 0)
 	p.Inner = pb.Inner
-	p.Src_ = append(p.Src_, 1)
 	p.InnerList = pb.InnerList
-	p.Src_ = append(p.Src_, 2)
 	p.InnerMap = pb.InnerMap
-	p.Src_ = append(p.Src_, 3)
 	p.InnerEnum = pb.InnerEnum
-	p.Src_ = append(p.Src_, 4)
 	p.InnerEnumList = pb.InnerEnumList
-	p.Src_ = append(p.Src_, 5)
 }
 
 // MarshalJX encodes ComplexNestedPlain to JSON using jx.Encoder
@@ -7643,7 +6752,6 @@ func (p *ComplexNestedPlain) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJX decodes ComplexNestedPlain from JSON using jx.Decoder
-// Populates Src_ with indices of decoded fields
 func (p *ComplexNestedPlain) UnmarshalJX(d *jx.Decoder) error {
 	if p == nil {
 		return nil
@@ -7651,28 +6759,17 @@ func (p *ComplexNestedPlain) UnmarshalJX(d *jx.Decoder) error {
 
 	return d.Obj(func(d *jx.Decoder, key string) error {
 		switch key {
-		case "_src":
-			return d.Arr(func(d *jx.Decoder) error {
-				v, err := d.UInt16()
-				if err != nil {
-					return err
-				}
-				p.Src_ = append(p.Src_, v)
-				return nil
-			})
 		case "id":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
 			p.Id = v
-			p.Src_ = append(p.Src_, 0)
 		case "inner":
 			p.Inner = &ComplexNested_Inner{}
 			if err := p.Inner.UnmarshalJX(d); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 1)
 		case "innerList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				var v ComplexNested_Inner
@@ -7684,7 +6781,6 @@ func (p *ComplexNestedPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 2)
 		case "innerMap":
 			if p.InnerMap == nil {
 				p.InnerMap = make(map[string]*ComplexNested_Inner)
@@ -7696,14 +6792,12 @@ func (p *ComplexNestedPlain) UnmarshalJX(d *jx.Decoder) error {
 				}
 				return nil
 			})
-			p.Src_ = append(p.Src_, 3)
 		case "innerEnum":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
 			p.InnerEnum = ComplexNested_InnerEnum(v)
-			p.Src_ = append(p.Src_, 4)
 		case "innerEnumList":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Int32()
@@ -7715,7 +6809,6 @@ func (p *ComplexNestedPlain) UnmarshalJX(d *jx.Decoder) error {
 			}); err != nil {
 				return err
 			}
-			p.Src_ = append(p.Src_, 5)
 		default:
 			return d.Skip()
 		}
@@ -7732,9 +6825,7 @@ func (p *ComplexNestedPlain) UnmarshalJSON(data []byte) error {
 // complexNestedPlainPool is a sync.Pool for ComplexNestedPlain objects
 var complexNestedPlainPool = sync.Pool{
 	New: func() interface{} {
-		return &ComplexNestedPlain{
-			Src_: make([]uint16, 0, 32),
-		}
+		return &ComplexNestedPlain{}
 	},
 }
 
@@ -7757,8 +6848,6 @@ func (p *ComplexNestedPlain) Reset() {
 	if p == nil {
 		return
 	}
-
-	p.Src_ = p.Src_[:0]
 
 	p.Id = ""
 	p.Inner = nil

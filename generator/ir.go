@@ -225,6 +225,8 @@ type IRField struct {
 	EnumAsString bool
 	// EnumAsInt — сериализовать enum как int
 	EnumAsInt bool
+	// WriteDefault — писать поле в JSON даже если значение = default (0, "", false, nil)
+	WriteDefault bool
 
 	// NeedsCaster — поле требует кастер (типы несовместимы)
 	// Если true, IntoPlain/IntoPb будут принимать кастер как параметр

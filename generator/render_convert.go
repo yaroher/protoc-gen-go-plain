@@ -278,7 +278,6 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 
 	srcField := "pb." + field.Source.GoName
 	dstField := "p." + field.GoName
-	srcAppend := fmt.Sprintf("p.Src_ = append(p.Src_, %d)", field.Index)
 
 	// Check if proto field is optional (pointer) but plain field is not
 	// Note: bytes type in proto3 is never a pointer, even with optional keyword
@@ -305,12 +304,10 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 			gf.P("\t\t\t\t", dstField, "[k] = v.IntoPlain()")
 			gf.P("\t\t\t}")
 			gf.P("\t\t}")
-			gf.P("\t\t", srcAppend)
 			gf.P("\t}")
 		} else {
 			// Use original protobuf type
 			gf.P("\t", dstField, " = ", srcField)
-			gf.P("\t", srcAppend)
 		}
 	} else if field.Kind == KindMessage {
 		// Message fields need IntoPlain() call if the nested type has generate=true
@@ -327,24 +324,20 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 				gf.P("\t\t\t\t", dstField, "[i] = *v.IntoPlain()")
 				gf.P("\t\t\t}")
 				gf.P("\t\t}")
-				gf.P("\t\t", srcAppend)
 				gf.P("\t}")
 			} else {
 				gf.P("\tif ", srcField, " != nil {")
 				gf.P("\t\t", dstField, " = ", srcField, ".IntoPlain()")
-				gf.P("\t\t", srcAppend)
 				gf.P("\t}")
 			}
 		} else if field.NeedsCaster {
 			// Message with type override (e.g., Timestamp -> time.Time)
 			gf.P("\tif ", srcField, " != nil {")
 			gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, true))
-			gf.P("\t\t", srcAppend)
 			gf.P("\t}")
 		} else {
 			// Use original protobuf type
 			gf.P("\t", dstField, " = ", srcField)
-			gf.P("\t", srcAppend)
 		}
 	} else if protoIsPointer && !plainIsPointer {
 		// Proto has optional (pointer), plain has value - dereference with nil check
@@ -354,7 +347,6 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		} else {
 			gf.P("\t\t", dstField, " = *", srcField)
 		}
-		gf.P("\t\t", srcAppend)
 		gf.P("\t}")
 	} else if !protoIsPointer && plainIsPointer {
 		// Proto has value, plain has pointer - take address
@@ -364,15 +356,12 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		} else {
 			gf.P("\t", dstField, " = &", srcField)
 		}
-		gf.P("\t", srcAppend)
 	} else if field.EnumAsString {
 		// Enum to string conversion
 		gf.P("\t", dstField, " = ", srcField, ".String()")
-		gf.P("\t", srcAppend)
 	} else if field.EnumAsInt {
 		// Enum to int32 conversion
 		gf.P("\t", dstField, " = int32(", srcField, ")")
-		gf.P("\t", srcAppend)
 	} else {
 		// Scalar, enum, bytes - direct copy (types match) or with cast
 		if field.NeedsCaster {
@@ -385,7 +374,6 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
 		}
-		gf.P("\t", srcAppend)
 	}
 }
 
@@ -406,11 +394,10 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 	dstField := "p." + field.GoName
 	getterChain := pathInfo.BuildGetterChain("pb")
 	nilCheck := pathInfo.BuildNilCheck("pb")
-	srcAppend := fmt.Sprintf("p.Src_ = append(p.Src_, %d)", field.Index)
 
 	gf.P("\t// ", field.GoName, " from ", field.EmPath)
 	gf.P("\tif ", nilCheck, " {")
-	g.generateEmbedFieldAssignment(gf, field, pathInfo, dstField, getterChain, srcAppend)
+	g.generateEmbedFieldAssignment(gf, field, pathInfo, dstField, getterChain)
 	gf.P("\t}")
 
 	// Generate alternatives (for fields from other oneof variants)
@@ -425,13 +412,13 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 
 		gf.P("\t// ", field.GoName, " from ", alt.EmPath, " (variant: ", alt.OneofVariant, ")")
 		gf.P("\tif ", altNilCheck, " {")
-		g.generateEmbedFieldAssignment(gf, field, altPathInfo, dstField, altGetterChain, srcAppend)
+		g.generateEmbedFieldAssignment(gf, field, altPathInfo, dstField, altGetterChain)
 		gf.P("\t}")
 	}
 }
 
 // generateEmbedFieldAssignment generates the assignment code for an embedded field
-func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, field *IRField, pathInfo *PathInfo, dstField, getterChain, srcAppend string) {
+func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, field *IRField, pathInfo *PathInfo, dstField, getterChain string) {
 	leafField := pathInfo.LeafField
 
 	// Handle different field types
@@ -472,7 +459,6 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 		gf.P("\t\t", dstField, " = ", getterChain)
 	}
 
-	gf.P("\t\t", srcAppend)
 }
 
 // generateIntoPlainSerializedField handles serialized field (message -> bytes)
@@ -481,13 +467,11 @@ func (g *Generator) generateIntoPlainSerializedField(gf *protogen.GeneratedFile,
 
 	path := g.buildPbNavigationPath(field, msg)
 	dstField := "p." + field.GoName
-	srcAppend := fmt.Sprintf("p.Src_ = append(p.Src_, %d)", field.Index)
 
 	gf.P("\t// ", field.GoName, " serialized from ", field.EmPath)
 	gf.P("\tif ", path.NilCheck, " {")
 	gf.P("\t\tif data, err := ", gf.QualifiedGoIdent(protoPkg.Ident("Marshal")), "(", path.Value, "); err == nil {")
 	gf.P("\t\t\t", dstField, " = data")
-	gf.P("\t\t\t", srcAppend)
 	gf.P("\t\t}")
 	gf.P("\t}")
 }
@@ -507,14 +491,12 @@ func (g *Generator) generateIntoPlainTypeAliasField(gf *protogen.GeneratedFile, 
 	}
 
 	dstField := "p." + field.GoName
-	srcAppend := fmt.Sprintf("p.Src_ = append(p.Src_, %d)", field.Index)
 	getterChain := pathInfo.BuildGetterChain("pb")
 	nilCheck := pathInfo.BuildNilCheck("pb")
 
 	gf.P("\t// ", field.GoName, " type alias from ", field.EmPath)
 	gf.P("\tif ", nilCheck, " {")
 	gf.P("\t\t", dstField, " = ", getterChain)
-	gf.P("\t\t", srcAppend)
 	gf.P("\t}")
 }
 

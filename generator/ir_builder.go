@@ -581,10 +581,11 @@ func (b *IRBuilder) buildDirectField(field *protogen.Field, prefix string, pathN
 		irField.EmPath = prefix + "." + string(field.Desc.Name())
 	}
 
-	// Обрабатываем enum опции
+	// Обрабатываем field опции
 	if fieldOpts != nil {
 		irField.EnumAsString = fieldOpts.EnumAsString
 		irField.EnumAsInt = fieldOpts.EnumAsInt
+		irField.WriteDefault = fieldOpts.WriteDefault
 	}
 
 	// Обрабатываем override_type (field-level)

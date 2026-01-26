@@ -12,10 +12,6 @@ type PluginSettings struct {
 	// JXPB generates MarshalJX/UnmarshalJX methods for original protobuf structs.
 	// This allows nested messages to use fast JX instead of protojson fallback.
 	JXPB bool
-	// SparseJSON enables sparse serialization mode with Src_ field checks.
-	// When false: faster serialization without sparse field tracking.
-	// When true (default): only fields in Src_ are serialized.
-	SparseJSON bool
 	// GeneratePool generates sync.Pool, Reset(), Get/Put methods for Plain structs.
 	// Enables zero-allocation reuse of Plain objects in hot paths.
 	GeneratePool bool
@@ -54,7 +50,6 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	settings := &PluginSettings{
 		JSONJX:           mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
 		JXPB:             mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
-		SparseJSON:       mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
 		GeneratePool:     mapGetOrDefault(paramsMap, "pool", "false") == "true",
 		CastersAsStruct:  mapGetOrDefault(paramsMap, "casters_as_struct", "true") == "true", // default true
 		UnifiedOneofJSON: mapGetOrDefault(paramsMap, "unified_oneof_json", "false") == "true",
