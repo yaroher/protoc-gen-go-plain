@@ -557,6 +557,21 @@ func (b *IRBuilder) processEmbedField(
 func (b *IRBuilder) buildDirectField(field *protogen.Field, prefix string, pathNumbers []int32) *IRField {
 	fieldOpts := b.getFieldOptions(field)
 
+	// DEBUG
+	if string(field.Desc.Name()) == "deleted_at" || string(field.Desc.Name()) == "oidc_id" {
+		f, _ := os.OpenFile("/tmp/protoc-gen-go-plain-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if f != nil {
+			fmt.Fprintf(f, "DEBUG field %s: HasOptionalKeyword=%v, HasPresence=%v, Cardinality=%v, ContainingOneof=%v\n",
+				field.Desc.Name(),
+				field.Desc.HasOptionalKeyword(),
+				field.Desc.HasPresence(),
+				field.Desc.Cardinality(),
+				field.Desc.ContainingOneof(),
+			)
+			f.Close()
+		}
+	}
+
 	irField := &IRField{
 		Source:         field,
 		Name:           b.buildFieldName(field, prefix),
