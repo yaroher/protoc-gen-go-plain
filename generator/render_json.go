@@ -91,6 +91,12 @@ func (g *Generator) generateMarshalJXField(gf *protogen.GeneratedFile, field *IR
 		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
 		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
 		gf.P("\t}")
+	} else if field.Kind == KindEnum {
+		// Enum - skip if zero value (first enum value)
+		gf.P("\tif ", fieldAccess, " != 0 {")
+		gf.P("\t\te.FieldStart(\"", jsonName, "\")")
+		g.generateMarshalJXValue(gf, field, fieldAccess, f, "\t\t")
+		gf.P("\t}")
 	} else {
 		// Scalar - apply omitempty for zero values
 		zeroCheck := g.getScalarZeroCheck(field, fieldAccess)
