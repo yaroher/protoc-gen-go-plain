@@ -315,7 +315,10 @@ func (g *Generator) buildTypeString(gf *protogen.GeneratedFile, field *IRField, 
 		sb.WriteString("[]")
 	}
 
-	if field.GoType.IsPointer {
+	// Add pointer if:
+	// 1. GoType.IsPointer = true, OR
+	// 2. Field is optional AND type is not already a slice/repeated (for nullable fields like optional Timestamp -> *time.Time)
+	if field.GoType.IsPointer || (field.IsOptional && !field.GoType.IsSlice && !field.IsRepeated) {
 		sb.WriteString("*")
 	}
 

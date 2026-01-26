@@ -283,7 +283,8 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 	// Note: bytes type in proto3 is never a pointer, even with optional keyword
 	protoIsPointer := (field.Source.Desc.HasOptionalKeyword() || field.Source.Desc.HasPresence()) &&
 		field.Source.Desc.Kind() != protoreflect.BytesKind
-	plainIsPointer := field.GoType.IsPointer
+	// Plain is pointer if GoType.IsPointer OR field is optional (for nullable fields like optional Timestamp -> *time.Time)
+	plainIsPointer := field.GoType.IsPointer || (field.IsOptional && !field.GoType.IsSlice && !field.IsRepeated)
 
 	// Check if types match or need conversion
 	if field.IsMap && field.MapValue != nil && field.MapValue.Kind == KindMessage {
@@ -333,7 +334,13 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		} else if field.NeedsCaster {
 			// Message with type override (e.g., Timestamp -> time.Time)
 			gf.P("\tif ", srcField, " != nil {")
-			gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, true))
+			if plainIsPointer {
+				// Plain is pointer (e.g., *time.Time) - need to take address of caster result
+				gf.P("\t\t_tmp := ", g.casterCallWithImport(gf, field, srcField, true))
+				gf.P("\t\t", dstField, " = &_tmp")
+			} else {
+				gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, true))
+			}
 			gf.P("\t}")
 		} else {
 			// Use original protobuf type
@@ -420,6 +427,8 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 // generateEmbedFieldAssignment generates the assignment code for an embedded field
 func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, field *IRField, pathInfo *PathInfo, dstField, getterChain string) {
 	leafField := pathInfo.LeafField
+	// Plain is pointer if GoType.IsPointer OR field is optional (for nullable fields like optional Timestamp -> *time.Time)
+	plainIsPointer := field.GoType.IsPointer || (field.IsOptional && !field.GoType.IsSlice && !field.IsRepeated)
 
 	// Handle different field types
 	if field.Kind == KindMessage {
@@ -436,7 +445,13 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 			}
 		} else if field.NeedsCaster {
 			// Message with type override (e.g., Timestamp -> time.Time)
-			gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, getterChain, true))
+			if plainIsPointer {
+				// Plain is pointer (e.g., *time.Time) - need to take address of caster result
+				gf.P("\t\t_tmp := ", g.casterCallWithImport(gf, field, getterChain, true))
+				gf.P("\t\t", dstField, " = &_tmp")
+			} else {
+				gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, getterChain, true))
+			}
 		} else {
 			// Protobuf type - check if slice element types match
 			if field.IsRepeated && !field.GoType.IsPointer && leafField != nil && leafField.Message != nil {
@@ -571,7 +586,8 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 	// Note: bytes type in proto3 is never a pointer, even with optional keyword
 	protoIsPointer := (field.Source.Desc.HasOptionalKeyword() || field.Source.Desc.HasPresence()) &&
 		field.Source.Desc.Kind() != protoreflect.BytesKind
-	plainIsPointer := field.GoType.IsPointer
+	// Plain is pointer if GoType.IsPointer OR field is optional (for nullable fields like optional Timestamp -> *time.Time)
+	plainIsPointer := field.GoType.IsPointer || (field.IsOptional && !field.GoType.IsSlice && !field.IsRepeated)
 
 	if field.IsMap && field.MapValue != nil && field.MapValue.Kind == KindMessage {
 		// Map with message value - check if value type has generate=true
@@ -613,7 +629,14 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 			}
 		} else if field.NeedsCaster {
 			// Message with type override (e.g., time.Time -> Timestamp)
-			gf.P("\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, false))
+			if plainIsPointer {
+				// Plain is pointer (e.g., *time.Time) - need nil check and dereference
+				gf.P("\tif ", srcField, " != nil {")
+				gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, "*"+srcField, false))
+				gf.P("\t}")
+			} else {
+				gf.P("\t", dstField, " = ", g.casterCallWithImport(gf, field, srcField, false))
+			}
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
 		}
@@ -711,7 +734,8 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 	// For oneof scalar fields, proto does NOT use pointer (wrapper contains value directly)
 	isOneofScalar := leafField != nil && leafField.Oneof != nil && !leafField.Oneof.Desc.IsSynthetic() && leafField.Message == nil
 	protoIsPointer := leafField != nil && !isOneofScalar && (leafField.Desc.HasOptionalKeyword() || leafField.Desc.HasPresence())
-	plainIsPointer := field.GoType.IsPointer
+	// Plain is pointer if GoType.IsPointer OR field is optional (for nullable fields like optional Timestamp -> *time.Time)
+	plainIsPointer := field.GoType.IsPointer || (field.IsOptional && !field.GoType.IsSlice && !field.IsRepeated)
 
 	// Determine if value needs conversion
 	valueExpr := srcField
@@ -772,12 +796,22 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 			return
 		} else if field.NeedsCaster {
 			// Message with type override (e.g., time.Time -> Timestamp)
-			valueExpr = g.casterCallWithImport(gf, field, srcField, false)
+			if plainIsPointer {
+				// Plain is pointer (e.g., *time.Time) - need to dereference
+				valueExpr = g.casterCallWithImport(gf, field, "*"+srcField, false)
+			} else {
+				valueExpr = g.casterCallWithImport(gf, field, srcField, false)
+			}
 			valueIsPointer = true // Caster returns pointer for Timestamp
 		}
 	} else if field.NeedsCaster {
 		// Scalar with type override
-		valueExpr = g.casterCallWithImport(gf, field, srcField, false)
+		if plainIsPointer {
+			// Plain is pointer - need to dereference
+			valueExpr = g.casterCallWithImport(gf, field, "*"+srcField, false)
+		} else {
+			valueExpr = g.casterCallWithImport(gf, field, srcField, false)
+		}
 	} else if protoIsPointer && !plainIsPointer {
 		// Proto wants pointer, plain has value - take address
 		valueExpr = "&" + srcField
@@ -788,8 +822,8 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 	initCode, assignCode := pathInfo.BuildSetterCode(gf, "pb", valueExpr, valueIsPointer)
 
 	// Generate nil check for source value (with case check for oneof fields)
-	// For overridden types (e.g., time.Time from Timestamp), don't check nil if GoType is not pointer
-	needsNilCheck := field.GoType.IsPointer || (field.Kind == KindMessage && !field.IsRepeated && !field.NeedsCaster)
+	// For overridden types (e.g., time.Time from Timestamp), check nil if plainIsPointer
+	needsNilCheck := plainIsPointer || (field.Kind == KindMessage && !field.IsRepeated && !field.NeedsCaster)
 	if needsNilCheck {
 		gf.P("\tif ", srcField, " != nil", caseCheck, " {")
 		if initCode != "" {
