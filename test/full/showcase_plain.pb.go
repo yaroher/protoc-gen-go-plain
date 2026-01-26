@@ -410,31 +410,31 @@ func (p *CustomTypesPlain) Reset() {
 }
 
 type DocumentPlain struct {
-	Id                              string            `json:"id"`
-	Title                           string            `json:"title"`
-	Status                          Status            `json:"status"`
-	Priority                        Priority          `json:"priority"`
-	Description                     string            `json:"description"` // origin: type_alias, empath: description
-	Version                         int64             `json:"version"`     // origin: type_alias, empath: version
-	IsPublic                        bool              `json:"isPublic"`    // origin: type_alias, empath: is_public
-	Email                           string            `json:"email"`
-	Phone                           string            `json:"phone"`
-	Address                         *Address          `json:"address"`
-	Metadata                        *Metadata         `json:"metadata"`
-	Performance                     []byte            `json:"performance"` // origin: serialized, empath: performance
-	Keywords                        []string          `json:"keywords"`
-	Attributes                      map[string]string `json:"attributes"`
-	Locations                       []*Address        `json:"locations"`
-	Structure                       *Level1           `json:"structure"`
-	Children                        []DocumentPlain   `json:"children"`
-	Parent                          *DocumentPlain    `json:"parent"`
-	ContentTextContentTextContent   *TextContent      `json:"contentTextContentTextContent"`   // origin: oneof_embed, empath: content_text_content.text_content
-	ContentImageContentImageContent *ImageContent     `json:"contentImageContentImageContent"` // origin: oneof_embed, empath: content_image_content.image_content
-	ContentVideoContentVideoContent *VideoContent     `json:"contentVideoContentVideoContent"` // origin: oneof_embed, empath: content_video_content.video_content
-	ContentCodeContentCodeContent   *CodeContent      `json:"contentCodeContentCodeContent"`   // origin: oneof_embed, empath: content_code_content.code_content
-	ContentTableContentTableContent *TableContent     `json:"contentTableContentTableContent"` // origin: oneof_embed, empath: content_table_content.table_content
-	ComputedHash                    string            `json:"computedHash"`                    // origin: virtual, empath: virtual
-	IsValid                         bool              `json:"isValid"`                         // origin: virtual, empath: virtual
+	Id                       string            `json:"id"`
+	Title                    string            `json:"title"`
+	Status                   Status            `json:"status"`
+	Priority                 Priority          `json:"priority"`
+	Description              string            `json:"description"` // origin: type_alias, empath: description
+	Version                  int64             `json:"version"`     // origin: type_alias, empath: version
+	IsPublic                 bool              `json:"isPublic"`    // origin: type_alias, empath: is_public
+	Email                    string            `json:"email"`
+	Phone                    string            `json:"phone"`
+	Address                  *Address          `json:"address"`
+	Metadata                 *Metadata         `json:"metadata"`
+	Performance              []byte            `json:"performance"` // origin: serialized, empath: performance
+	Keywords                 []string          `json:"keywords"`
+	Attributes               map[string]string `json:"attributes"`
+	Locations                []*Address        `json:"locations"`
+	Structure                *Level1           `json:"structure"`
+	Children                 []DocumentPlain   `json:"children"`
+	Parent                   *DocumentPlain    `json:"parent"`
+	TextContentTextContent   *TextContent      `json:"textContentTextContent"`   // origin: oneof_embed, empath: text_content.text_content
+	ImageContentImageContent *ImageContent     `json:"imageContentImageContent"` // origin: oneof_embed, empath: image_content.image_content
+	VideoContentVideoContent *VideoContent     `json:"videoContentVideoContent"` // origin: oneof_embed, empath: video_content.video_content
+	CodeContentCodeContent   *CodeContent      `json:"codeContentCodeContent"`   // origin: oneof_embed, empath: code_content.code_content
+	TableContentTableContent *TableContent     `json:"tableContentTableContent"` // origin: oneof_embed, empath: table_content.table_content
+	ComputedHash             string            `json:"computedHash"`             // origin: virtual, empath: virtual
+	IsValid                  bool              `json:"isValid"`                  // origin: virtual, empath: virtual
 	// ContentCase indicates which variant of content oneof is set
 	ContentCase string `json:"content_case,omitempty"`
 	// Src_ contains indices of populated fields for sparse serialization
@@ -530,29 +530,29 @@ func (pb *Document) IntoPlain() *DocumentPlain {
 		p.Parent = pb.Parent.IntoPlain()
 		p.Src_ = append(p.Src_, 17)
 	}
-	// ContentTextContentTextContent from content_text_content.text_content
+	// TextContentTextContent from text_content.text_content
 	if pb.GetTextContent() != nil {
-		p.ContentTextContentTextContent = pb.GetTextContent()
+		p.TextContentTextContent = pb.GetTextContent()
 		p.Src_ = append(p.Src_, 18)
 	}
-	// ContentImageContentImageContent from content_image_content.image_content
+	// ImageContentImageContent from image_content.image_content
 	if pb.GetImageContent() != nil {
-		p.ContentImageContentImageContent = pb.GetImageContent()
+		p.ImageContentImageContent = pb.GetImageContent()
 		p.Src_ = append(p.Src_, 19)
 	}
-	// ContentVideoContentVideoContent from content_video_content.video_content
+	// VideoContentVideoContent from video_content.video_content
 	if pb.GetVideoContent() != nil {
-		p.ContentVideoContentVideoContent = pb.GetVideoContent()
+		p.VideoContentVideoContent = pb.GetVideoContent()
 		p.Src_ = append(p.Src_, 20)
 	}
-	// ContentCodeContentCodeContent from content_code_content.code_content
+	// CodeContentCodeContent from code_content.code_content
 	if pb.GetCodeContent() != nil {
-		p.ContentCodeContentCodeContent = pb.GetCodeContent()
+		p.CodeContentCodeContent = pb.GetCodeContent()
 		p.Src_ = append(p.Src_, 21)
 	}
-	// ContentTableContentTableContent from content_table_content.table_content
+	// TableContentTableContent from table_content.table_content
 	if pb.GetTableContent() != nil {
-		p.ContentTableContentTableContent = pb.GetTableContent()
+		p.TableContentTableContent = pb.GetTableContent()
 		p.Src_ = append(p.Src_, 22)
 	}
 	// ComputedHash is virtual, no source in protobuf
@@ -626,25 +626,25 @@ func (p *DocumentPlain) IntoPb() *Document {
 	if p.Parent != nil {
 		pb.Parent = p.Parent.IntoPb()
 	}
-	// ContentTextContentTextContent -> content_text_content.text_content
-	if p.ContentTextContentTextContent != nil && p.ContentCase == "text_content" {
-		pb.Content = &Document_TextContent{TextContent: p.ContentTextContentTextContent}
+	// TextContentTextContent -> text_content.text_content
+	if p.TextContentTextContent != nil && p.ContentCase == "text_content" {
+		pb.Content = &Document_TextContent{TextContent: p.TextContentTextContent}
 	}
-	// ContentImageContentImageContent -> content_image_content.image_content
-	if p.ContentImageContentImageContent != nil && p.ContentCase == "image_content" {
-		pb.Content = &Document_ImageContent{ImageContent: p.ContentImageContentImageContent}
+	// ImageContentImageContent -> image_content.image_content
+	if p.ImageContentImageContent != nil && p.ContentCase == "image_content" {
+		pb.Content = &Document_ImageContent{ImageContent: p.ImageContentImageContent}
 	}
-	// ContentVideoContentVideoContent -> content_video_content.video_content
-	if p.ContentVideoContentVideoContent != nil && p.ContentCase == "video_content" {
-		pb.Content = &Document_VideoContent{VideoContent: p.ContentVideoContentVideoContent}
+	// VideoContentVideoContent -> video_content.video_content
+	if p.VideoContentVideoContent != nil && p.ContentCase == "video_content" {
+		pb.Content = &Document_VideoContent{VideoContent: p.VideoContentVideoContent}
 	}
-	// ContentCodeContentCodeContent -> content_code_content.code_content
-	if p.ContentCodeContentCodeContent != nil && p.ContentCase == "code_content" {
-		pb.Content = &Document_CodeContent{CodeContent: p.ContentCodeContentCodeContent}
+	// CodeContentCodeContent -> code_content.code_content
+	if p.CodeContentCodeContent != nil && p.ContentCase == "code_content" {
+		pb.Content = &Document_CodeContent{CodeContent: p.CodeContentCodeContent}
 	}
-	// ContentTableContentTableContent -> content_table_content.table_content
-	if p.ContentTableContentTableContent != nil && p.ContentCase == "table_content" {
-		pb.Content = &Document_TableContent{TableContent: p.ContentTableContentTableContent}
+	// TableContentTableContent -> table_content.table_content
+	if p.TableContentTableContent != nil && p.ContentCase == "table_content" {
+		pb.Content = &Document_TableContent{TableContent: p.TableContentTableContent}
 	}
 	// ComputedHash is virtual, skipping
 	// IsValid is virtual, skipping
@@ -741,29 +741,29 @@ func (pb *Document) IntoPlainReuse(p *DocumentPlain) {
 		p.Parent = pb.Parent.IntoPlain()
 		p.Src_ = append(p.Src_, 17)
 	}
-	// ContentTextContentTextContent from content_text_content.text_content
+	// TextContentTextContent from text_content.text_content
 	if pb.GetTextContent() != nil {
-		p.ContentTextContentTextContent = pb.GetTextContent()
+		p.TextContentTextContent = pb.GetTextContent()
 		p.Src_ = append(p.Src_, 18)
 	}
-	// ContentImageContentImageContent from content_image_content.image_content
+	// ImageContentImageContent from image_content.image_content
 	if pb.GetImageContent() != nil {
-		p.ContentImageContentImageContent = pb.GetImageContent()
+		p.ImageContentImageContent = pb.GetImageContent()
 		p.Src_ = append(p.Src_, 19)
 	}
-	// ContentVideoContentVideoContent from content_video_content.video_content
+	// VideoContentVideoContent from video_content.video_content
 	if pb.GetVideoContent() != nil {
-		p.ContentVideoContentVideoContent = pb.GetVideoContent()
+		p.VideoContentVideoContent = pb.GetVideoContent()
 		p.Src_ = append(p.Src_, 20)
 	}
-	// ContentCodeContentCodeContent from content_code_content.code_content
+	// CodeContentCodeContent from code_content.code_content
 	if pb.GetCodeContent() != nil {
-		p.ContentCodeContentCodeContent = pb.GetCodeContent()
+		p.CodeContentCodeContent = pb.GetCodeContent()
 		p.Src_ = append(p.Src_, 21)
 	}
-	// ContentTableContentTableContent from content_table_content.table_content
+	// TableContentTableContent from table_content.table_content
 	if pb.GetTableContent() != nil {
-		p.ContentTableContentTableContent = pb.GetTableContent()
+		p.TableContentTableContent = pb.GetTableContent()
 		p.Src_ = append(p.Src_, 22)
 	}
 	// ComputedHash is virtual, no source in protobuf
@@ -866,25 +866,25 @@ func (p *DocumentPlain) MarshalJX(e *jx.Encoder) {
 		e.FieldStart("parent")
 		p.Parent.MarshalJX(e)
 	}
-	if p.ContentTextContentTextContent != nil {
-		e.FieldStart("contentTextContentTextContent")
-		p.ContentTextContentTextContent.MarshalJX(e)
+	if p.TextContentTextContent != nil {
+		e.FieldStart("textContentTextContent")
+		p.TextContentTextContent.MarshalJX(e)
 	}
-	if p.ContentImageContentImageContent != nil {
-		e.FieldStart("contentImageContentImageContent")
-		p.ContentImageContentImageContent.MarshalJX(e)
+	if p.ImageContentImageContent != nil {
+		e.FieldStart("imageContentImageContent")
+		p.ImageContentImageContent.MarshalJX(e)
 	}
-	if p.ContentVideoContentVideoContent != nil {
-		e.FieldStart("contentVideoContentVideoContent")
-		p.ContentVideoContentVideoContent.MarshalJX(e)
+	if p.VideoContentVideoContent != nil {
+		e.FieldStart("videoContentVideoContent")
+		p.VideoContentVideoContent.MarshalJX(e)
 	}
-	if p.ContentCodeContentCodeContent != nil {
-		e.FieldStart("contentCodeContentCodeContent")
-		p.ContentCodeContentCodeContent.MarshalJX(e)
+	if p.CodeContentCodeContent != nil {
+		e.FieldStart("codeContentCodeContent")
+		p.CodeContentCodeContent.MarshalJX(e)
 	}
-	if p.ContentTableContentTableContent != nil {
-		e.FieldStart("contentTableContentTableContent")
-		p.ContentTableContentTableContent.MarshalJX(e)
+	if p.TableContentTableContent != nil {
+		e.FieldStart("tableContentTableContent")
+		p.TableContentTableContent.MarshalJX(e)
 	}
 	if p.ComputedHash != "" {
 		e.FieldStart("computedHash")
@@ -1072,33 +1072,33 @@ func (p *DocumentPlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.Src_ = append(p.Src_, 17)
-		case "contentTextContentTextContent":
-			p.ContentTextContentTextContent = &TextContent{}
-			if err := p.ContentTextContentTextContent.UnmarshalJX(d); err != nil {
+		case "textContentTextContent":
+			p.TextContentTextContent = &TextContent{}
+			if err := p.TextContentTextContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 18)
-		case "contentImageContentImageContent":
-			p.ContentImageContentImageContent = &ImageContent{}
-			if err := p.ContentImageContentImageContent.UnmarshalJX(d); err != nil {
+		case "imageContentImageContent":
+			p.ImageContentImageContent = &ImageContent{}
+			if err := p.ImageContentImageContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 19)
-		case "contentVideoContentVideoContent":
-			p.ContentVideoContentVideoContent = &VideoContent{}
-			if err := p.ContentVideoContentVideoContent.UnmarshalJX(d); err != nil {
+		case "videoContentVideoContent":
+			p.VideoContentVideoContent = &VideoContent{}
+			if err := p.VideoContentVideoContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 20)
-		case "contentCodeContentCodeContent":
-			p.ContentCodeContentCodeContent = &CodeContent{}
-			if err := p.ContentCodeContentCodeContent.UnmarshalJX(d); err != nil {
+		case "codeContentCodeContent":
+			p.CodeContentCodeContent = &CodeContent{}
+			if err := p.CodeContentCodeContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 21)
-		case "contentTableContentTableContent":
-			p.ContentTableContentTableContent = &TableContent{}
-			if err := p.ContentTableContentTableContent.UnmarshalJX(d); err != nil {
+		case "tableContentTableContent":
+			p.TableContentTableContent = &TableContent{}
+			if err := p.TableContentTableContent.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 22)
@@ -1181,30 +1181,30 @@ func (p *DocumentPlain) Reset() {
 	p.Structure = nil
 	p.Children = p.Children[:0]
 	p.Parent = nil
-	p.ContentTextContentTextContent = nil
-	p.ContentImageContentImageContent = nil
-	p.ContentVideoContentVideoContent = nil
-	p.ContentCodeContentCodeContent = nil
-	p.ContentTableContentTableContent = nil
+	p.TextContentTextContent = nil
+	p.ImageContentImageContent = nil
+	p.VideoContentVideoContent = nil
+	p.CodeContentCodeContent = nil
+	p.TableContentTableContent = nil
 	p.ComputedHash = ""
 	p.IsValid = false
 }
 
 type TreeNodePlain struct {
-	Id                string            `json:"id"`
-	Name              string            `json:"name"`
-	Type              string            `json:"type"`
-	Children          []TreeNodePlain   `json:"children"`
-	Parent            *TreeNodePlain    `json:"parent"`
-	CreatedBy         string            `json:"createdBy"`
-	CreatedAt         int64             `json:"createdAt"`
-	ModifiedBy        string            `json:"modifiedBy"`
-	ModifiedAt        int64             `json:"modifiedAt"`
-	Labels            map[string]string `json:"labels"`
-	Tags              []string          `json:"tags"`
-	PayloadTextText   *TextContent      `json:"payloadTextText"`   // origin: oneof_embed, empath: payload_text.text
-	PayloadImageImage *ImageContent     `json:"payloadImageImage"` // origin: oneof_embed, empath: payload_image.image
-	PayloadCodeCode   *CodeContent      `json:"payloadCodeCode"`   // origin: oneof_embed, empath: payload_code.code
+	Id         string            `json:"id"`
+	Name       string            `json:"name"`
+	Type       string            `json:"type"`
+	Children   []TreeNodePlain   `json:"children"`
+	Parent     *TreeNodePlain    `json:"parent"`
+	CreatedBy  string            `json:"createdBy"`
+	CreatedAt  int64             `json:"createdAt"`
+	ModifiedBy string            `json:"modifiedBy"`
+	ModifiedAt int64             `json:"modifiedAt"`
+	Labels     map[string]string `json:"labels"`
+	Tags       []string          `json:"tags"`
+	TextText   *TextContent      `json:"textText"`   // origin: oneof_embed, empath: text.text
+	ImageImage *ImageContent     `json:"imageImage"` // origin: oneof_embed, empath: image.image
+	CodeCode   *CodeContent      `json:"codeCode"`   // origin: oneof_embed, empath: code.code
 	// PayloadCase indicates which variant of payload oneof is set
 	PayloadCase string `json:"payload_case,omitempty"`
 	// Src_ contains indices of populated fields for sparse serialization
@@ -1277,19 +1277,19 @@ func (pb *TreeNode) IntoPlain() *TreeNodePlain {
 		p.Tags = pb.GetInfo().GetTags()
 		p.Src_ = append(p.Src_, 10)
 	}
-	// PayloadTextText from payload_text.text
+	// TextText from text.text
 	if pb.GetText() != nil {
-		p.PayloadTextText = pb.GetText()
+		p.TextText = pb.GetText()
 		p.Src_ = append(p.Src_, 11)
 	}
-	// PayloadImageImage from payload_image.image
+	// ImageImage from image.image
 	if pb.GetImage() != nil {
-		p.PayloadImageImage = pb.GetImage()
+		p.ImageImage = pb.GetImage()
 		p.Src_ = append(p.Src_, 12)
 	}
-	// PayloadCodeCode from payload_code.code
+	// CodeCode from code.code
 	if pb.GetCode() != nil {
-		p.PayloadCodeCode = pb.GetCode()
+		p.CodeCode = pb.GetCode()
 		p.Src_ = append(p.Src_, 13)
 	}
 	return p
@@ -1350,17 +1350,17 @@ func (p *TreeNodePlain) IntoPb() *TreeNode {
 		}
 		pb.Info.Tags = p.Tags
 	}
-	// PayloadTextText -> payload_text.text
-	if p.PayloadTextText != nil && p.PayloadCase == "text" {
-		pb.Payload = &TreeNode_Text{Text: p.PayloadTextText}
+	// TextText -> text.text
+	if p.TextText != nil && p.PayloadCase == "text" {
+		pb.Payload = &TreeNode_Text{Text: p.TextText}
 	}
-	// PayloadImageImage -> payload_image.image
-	if p.PayloadImageImage != nil && p.PayloadCase == "image" {
-		pb.Payload = &TreeNode_Image{Image: p.PayloadImageImage}
+	// ImageImage -> image.image
+	if p.ImageImage != nil && p.PayloadCase == "image" {
+		pb.Payload = &TreeNode_Image{Image: p.ImageImage}
 	}
-	// PayloadCodeCode -> payload_code.code
-	if p.PayloadCodeCode != nil && p.PayloadCase == "code" {
-		pb.Payload = &TreeNode_Code{Code: p.PayloadCodeCode}
+	// CodeCode -> code.code
+	if p.CodeCode != nil && p.PayloadCase == "code" {
+		pb.Payload = &TreeNode_Code{Code: p.CodeCode}
 	}
 	return pb
 }
@@ -1432,19 +1432,19 @@ func (pb *TreeNode) IntoPlainReuse(p *TreeNodePlain) {
 		p.Tags = pb.GetInfo().GetTags()
 		p.Src_ = append(p.Src_, 10)
 	}
-	// PayloadTextText from payload_text.text
+	// TextText from text.text
 	if pb.GetText() != nil {
-		p.PayloadTextText = pb.GetText()
+		p.TextText = pb.GetText()
 		p.Src_ = append(p.Src_, 11)
 	}
-	// PayloadImageImage from payload_image.image
+	// ImageImage from image.image
 	if pb.GetImage() != nil {
-		p.PayloadImageImage = pb.GetImage()
+		p.ImageImage = pb.GetImage()
 		p.Src_ = append(p.Src_, 12)
 	}
-	// PayloadCodeCode from payload_code.code
+	// CodeCode from code.code
 	if pb.GetCode() != nil {
-		p.PayloadCodeCode = pb.GetCode()
+		p.CodeCode = pb.GetCode()
 		p.Src_ = append(p.Src_, 13)
 	}
 }
@@ -1517,17 +1517,17 @@ func (p *TreeNodePlain) MarshalJX(e *jx.Encoder) {
 		}
 		e.ArrEnd()
 	}
-	if p.PayloadTextText != nil {
-		e.FieldStart("payloadTextText")
-		p.PayloadTextText.MarshalJX(e)
+	if p.TextText != nil {
+		e.FieldStart("textText")
+		p.TextText.MarshalJX(e)
 	}
-	if p.PayloadImageImage != nil {
-		e.FieldStart("payloadImageImage")
-		p.PayloadImageImage.MarshalJX(e)
+	if p.ImageImage != nil {
+		e.FieldStart("imageImage")
+		p.ImageImage.MarshalJX(e)
 	}
-	if p.PayloadCodeCode != nil {
-		e.FieldStart("payloadCodeCode")
-		p.PayloadCodeCode.MarshalJX(e)
+	if p.CodeCode != nil {
+		e.FieldStart("codeCode")
+		p.CodeCode.MarshalJX(e)
 	}
 	e.ObjEnd()
 }
@@ -1656,21 +1656,21 @@ func (p *TreeNodePlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.Src_ = append(p.Src_, 10)
-		case "payloadTextText":
-			p.PayloadTextText = &TextContent{}
-			if err := p.PayloadTextText.UnmarshalJX(d); err != nil {
+		case "textText":
+			p.TextText = &TextContent{}
+			if err := p.TextText.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 11)
-		case "payloadImageImage":
-			p.PayloadImageImage = &ImageContent{}
-			if err := p.PayloadImageImage.UnmarshalJX(d); err != nil {
+		case "imageImage":
+			p.ImageImage = &ImageContent{}
+			if err := p.ImageImage.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 12)
-		case "payloadCodeCode":
-			p.PayloadCodeCode = &CodeContent{}
-			if err := p.PayloadCodeCode.UnmarshalJX(d); err != nil {
+		case "codeCode":
+			p.CodeCode = &CodeContent{}
+			if err := p.CodeCode.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 13)
@@ -1732,22 +1732,22 @@ func (p *TreeNodePlain) Reset() {
 		delete(p.Labels, k)
 	}
 	p.Tags = p.Tags[:0]
-	p.PayloadTextText = nil
-	p.PayloadImageImage = nil
-	p.PayloadCodeCode = nil
+	p.TextText = nil
+	p.ImageImage = nil
+	p.CodeCode = nil
 }
 
 type EventPlain struct {
-	EventId                             string               `json:"eventId"`
-	EventType                           string               `json:"eventType"`
-	Timestamp                           int64                `json:"timestamp"`
-	Source                              string               `json:"source"`
-	Meta                                *Metadata            `json:"meta"`
-	PayloadUserCreatedUserCreated       *UserCreatedEvent    `json:"payloadUserCreatedUserCreated"`       // origin: oneof_embed, empath: payload_user_created.user_created
-	PayloadUserUpdatedUserUpdated       *UserUpdatedEvent    `json:"payloadUserUpdatedUserUpdated"`       // origin: oneof_embed, empath: payload_user_updated.user_updated
-	PayloadUserDeletedUserDeleted       *UserDeletedEvent    `json:"payloadUserDeletedUserDeleted"`       // origin: oneof_embed, empath: payload_user_deleted.user_deleted
-	PayloadOrderCreatedOrderCreated     *OrderCreatedEvent   `json:"payloadOrderCreatedOrderCreated"`     // origin: oneof_embed, empath: payload_order_created.order_created
-	PayloadOrderCompletedOrderCompleted *OrderCompletedEvent `json:"payloadOrderCompletedOrderCompleted"` // origin: oneof_embed, empath: payload_order_completed.order_completed
+	EventId                      string               `json:"eventId"`
+	EventType                    string               `json:"eventType"`
+	Timestamp                    int64                `json:"timestamp"`
+	Source                       string               `json:"source"`
+	Meta                         *Metadata            `json:"meta"`
+	UserCreatedUserCreated       *UserCreatedEvent    `json:"userCreatedUserCreated"`       // origin: oneof_embed, empath: user_created.user_created
+	UserUpdatedUserUpdated       *UserUpdatedEvent    `json:"userUpdatedUserUpdated"`       // origin: oneof_embed, empath: user_updated.user_updated
+	UserDeletedUserDeleted       *UserDeletedEvent    `json:"userDeletedUserDeleted"`       // origin: oneof_embed, empath: user_deleted.user_deleted
+	OrderCreatedOrderCreated     *OrderCreatedEvent   `json:"orderCreatedOrderCreated"`     // origin: oneof_embed, empath: order_created.order_created
+	OrderCompletedOrderCompleted *OrderCompletedEvent `json:"orderCompletedOrderCompleted"` // origin: oneof_embed, empath: order_completed.order_completed
 	// PayloadCase indicates which variant of payload oneof is set
 	PayloadCase string `json:"payload_case,omitempty"`
 	// Src_ contains indices of populated fields for sparse serialization
@@ -1785,29 +1785,29 @@ func (pb *Event) IntoPlain() *EventPlain {
 	p.Src_ = append(p.Src_, 3)
 	p.Meta = pb.Meta
 	p.Src_ = append(p.Src_, 4)
-	// PayloadUserCreatedUserCreated from payload_user_created.user_created
+	// UserCreatedUserCreated from user_created.user_created
 	if pb.GetUserCreated() != nil {
-		p.PayloadUserCreatedUserCreated = pb.GetUserCreated()
+		p.UserCreatedUserCreated = pb.GetUserCreated()
 		p.Src_ = append(p.Src_, 5)
 	}
-	// PayloadUserUpdatedUserUpdated from payload_user_updated.user_updated
+	// UserUpdatedUserUpdated from user_updated.user_updated
 	if pb.GetUserUpdated() != nil {
-		p.PayloadUserUpdatedUserUpdated = pb.GetUserUpdated()
+		p.UserUpdatedUserUpdated = pb.GetUserUpdated()
 		p.Src_ = append(p.Src_, 6)
 	}
-	// PayloadUserDeletedUserDeleted from payload_user_deleted.user_deleted
+	// UserDeletedUserDeleted from user_deleted.user_deleted
 	if pb.GetUserDeleted() != nil {
-		p.PayloadUserDeletedUserDeleted = pb.GetUserDeleted()
+		p.UserDeletedUserDeleted = pb.GetUserDeleted()
 		p.Src_ = append(p.Src_, 7)
 	}
-	// PayloadOrderCreatedOrderCreated from payload_order_created.order_created
+	// OrderCreatedOrderCreated from order_created.order_created
 	if pb.GetOrderCreated() != nil {
-		p.PayloadOrderCreatedOrderCreated = pb.GetOrderCreated()
+		p.OrderCreatedOrderCreated = pb.GetOrderCreated()
 		p.Src_ = append(p.Src_, 8)
 	}
-	// PayloadOrderCompletedOrderCompleted from payload_order_completed.order_completed
+	// OrderCompletedOrderCompleted from order_completed.order_completed
 	if pb.GetOrderCompleted() != nil {
-		p.PayloadOrderCompletedOrderCompleted = pb.GetOrderCompleted()
+		p.OrderCompletedOrderCompleted = pb.GetOrderCompleted()
 		p.Src_ = append(p.Src_, 9)
 	}
 	return p
@@ -1825,25 +1825,25 @@ func (p *EventPlain) IntoPb() *Event {
 	pb.Timestamp = p.Timestamp
 	pb.Source = p.Source
 	pb.Meta = p.Meta
-	// PayloadUserCreatedUserCreated -> payload_user_created.user_created
-	if p.PayloadUserCreatedUserCreated != nil && p.PayloadCase == "user_created" {
-		pb.Payload = &Event_UserCreated{UserCreated: p.PayloadUserCreatedUserCreated}
+	// UserCreatedUserCreated -> user_created.user_created
+	if p.UserCreatedUserCreated != nil && p.PayloadCase == "user_created" {
+		pb.Payload = &Event_UserCreated{UserCreated: p.UserCreatedUserCreated}
 	}
-	// PayloadUserUpdatedUserUpdated -> payload_user_updated.user_updated
-	if p.PayloadUserUpdatedUserUpdated != nil && p.PayloadCase == "user_updated" {
-		pb.Payload = &Event_UserUpdated{UserUpdated: p.PayloadUserUpdatedUserUpdated}
+	// UserUpdatedUserUpdated -> user_updated.user_updated
+	if p.UserUpdatedUserUpdated != nil && p.PayloadCase == "user_updated" {
+		pb.Payload = &Event_UserUpdated{UserUpdated: p.UserUpdatedUserUpdated}
 	}
-	// PayloadUserDeletedUserDeleted -> payload_user_deleted.user_deleted
-	if p.PayloadUserDeletedUserDeleted != nil && p.PayloadCase == "user_deleted" {
-		pb.Payload = &Event_UserDeleted{UserDeleted: p.PayloadUserDeletedUserDeleted}
+	// UserDeletedUserDeleted -> user_deleted.user_deleted
+	if p.UserDeletedUserDeleted != nil && p.PayloadCase == "user_deleted" {
+		pb.Payload = &Event_UserDeleted{UserDeleted: p.UserDeletedUserDeleted}
 	}
-	// PayloadOrderCreatedOrderCreated -> payload_order_created.order_created
-	if p.PayloadOrderCreatedOrderCreated != nil && p.PayloadCase == "order_created" {
-		pb.Payload = &Event_OrderCreated{OrderCreated: p.PayloadOrderCreatedOrderCreated}
+	// OrderCreatedOrderCreated -> order_created.order_created
+	if p.OrderCreatedOrderCreated != nil && p.PayloadCase == "order_created" {
+		pb.Payload = &Event_OrderCreated{OrderCreated: p.OrderCreatedOrderCreated}
 	}
-	// PayloadOrderCompletedOrderCompleted -> payload_order_completed.order_completed
-	if p.PayloadOrderCompletedOrderCompleted != nil && p.PayloadCase == "order_completed" {
-		pb.Payload = &Event_OrderCompleted{OrderCompleted: p.PayloadOrderCompletedOrderCompleted}
+	// OrderCompletedOrderCompleted -> order_completed.order_completed
+	if p.OrderCompletedOrderCompleted != nil && p.PayloadCase == "order_completed" {
+		pb.Payload = &Event_OrderCompleted{OrderCompleted: p.OrderCompletedOrderCompleted}
 	}
 	return pb
 }
@@ -1880,29 +1880,29 @@ func (pb *Event) IntoPlainReuse(p *EventPlain) {
 	p.Src_ = append(p.Src_, 3)
 	p.Meta = pb.Meta
 	p.Src_ = append(p.Src_, 4)
-	// PayloadUserCreatedUserCreated from payload_user_created.user_created
+	// UserCreatedUserCreated from user_created.user_created
 	if pb.GetUserCreated() != nil {
-		p.PayloadUserCreatedUserCreated = pb.GetUserCreated()
+		p.UserCreatedUserCreated = pb.GetUserCreated()
 		p.Src_ = append(p.Src_, 5)
 	}
-	// PayloadUserUpdatedUserUpdated from payload_user_updated.user_updated
+	// UserUpdatedUserUpdated from user_updated.user_updated
 	if pb.GetUserUpdated() != nil {
-		p.PayloadUserUpdatedUserUpdated = pb.GetUserUpdated()
+		p.UserUpdatedUserUpdated = pb.GetUserUpdated()
 		p.Src_ = append(p.Src_, 6)
 	}
-	// PayloadUserDeletedUserDeleted from payload_user_deleted.user_deleted
+	// UserDeletedUserDeleted from user_deleted.user_deleted
 	if pb.GetUserDeleted() != nil {
-		p.PayloadUserDeletedUserDeleted = pb.GetUserDeleted()
+		p.UserDeletedUserDeleted = pb.GetUserDeleted()
 		p.Src_ = append(p.Src_, 7)
 	}
-	// PayloadOrderCreatedOrderCreated from payload_order_created.order_created
+	// OrderCreatedOrderCreated from order_created.order_created
 	if pb.GetOrderCreated() != nil {
-		p.PayloadOrderCreatedOrderCreated = pb.GetOrderCreated()
+		p.OrderCreatedOrderCreated = pb.GetOrderCreated()
 		p.Src_ = append(p.Src_, 8)
 	}
-	// PayloadOrderCompletedOrderCompleted from payload_order_completed.order_completed
+	// OrderCompletedOrderCompleted from order_completed.order_completed
 	if pb.GetOrderCompleted() != nil {
-		p.PayloadOrderCompletedOrderCompleted = pb.GetOrderCompleted()
+		p.OrderCompletedOrderCompleted = pb.GetOrderCompleted()
 		p.Src_ = append(p.Src_, 9)
 	}
 }
@@ -1940,25 +1940,25 @@ func (p *EventPlain) MarshalJX(e *jx.Encoder) {
 		e.FieldStart("meta")
 		p.Meta.MarshalJX(e)
 	}
-	if p.PayloadUserCreatedUserCreated != nil {
-		e.FieldStart("payloadUserCreatedUserCreated")
-		p.PayloadUserCreatedUserCreated.MarshalJX(e)
+	if p.UserCreatedUserCreated != nil {
+		e.FieldStart("userCreatedUserCreated")
+		p.UserCreatedUserCreated.MarshalJX(e)
 	}
-	if p.PayloadUserUpdatedUserUpdated != nil {
-		e.FieldStart("payloadUserUpdatedUserUpdated")
-		p.PayloadUserUpdatedUserUpdated.MarshalJX(e)
+	if p.UserUpdatedUserUpdated != nil {
+		e.FieldStart("userUpdatedUserUpdated")
+		p.UserUpdatedUserUpdated.MarshalJX(e)
 	}
-	if p.PayloadUserDeletedUserDeleted != nil {
-		e.FieldStart("payloadUserDeletedUserDeleted")
-		p.PayloadUserDeletedUserDeleted.MarshalJX(e)
+	if p.UserDeletedUserDeleted != nil {
+		e.FieldStart("userDeletedUserDeleted")
+		p.UserDeletedUserDeleted.MarshalJX(e)
 	}
-	if p.PayloadOrderCreatedOrderCreated != nil {
-		e.FieldStart("payloadOrderCreatedOrderCreated")
-		p.PayloadOrderCreatedOrderCreated.MarshalJX(e)
+	if p.OrderCreatedOrderCreated != nil {
+		e.FieldStart("orderCreatedOrderCreated")
+		p.OrderCreatedOrderCreated.MarshalJX(e)
 	}
-	if p.PayloadOrderCompletedOrderCompleted != nil {
-		e.FieldStart("payloadOrderCompletedOrderCompleted")
-		p.PayloadOrderCompletedOrderCompleted.MarshalJX(e)
+	if p.OrderCompletedOrderCompleted != nil {
+		e.FieldStart("orderCompletedOrderCompleted")
+		p.OrderCompletedOrderCompleted.MarshalJX(e)
 	}
 	e.ObjEnd()
 }
@@ -2029,33 +2029,33 @@ func (p *EventPlain) UnmarshalJX(d *jx.Decoder) error {
 				return err
 			}
 			p.Src_ = append(p.Src_, 4)
-		case "payloadUserCreatedUserCreated":
-			p.PayloadUserCreatedUserCreated = &UserCreatedEvent{}
-			if err := p.PayloadUserCreatedUserCreated.UnmarshalJX(d); err != nil {
+		case "userCreatedUserCreated":
+			p.UserCreatedUserCreated = &UserCreatedEvent{}
+			if err := p.UserCreatedUserCreated.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 5)
-		case "payloadUserUpdatedUserUpdated":
-			p.PayloadUserUpdatedUserUpdated = &UserUpdatedEvent{}
-			if err := p.PayloadUserUpdatedUserUpdated.UnmarshalJX(d); err != nil {
+		case "userUpdatedUserUpdated":
+			p.UserUpdatedUserUpdated = &UserUpdatedEvent{}
+			if err := p.UserUpdatedUserUpdated.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 6)
-		case "payloadUserDeletedUserDeleted":
-			p.PayloadUserDeletedUserDeleted = &UserDeletedEvent{}
-			if err := p.PayloadUserDeletedUserDeleted.UnmarshalJX(d); err != nil {
+		case "userDeletedUserDeleted":
+			p.UserDeletedUserDeleted = &UserDeletedEvent{}
+			if err := p.UserDeletedUserDeleted.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 7)
-		case "payloadOrderCreatedOrderCreated":
-			p.PayloadOrderCreatedOrderCreated = &OrderCreatedEvent{}
-			if err := p.PayloadOrderCreatedOrderCreated.UnmarshalJX(d); err != nil {
+		case "orderCreatedOrderCreated":
+			p.OrderCreatedOrderCreated = &OrderCreatedEvent{}
+			if err := p.OrderCreatedOrderCreated.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 8)
-		case "payloadOrderCompletedOrderCompleted":
-			p.PayloadOrderCompletedOrderCompleted = &OrderCompletedEvent{}
-			if err := p.PayloadOrderCompletedOrderCompleted.UnmarshalJX(d); err != nil {
+		case "orderCompletedOrderCompleted":
+			p.OrderCompletedOrderCompleted = &OrderCompletedEvent{}
+			if err := p.OrderCompletedOrderCompleted.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 9)
@@ -2109,11 +2109,11 @@ func (p *EventPlain) Reset() {
 	p.Timestamp = 0
 	p.Source = ""
 	p.Meta = nil
-	p.PayloadUserCreatedUserCreated = nil
-	p.PayloadUserUpdatedUserUpdated = nil
-	p.PayloadUserDeletedUserDeleted = nil
-	p.PayloadOrderCreatedOrderCreated = nil
-	p.PayloadOrderCompletedOrderCompleted = nil
+	p.UserCreatedUserCreated = nil
+	p.UserUpdatedUserUpdated = nil
+	p.UserDeletedUserDeleted = nil
+	p.OrderCreatedOrderCreated = nil
+	p.OrderCompletedOrderCompleted = nil
 }
 
 type ConfigPlain struct {
@@ -5927,10 +5927,10 @@ func (p *OptionalShowcasePlain) Reset() {
 }
 
 type OneofShowcasePlain struct {
-	Id                string        `json:"id"`
-	ContentTextText   *TextContent  `json:"contentTextText"`   // origin: oneof_embed, empath: content_text.text
-	ContentImageImage *ImageContent `json:"contentImageImage"` // origin: oneof_embed, empath: content_image.image
-	ContentCodeCode   *CodeContent  `json:"contentCodeCode"`   // origin: oneof_embed, empath: content_code.code
+	Id         string        `json:"id"`
+	TextText   *TextContent  `json:"textText"`   // origin: oneof_embed, empath: text.text
+	ImageImage *ImageContent `json:"imageImage"` // origin: oneof_embed, empath: image.image
+	CodeCode   *CodeContent  `json:"codeCode"`   // origin: oneof_embed, empath: code.code
 	// ContentCase indicates which variant of content oneof is set
 	ContentCase string `json:"content_case,omitempty"`
 	// Src_ contains indices of populated fields for sparse serialization
@@ -5956,19 +5956,19 @@ func (pb *OneofShowcase) IntoPlain() *OneofShowcasePlain {
 
 	p.Id = pb.Id
 	p.Src_ = append(p.Src_, 0)
-	// ContentTextText from content_text.text
+	// TextText from text.text
 	if pb.GetText() != nil {
-		p.ContentTextText = pb.GetText()
+		p.TextText = pb.GetText()
 		p.Src_ = append(p.Src_, 1)
 	}
-	// ContentImageImage from content_image.image
+	// ImageImage from image.image
 	if pb.GetImage() != nil {
-		p.ContentImageImage = pb.GetImage()
+		p.ImageImage = pb.GetImage()
 		p.Src_ = append(p.Src_, 2)
 	}
-	// ContentCodeCode from content_code.code
+	// CodeCode from code.code
 	if pb.GetCode() != nil {
-		p.ContentCodeCode = pb.GetCode()
+		p.CodeCode = pb.GetCode()
 		p.Src_ = append(p.Src_, 3)
 	}
 	return p
@@ -5982,17 +5982,17 @@ func (p *OneofShowcasePlain) IntoPb() *OneofShowcase {
 	pb := &OneofShowcase{}
 
 	pb.Id = p.Id
-	// ContentTextText -> content_text.text
-	if p.ContentTextText != nil && p.ContentCase == "text" {
-		pb.Content = &OneofShowcase_Text{Text: p.ContentTextText}
+	// TextText -> text.text
+	if p.TextText != nil && p.ContentCase == "text" {
+		pb.Content = &OneofShowcase_Text{Text: p.TextText}
 	}
-	// ContentImageImage -> content_image.image
-	if p.ContentImageImage != nil && p.ContentCase == "image" {
-		pb.Content = &OneofShowcase_Image{Image: p.ContentImageImage}
+	// ImageImage -> image.image
+	if p.ImageImage != nil && p.ContentCase == "image" {
+		pb.Content = &OneofShowcase_Image{Image: p.ImageImage}
 	}
-	// ContentCodeCode -> content_code.code
-	if p.ContentCodeCode != nil && p.ContentCase == "code" {
-		pb.Content = &OneofShowcase_Code{Code: p.ContentCodeCode}
+	// CodeCode -> code.code
+	if p.CodeCode != nil && p.ContentCase == "code" {
+		pb.Content = &OneofShowcase_Code{Code: p.CodeCode}
 	}
 	return pb
 }
@@ -6017,19 +6017,19 @@ func (pb *OneofShowcase) IntoPlainReuse(p *OneofShowcasePlain) {
 
 	p.Id = pb.Id
 	p.Src_ = append(p.Src_, 0)
-	// ContentTextText from content_text.text
+	// TextText from text.text
 	if pb.GetText() != nil {
-		p.ContentTextText = pb.GetText()
+		p.TextText = pb.GetText()
 		p.Src_ = append(p.Src_, 1)
 	}
-	// ContentImageImage from content_image.image
+	// ImageImage from image.image
 	if pb.GetImage() != nil {
-		p.ContentImageImage = pb.GetImage()
+		p.ImageImage = pb.GetImage()
 		p.Src_ = append(p.Src_, 2)
 	}
-	// ContentCodeCode from content_code.code
+	// CodeCode from code.code
 	if pb.GetCode() != nil {
-		p.ContentCodeCode = pb.GetCode()
+		p.CodeCode = pb.GetCode()
 		p.Src_ = append(p.Src_, 3)
 	}
 }
@@ -6051,17 +6051,17 @@ func (p *OneofShowcasePlain) MarshalJX(e *jx.Encoder) {
 		e.FieldStart("id")
 		e.Str(p.Id)
 	}
-	if p.ContentTextText != nil {
-		e.FieldStart("contentTextText")
-		p.ContentTextText.MarshalJX(e)
+	if p.TextText != nil {
+		e.FieldStart("textText")
+		p.TextText.MarshalJX(e)
 	}
-	if p.ContentImageImage != nil {
-		e.FieldStart("contentImageImage")
-		p.ContentImageImage.MarshalJX(e)
+	if p.ImageImage != nil {
+		e.FieldStart("imageImage")
+		p.ImageImage.MarshalJX(e)
 	}
-	if p.ContentCodeCode != nil {
-		e.FieldStart("contentCodeCode")
-		p.ContentCodeCode.MarshalJX(e)
+	if p.CodeCode != nil {
+		e.FieldStart("codeCode")
+		p.CodeCode.MarshalJX(e)
 	}
 	e.ObjEnd()
 }
@@ -6105,21 +6105,21 @@ func (p *OneofShowcasePlain) UnmarshalJX(d *jx.Decoder) error {
 			}
 			p.Id = v
 			p.Src_ = append(p.Src_, 0)
-		case "contentTextText":
-			p.ContentTextText = &TextContent{}
-			if err := p.ContentTextText.UnmarshalJX(d); err != nil {
+		case "textText":
+			p.TextText = &TextContent{}
+			if err := p.TextText.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 1)
-		case "contentImageImage":
-			p.ContentImageImage = &ImageContent{}
-			if err := p.ContentImageImage.UnmarshalJX(d); err != nil {
+		case "imageImage":
+			p.ImageImage = &ImageContent{}
+			if err := p.ImageImage.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 2)
-		case "contentCodeCode":
-			p.ContentCodeCode = &CodeContent{}
-			if err := p.ContentCodeCode.UnmarshalJX(d); err != nil {
+		case "codeCode":
+			p.CodeCode = &CodeContent{}
+			if err := p.CodeCode.UnmarshalJX(d); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 3)
@@ -6169,9 +6169,9 @@ func (p *OneofShowcasePlain) Reset() {
 
 	p.ContentCase = ""
 	p.Id = ""
-	p.ContentTextText = nil
-	p.ContentImageImage = nil
-	p.ContentCodeCode = nil
+	p.TextText = nil
+	p.ImageImage = nil
+	p.CodeCode = nil
 }
 
 // This demonstrates oneof with embed=true where variants also have embed=true
@@ -6179,28 +6179,28 @@ func (p *OneofShowcasePlain) Reset() {
 //	Result: all fields from Heartbeat/ProcessStarted/ProcessExited/NetworkEvent
 //	are flattened directly into PlatformEventPlain
 type PlatformEventPlain struct {
-	EventId                                string            `json:"eventId"`
-	EventTime                              int64             `json:"eventTime"`
-	Source                                 string            `json:"source"`
-	Labels                                 map[string]string `json:"labels"`
-	PlatformEventHeartbeatTimestamp        int64             `json:"platformEventHeartbeatTimestamp"`        // origin: oneof_embed, empath: platform_event_heartbeat.timestamp
-	PlatformEventHeartbeatNodeId           string            `json:"platformEventHeartbeatNodeId"`           // origin: oneof_embed, empath: platform_event_heartbeat.node_id
-	PlatformEventHeartbeatCpuPercent       int32             `json:"platformEventHeartbeatCpuPercent"`       // origin: oneof_embed, empath: platform_event_heartbeat.cpu_percent
-	PlatformEventHeartbeatMemoryBytes      int64             `json:"platformEventHeartbeatMemoryBytes"`      // origin: oneof_embed, empath: platform_event_heartbeat.memory_bytes
-	PlatformEventProcessStartedProcessId   string            `json:"platformEventProcessStartedProcessId"`   // origin: oneof_embed, empath: platform_event_process_started.process_id
-	PlatformEventProcessStartedCommand     string            `json:"platformEventProcessStartedCommand"`     // origin: oneof_embed, empath: platform_event_process_started.command
-	PlatformEventProcessStartedArgs        []string          `json:"platformEventProcessStartedArgs"`        // origin: oneof_embed, empath: platform_event_process_started.args
-	PlatformEventProcessStartedStartTime   int64             `json:"platformEventProcessStartedStartTime"`   // origin: oneof_embed, empath: platform_event_process_started.start_time
-	PlatformEventProcessExitedProcessId    string            `json:"platformEventProcessExitedProcessId"`    // origin: oneof_embed, empath: platform_event_process_exited.process_id
-	PlatformEventProcessExitedExitCode     int32             `json:"platformEventProcessExitedExitCode"`     // origin: oneof_embed, empath: platform_event_process_exited.exit_code
-	PlatformEventProcessExitedExitTime     int64             `json:"platformEventProcessExitedExitTime"`     // origin: oneof_embed, empath: platform_event_process_exited.exit_time
-	PlatformEventProcessExitedSignal       string            `json:"platformEventProcessExitedSignal"`       // origin: oneof_embed, empath: platform_event_process_exited.signal
-	PlatformEventNetworkEventInterfaceName string            `json:"platformEventNetworkEventInterfaceName"` // origin: oneof_embed, empath: platform_event_network_event.interface_name
-	PlatformEventNetworkEventRemoteAddr    string            `json:"platformEventNetworkEventRemoteAddr"`    // origin: oneof_embed, empath: platform_event_network_event.remote_addr
-	PlatformEventNetworkEventRemotePort    int32             `json:"platformEventNetworkEventRemotePort"`    // origin: oneof_embed, empath: platform_event_network_event.remote_port
-	PlatformEventNetworkEventProtocol      string            `json:"platformEventNetworkEventProtocol"`      // origin: oneof_embed, empath: platform_event_network_event.protocol
-	PlatformEventNetworkEventBytesSent     int64             `json:"platformEventNetworkEventBytesSent"`     // origin: oneof_embed, empath: platform_event_network_event.bytes_sent
-	PlatformEventNetworkEventBytesReceived int64             `json:"platformEventNetworkEventBytesReceived"` // origin: oneof_embed, empath: platform_event_network_event.bytes_received
+	EventId                   string            `json:"eventId"`
+	EventTime                 int64             `json:"eventTime"`
+	Source                    string            `json:"source"`
+	Labels                    map[string]string `json:"labels"`
+	HeartbeatTimestamp        int64             `json:"heartbeatTimestamp"`        // origin: oneof_embed, empath: heartbeat.timestamp
+	HeartbeatNodeId           string            `json:"heartbeatNodeId"`           // origin: oneof_embed, empath: heartbeat.node_id
+	HeartbeatCpuPercent       int32             `json:"heartbeatCpuPercent"`       // origin: oneof_embed, empath: heartbeat.cpu_percent
+	HeartbeatMemoryBytes      int64             `json:"heartbeatMemoryBytes"`      // origin: oneof_embed, empath: heartbeat.memory_bytes
+	ProcessStartedProcessId   string            `json:"processStartedProcessId"`   // origin: oneof_embed, empath: process_started.process_id
+	ProcessStartedCommand     string            `json:"processStartedCommand"`     // origin: oneof_embed, empath: process_started.command
+	ProcessStartedArgs        []string          `json:"processStartedArgs"`        // origin: oneof_embed, empath: process_started.args
+	ProcessStartedStartTime   int64             `json:"processStartedStartTime"`   // origin: oneof_embed, empath: process_started.start_time
+	ProcessExitedProcessId    string            `json:"processExitedProcessId"`    // origin: oneof_embed, empath: process_exited.process_id
+	ProcessExitedExitCode     int32             `json:"processExitedExitCode"`     // origin: oneof_embed, empath: process_exited.exit_code
+	ProcessExitedExitTime     int64             `json:"processExitedExitTime"`     // origin: oneof_embed, empath: process_exited.exit_time
+	ProcessExitedSignal       string            `json:"processExitedSignal"`       // origin: oneof_embed, empath: process_exited.signal
+	NetworkEventInterfaceName string            `json:"networkEventInterfaceName"` // origin: oneof_embed, empath: network_event.interface_name
+	NetworkEventRemoteAddr    string            `json:"networkEventRemoteAddr"`    // origin: oneof_embed, empath: network_event.remote_addr
+	NetworkEventRemotePort    int32             `json:"networkEventRemotePort"`    // origin: oneof_embed, empath: network_event.remote_port
+	NetworkEventProtocol      string            `json:"networkEventProtocol"`      // origin: oneof_embed, empath: network_event.protocol
+	NetworkEventBytesSent     int64             `json:"networkEventBytesSent"`     // origin: oneof_embed, empath: network_event.bytes_sent
+	NetworkEventBytesReceived int64             `json:"networkEventBytesReceived"` // origin: oneof_embed, empath: network_event.bytes_received
 	// PlatformEventCase indicates which variant of platform_event oneof is set
 	PlatformEventCase string `json:"platform_event_case,omitempty"`
 	// Src_ contains indices of populated fields for sparse serialization
@@ -6234,94 +6234,94 @@ func (pb *PlatformEvent) IntoPlain() *PlatformEventPlain {
 	p.Src_ = append(p.Src_, 2)
 	p.Labels = pb.Labels
 	p.Src_ = append(p.Src_, 3)
-	// PlatformEventHeartbeatTimestamp from platform_event_heartbeat.timestamp
+	// HeartbeatTimestamp from heartbeat.timestamp
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatTimestamp = pb.GetHeartbeat().GetTimestamp()
+		p.HeartbeatTimestamp = pb.GetHeartbeat().GetTimestamp()
 		p.Src_ = append(p.Src_, 4)
 	}
-	// PlatformEventHeartbeatNodeId from platform_event_heartbeat.node_id
+	// HeartbeatNodeId from heartbeat.node_id
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatNodeId = pb.GetHeartbeat().GetNodeId()
+		p.HeartbeatNodeId = pb.GetHeartbeat().GetNodeId()
 		p.Src_ = append(p.Src_, 5)
 	}
-	// PlatformEventHeartbeatCpuPercent from platform_event_heartbeat.cpu_percent
+	// HeartbeatCpuPercent from heartbeat.cpu_percent
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatCpuPercent = pb.GetHeartbeat().GetCpuPercent()
+		p.HeartbeatCpuPercent = pb.GetHeartbeat().GetCpuPercent()
 		p.Src_ = append(p.Src_, 6)
 	}
-	// PlatformEventHeartbeatMemoryBytes from platform_event_heartbeat.memory_bytes
+	// HeartbeatMemoryBytes from heartbeat.memory_bytes
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatMemoryBytes = pb.GetHeartbeat().GetMemoryBytes()
+		p.HeartbeatMemoryBytes = pb.GetHeartbeat().GetMemoryBytes()
 		p.Src_ = append(p.Src_, 7)
 	}
-	// PlatformEventProcessStartedProcessId from platform_event_process_started.process_id
+	// ProcessStartedProcessId from process_started.process_id
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedProcessId = pb.GetProcessStarted().GetProcessId()
+		p.ProcessStartedProcessId = pb.GetProcessStarted().GetProcessId()
 		p.Src_ = append(p.Src_, 8)
 	}
-	// PlatformEventProcessStartedCommand from platform_event_process_started.command
+	// ProcessStartedCommand from process_started.command
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedCommand = pb.GetProcessStarted().GetCommand()
+		p.ProcessStartedCommand = pb.GetProcessStarted().GetCommand()
 		p.Src_ = append(p.Src_, 9)
 	}
-	// PlatformEventProcessStartedArgs from platform_event_process_started.args
+	// ProcessStartedArgs from process_started.args
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedArgs = pb.GetProcessStarted().GetArgs()
+		p.ProcessStartedArgs = pb.GetProcessStarted().GetArgs()
 		p.Src_ = append(p.Src_, 10)
 	}
-	// PlatformEventProcessStartedStartTime from platform_event_process_started.start_time
+	// ProcessStartedStartTime from process_started.start_time
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedStartTime = pb.GetProcessStarted().GetStartTime()
+		p.ProcessStartedStartTime = pb.GetProcessStarted().GetStartTime()
 		p.Src_ = append(p.Src_, 11)
 	}
-	// PlatformEventProcessExitedProcessId from platform_event_process_exited.process_id
+	// ProcessExitedProcessId from process_exited.process_id
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedProcessId = pb.GetProcessExited().GetProcessId()
+		p.ProcessExitedProcessId = pb.GetProcessExited().GetProcessId()
 		p.Src_ = append(p.Src_, 12)
 	}
-	// PlatformEventProcessExitedExitCode from platform_event_process_exited.exit_code
+	// ProcessExitedExitCode from process_exited.exit_code
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedExitCode = pb.GetProcessExited().GetExitCode()
+		p.ProcessExitedExitCode = pb.GetProcessExited().GetExitCode()
 		p.Src_ = append(p.Src_, 13)
 	}
-	// PlatformEventProcessExitedExitTime from platform_event_process_exited.exit_time
+	// ProcessExitedExitTime from process_exited.exit_time
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedExitTime = pb.GetProcessExited().GetExitTime()
+		p.ProcessExitedExitTime = pb.GetProcessExited().GetExitTime()
 		p.Src_ = append(p.Src_, 14)
 	}
-	// PlatformEventProcessExitedSignal from platform_event_process_exited.signal
+	// ProcessExitedSignal from process_exited.signal
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedSignal = pb.GetProcessExited().GetSignal()
+		p.ProcessExitedSignal = pb.GetProcessExited().GetSignal()
 		p.Src_ = append(p.Src_, 15)
 	}
-	// PlatformEventNetworkEventInterfaceName from platform_event_network_event.interface_name
+	// NetworkEventInterfaceName from network_event.interface_name
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventInterfaceName = pb.GetNetworkEvent().GetInterfaceName()
+		p.NetworkEventInterfaceName = pb.GetNetworkEvent().GetInterfaceName()
 		p.Src_ = append(p.Src_, 16)
 	}
-	// PlatformEventNetworkEventRemoteAddr from platform_event_network_event.remote_addr
+	// NetworkEventRemoteAddr from network_event.remote_addr
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventRemoteAddr = pb.GetNetworkEvent().GetRemoteAddr()
+		p.NetworkEventRemoteAddr = pb.GetNetworkEvent().GetRemoteAddr()
 		p.Src_ = append(p.Src_, 17)
 	}
-	// PlatformEventNetworkEventRemotePort from platform_event_network_event.remote_port
+	// NetworkEventRemotePort from network_event.remote_port
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventRemotePort = pb.GetNetworkEvent().GetRemotePort()
+		p.NetworkEventRemotePort = pb.GetNetworkEvent().GetRemotePort()
 		p.Src_ = append(p.Src_, 18)
 	}
-	// PlatformEventNetworkEventProtocol from platform_event_network_event.protocol
+	// NetworkEventProtocol from network_event.protocol
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventProtocol = pb.GetNetworkEvent().GetProtocol()
+		p.NetworkEventProtocol = pb.GetNetworkEvent().GetProtocol()
 		p.Src_ = append(p.Src_, 19)
 	}
-	// PlatformEventNetworkEventBytesSent from platform_event_network_event.bytes_sent
+	// NetworkEventBytesSent from network_event.bytes_sent
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventBytesSent = pb.GetNetworkEvent().GetBytesSent()
+		p.NetworkEventBytesSent = pb.GetNetworkEvent().GetBytesSent()
 		p.Src_ = append(p.Src_, 20)
 	}
-	// PlatformEventNetworkEventBytesReceived from platform_event_network_event.bytes_received
+	// NetworkEventBytesReceived from network_event.bytes_received
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventBytesReceived = pb.GetNetworkEvent().GetBytesReceived()
+		p.NetworkEventBytesReceived = pb.GetNetworkEvent().GetBytesReceived()
 		p.Src_ = append(p.Src_, 21)
 	}
 	return p
@@ -6338,131 +6338,131 @@ func (p *PlatformEventPlain) IntoPb() *PlatformEvent {
 	pb.EventTime = p.EventTime
 	pb.Source = p.Source
 	pb.Labels = p.Labels
-	// PlatformEventHeartbeatTimestamp -> platform_event_heartbeat.timestamp
+	// HeartbeatTimestamp -> heartbeat.timestamp
 	if p.PlatformEventCase == "heartbeat" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_Heartbeat); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_Heartbeat{Heartbeat: &Heartbeat{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.Timestamp = p.PlatformEventHeartbeatTimestamp
+		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.Timestamp = p.HeartbeatTimestamp
 	}
-	// PlatformEventHeartbeatNodeId -> platform_event_heartbeat.node_id
+	// HeartbeatNodeId -> heartbeat.node_id
 	if p.PlatformEventCase == "heartbeat" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_Heartbeat); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_Heartbeat{Heartbeat: &Heartbeat{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.NodeId = p.PlatformEventHeartbeatNodeId
+		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.NodeId = p.HeartbeatNodeId
 	}
-	// PlatformEventHeartbeatCpuPercent -> platform_event_heartbeat.cpu_percent
+	// HeartbeatCpuPercent -> heartbeat.cpu_percent
 	if p.PlatformEventCase == "heartbeat" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_Heartbeat); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_Heartbeat{Heartbeat: &Heartbeat{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.CpuPercent = p.PlatformEventHeartbeatCpuPercent
+		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.CpuPercent = p.HeartbeatCpuPercent
 	}
-	// PlatformEventHeartbeatMemoryBytes -> platform_event_heartbeat.memory_bytes
+	// HeartbeatMemoryBytes -> heartbeat.memory_bytes
 	if p.PlatformEventCase == "heartbeat" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_Heartbeat); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_Heartbeat{Heartbeat: &Heartbeat{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.MemoryBytes = p.PlatformEventHeartbeatMemoryBytes
+		pb.PlatformEvent.(*PlatformEvent_Heartbeat).Heartbeat.MemoryBytes = p.HeartbeatMemoryBytes
 	}
-	// PlatformEventProcessStartedProcessId -> platform_event_process_started.process_id
+	// ProcessStartedProcessId -> process_started.process_id
 	if p.PlatformEventCase == "process_started" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessStarted); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessStarted{ProcessStarted: &ProcessStarted{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.ProcessId = p.PlatformEventProcessStartedProcessId
+		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.ProcessId = p.ProcessStartedProcessId
 	}
-	// PlatformEventProcessStartedCommand -> platform_event_process_started.command
+	// ProcessStartedCommand -> process_started.command
 	if p.PlatformEventCase == "process_started" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessStarted); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessStarted{ProcessStarted: &ProcessStarted{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.Command = p.PlatformEventProcessStartedCommand
+		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.Command = p.ProcessStartedCommand
 	}
-	// PlatformEventProcessStartedArgs -> platform_event_process_started.args
-	if len(p.PlatformEventProcessStartedArgs) > 0 && p.PlatformEventCase == "process_started" {
+	// ProcessStartedArgs -> process_started.args
+	if len(p.ProcessStartedArgs) > 0 && p.PlatformEventCase == "process_started" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessStarted); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessStarted{ProcessStarted: &ProcessStarted{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.Args = p.PlatformEventProcessStartedArgs
+		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.Args = p.ProcessStartedArgs
 	}
-	// PlatformEventProcessStartedStartTime -> platform_event_process_started.start_time
+	// ProcessStartedStartTime -> process_started.start_time
 	if p.PlatformEventCase == "process_started" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessStarted); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessStarted{ProcessStarted: &ProcessStarted{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.StartTime = p.PlatformEventProcessStartedStartTime
+		pb.PlatformEvent.(*PlatformEvent_ProcessStarted).ProcessStarted.StartTime = p.ProcessStartedStartTime
 	}
-	// PlatformEventProcessExitedProcessId -> platform_event_process_exited.process_id
+	// ProcessExitedProcessId -> process_exited.process_id
 	if p.PlatformEventCase == "process_exited" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessExited); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessExited{ProcessExited: &ProcessExited{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.ProcessId = p.PlatformEventProcessExitedProcessId
+		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.ProcessId = p.ProcessExitedProcessId
 	}
-	// PlatformEventProcessExitedExitCode -> platform_event_process_exited.exit_code
+	// ProcessExitedExitCode -> process_exited.exit_code
 	if p.PlatformEventCase == "process_exited" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessExited); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessExited{ProcessExited: &ProcessExited{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.ExitCode = p.PlatformEventProcessExitedExitCode
+		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.ExitCode = p.ProcessExitedExitCode
 	}
-	// PlatformEventProcessExitedExitTime -> platform_event_process_exited.exit_time
+	// ProcessExitedExitTime -> process_exited.exit_time
 	if p.PlatformEventCase == "process_exited" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessExited); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessExited{ProcessExited: &ProcessExited{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.ExitTime = p.PlatformEventProcessExitedExitTime
+		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.ExitTime = p.ProcessExitedExitTime
 	}
-	// PlatformEventProcessExitedSignal -> platform_event_process_exited.signal
+	// ProcessExitedSignal -> process_exited.signal
 	if p.PlatformEventCase == "process_exited" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_ProcessExited); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_ProcessExited{ProcessExited: &ProcessExited{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.Signal = p.PlatformEventProcessExitedSignal
+		pb.PlatformEvent.(*PlatformEvent_ProcessExited).ProcessExited.Signal = p.ProcessExitedSignal
 	}
-	// PlatformEventNetworkEventInterfaceName -> platform_event_network_event.interface_name
+	// NetworkEventInterfaceName -> network_event.interface_name
 	if p.PlatformEventCase == "network_event" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_NetworkEvent); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_NetworkEvent{NetworkEvent: &NetworkEvent{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.InterfaceName = p.PlatformEventNetworkEventInterfaceName
+		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.InterfaceName = p.NetworkEventInterfaceName
 	}
-	// PlatformEventNetworkEventRemoteAddr -> platform_event_network_event.remote_addr
+	// NetworkEventRemoteAddr -> network_event.remote_addr
 	if p.PlatformEventCase == "network_event" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_NetworkEvent); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_NetworkEvent{NetworkEvent: &NetworkEvent{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.RemoteAddr = p.PlatformEventNetworkEventRemoteAddr
+		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.RemoteAddr = p.NetworkEventRemoteAddr
 	}
-	// PlatformEventNetworkEventRemotePort -> platform_event_network_event.remote_port
+	// NetworkEventRemotePort -> network_event.remote_port
 	if p.PlatformEventCase == "network_event" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_NetworkEvent); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_NetworkEvent{NetworkEvent: &NetworkEvent{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.RemotePort = p.PlatformEventNetworkEventRemotePort
+		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.RemotePort = p.NetworkEventRemotePort
 	}
-	// PlatformEventNetworkEventProtocol -> platform_event_network_event.protocol
+	// NetworkEventProtocol -> network_event.protocol
 	if p.PlatformEventCase == "network_event" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_NetworkEvent); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_NetworkEvent{NetworkEvent: &NetworkEvent{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.Protocol = p.PlatformEventNetworkEventProtocol
+		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.Protocol = p.NetworkEventProtocol
 	}
-	// PlatformEventNetworkEventBytesSent -> platform_event_network_event.bytes_sent
+	// NetworkEventBytesSent -> network_event.bytes_sent
 	if p.PlatformEventCase == "network_event" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_NetworkEvent); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_NetworkEvent{NetworkEvent: &NetworkEvent{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.BytesSent = p.PlatformEventNetworkEventBytesSent
+		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.BytesSent = p.NetworkEventBytesSent
 	}
-	// PlatformEventNetworkEventBytesReceived -> platform_event_network_event.bytes_received
+	// NetworkEventBytesReceived -> network_event.bytes_received
 	if p.PlatformEventCase == "network_event" {
 		if _, ok := pb.PlatformEvent.(*PlatformEvent_NetworkEvent); !ok || pb.PlatformEvent == nil {
 			pb.PlatformEvent = &PlatformEvent_NetworkEvent{NetworkEvent: &NetworkEvent{}}
 		}
-		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.BytesReceived = p.PlatformEventNetworkEventBytesReceived
+		pb.PlatformEvent.(*PlatformEvent_NetworkEvent).NetworkEvent.BytesReceived = p.NetworkEventBytesReceived
 	}
 	return pb
 }
@@ -6495,94 +6495,94 @@ func (pb *PlatformEvent) IntoPlainReuse(p *PlatformEventPlain) {
 	p.Src_ = append(p.Src_, 2)
 	p.Labels = pb.Labels
 	p.Src_ = append(p.Src_, 3)
-	// PlatformEventHeartbeatTimestamp from platform_event_heartbeat.timestamp
+	// HeartbeatTimestamp from heartbeat.timestamp
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatTimestamp = pb.GetHeartbeat().GetTimestamp()
+		p.HeartbeatTimestamp = pb.GetHeartbeat().GetTimestamp()
 		p.Src_ = append(p.Src_, 4)
 	}
-	// PlatformEventHeartbeatNodeId from platform_event_heartbeat.node_id
+	// HeartbeatNodeId from heartbeat.node_id
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatNodeId = pb.GetHeartbeat().GetNodeId()
+		p.HeartbeatNodeId = pb.GetHeartbeat().GetNodeId()
 		p.Src_ = append(p.Src_, 5)
 	}
-	// PlatformEventHeartbeatCpuPercent from platform_event_heartbeat.cpu_percent
+	// HeartbeatCpuPercent from heartbeat.cpu_percent
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatCpuPercent = pb.GetHeartbeat().GetCpuPercent()
+		p.HeartbeatCpuPercent = pb.GetHeartbeat().GetCpuPercent()
 		p.Src_ = append(p.Src_, 6)
 	}
-	// PlatformEventHeartbeatMemoryBytes from platform_event_heartbeat.memory_bytes
+	// HeartbeatMemoryBytes from heartbeat.memory_bytes
 	if pb.GetHeartbeat() != nil {
-		p.PlatformEventHeartbeatMemoryBytes = pb.GetHeartbeat().GetMemoryBytes()
+		p.HeartbeatMemoryBytes = pb.GetHeartbeat().GetMemoryBytes()
 		p.Src_ = append(p.Src_, 7)
 	}
-	// PlatformEventProcessStartedProcessId from platform_event_process_started.process_id
+	// ProcessStartedProcessId from process_started.process_id
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedProcessId = pb.GetProcessStarted().GetProcessId()
+		p.ProcessStartedProcessId = pb.GetProcessStarted().GetProcessId()
 		p.Src_ = append(p.Src_, 8)
 	}
-	// PlatformEventProcessStartedCommand from platform_event_process_started.command
+	// ProcessStartedCommand from process_started.command
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedCommand = pb.GetProcessStarted().GetCommand()
+		p.ProcessStartedCommand = pb.GetProcessStarted().GetCommand()
 		p.Src_ = append(p.Src_, 9)
 	}
-	// PlatformEventProcessStartedArgs from platform_event_process_started.args
+	// ProcessStartedArgs from process_started.args
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedArgs = pb.GetProcessStarted().GetArgs()
+		p.ProcessStartedArgs = pb.GetProcessStarted().GetArgs()
 		p.Src_ = append(p.Src_, 10)
 	}
-	// PlatformEventProcessStartedStartTime from platform_event_process_started.start_time
+	// ProcessStartedStartTime from process_started.start_time
 	if pb.GetProcessStarted() != nil {
-		p.PlatformEventProcessStartedStartTime = pb.GetProcessStarted().GetStartTime()
+		p.ProcessStartedStartTime = pb.GetProcessStarted().GetStartTime()
 		p.Src_ = append(p.Src_, 11)
 	}
-	// PlatformEventProcessExitedProcessId from platform_event_process_exited.process_id
+	// ProcessExitedProcessId from process_exited.process_id
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedProcessId = pb.GetProcessExited().GetProcessId()
+		p.ProcessExitedProcessId = pb.GetProcessExited().GetProcessId()
 		p.Src_ = append(p.Src_, 12)
 	}
-	// PlatformEventProcessExitedExitCode from platform_event_process_exited.exit_code
+	// ProcessExitedExitCode from process_exited.exit_code
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedExitCode = pb.GetProcessExited().GetExitCode()
+		p.ProcessExitedExitCode = pb.GetProcessExited().GetExitCode()
 		p.Src_ = append(p.Src_, 13)
 	}
-	// PlatformEventProcessExitedExitTime from platform_event_process_exited.exit_time
+	// ProcessExitedExitTime from process_exited.exit_time
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedExitTime = pb.GetProcessExited().GetExitTime()
+		p.ProcessExitedExitTime = pb.GetProcessExited().GetExitTime()
 		p.Src_ = append(p.Src_, 14)
 	}
-	// PlatformEventProcessExitedSignal from platform_event_process_exited.signal
+	// ProcessExitedSignal from process_exited.signal
 	if pb.GetProcessExited() != nil {
-		p.PlatformEventProcessExitedSignal = pb.GetProcessExited().GetSignal()
+		p.ProcessExitedSignal = pb.GetProcessExited().GetSignal()
 		p.Src_ = append(p.Src_, 15)
 	}
-	// PlatformEventNetworkEventInterfaceName from platform_event_network_event.interface_name
+	// NetworkEventInterfaceName from network_event.interface_name
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventInterfaceName = pb.GetNetworkEvent().GetInterfaceName()
+		p.NetworkEventInterfaceName = pb.GetNetworkEvent().GetInterfaceName()
 		p.Src_ = append(p.Src_, 16)
 	}
-	// PlatformEventNetworkEventRemoteAddr from platform_event_network_event.remote_addr
+	// NetworkEventRemoteAddr from network_event.remote_addr
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventRemoteAddr = pb.GetNetworkEvent().GetRemoteAddr()
+		p.NetworkEventRemoteAddr = pb.GetNetworkEvent().GetRemoteAddr()
 		p.Src_ = append(p.Src_, 17)
 	}
-	// PlatformEventNetworkEventRemotePort from platform_event_network_event.remote_port
+	// NetworkEventRemotePort from network_event.remote_port
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventRemotePort = pb.GetNetworkEvent().GetRemotePort()
+		p.NetworkEventRemotePort = pb.GetNetworkEvent().GetRemotePort()
 		p.Src_ = append(p.Src_, 18)
 	}
-	// PlatformEventNetworkEventProtocol from platform_event_network_event.protocol
+	// NetworkEventProtocol from network_event.protocol
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventProtocol = pb.GetNetworkEvent().GetProtocol()
+		p.NetworkEventProtocol = pb.GetNetworkEvent().GetProtocol()
 		p.Src_ = append(p.Src_, 19)
 	}
-	// PlatformEventNetworkEventBytesSent from platform_event_network_event.bytes_sent
+	// NetworkEventBytesSent from network_event.bytes_sent
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventBytesSent = pb.GetNetworkEvent().GetBytesSent()
+		p.NetworkEventBytesSent = pb.GetNetworkEvent().GetBytesSent()
 		p.Src_ = append(p.Src_, 20)
 	}
-	// PlatformEventNetworkEventBytesReceived from platform_event_network_event.bytes_received
+	// NetworkEventBytesReceived from network_event.bytes_received
 	if pb.GetNetworkEvent() != nil {
-		p.PlatformEventNetworkEventBytesReceived = pb.GetNetworkEvent().GetBytesReceived()
+		p.NetworkEventBytesReceived = pb.GetNetworkEvent().GetBytesReceived()
 		p.Src_ = append(p.Src_, 21)
 	}
 }
@@ -6619,81 +6619,81 @@ func (p *PlatformEventPlain) MarshalJX(e *jx.Encoder) {
 		e.Str(v)
 	}
 	e.ObjEnd()
-	if p.PlatformEventHeartbeatTimestamp != 0 {
-		e.FieldStart("platformEventHeartbeatTimestamp")
-		e.Int64(p.PlatformEventHeartbeatTimestamp)
+	if p.HeartbeatTimestamp != 0 {
+		e.FieldStart("heartbeatTimestamp")
+		e.Int64(p.HeartbeatTimestamp)
 	}
-	if p.PlatformEventHeartbeatNodeId != "" {
-		e.FieldStart("platformEventHeartbeatNodeId")
-		e.Str(p.PlatformEventHeartbeatNodeId)
+	if p.HeartbeatNodeId != "" {
+		e.FieldStart("heartbeatNodeId")
+		e.Str(p.HeartbeatNodeId)
 	}
-	if p.PlatformEventHeartbeatCpuPercent != 0 {
-		e.FieldStart("platformEventHeartbeatCpuPercent")
-		e.Int32(p.PlatformEventHeartbeatCpuPercent)
+	if p.HeartbeatCpuPercent != 0 {
+		e.FieldStart("heartbeatCpuPercent")
+		e.Int32(p.HeartbeatCpuPercent)
 	}
-	if p.PlatformEventHeartbeatMemoryBytes != 0 {
-		e.FieldStart("platformEventHeartbeatMemoryBytes")
-		e.Int64(p.PlatformEventHeartbeatMemoryBytes)
+	if p.HeartbeatMemoryBytes != 0 {
+		e.FieldStart("heartbeatMemoryBytes")
+		e.Int64(p.HeartbeatMemoryBytes)
 	}
-	if p.PlatformEventProcessStartedProcessId != "" {
-		e.FieldStart("platformEventProcessStartedProcessId")
-		e.Str(p.PlatformEventProcessStartedProcessId)
+	if p.ProcessStartedProcessId != "" {
+		e.FieldStart("processStartedProcessId")
+		e.Str(p.ProcessStartedProcessId)
 	}
-	if p.PlatformEventProcessStartedCommand != "" {
-		e.FieldStart("platformEventProcessStartedCommand")
-		e.Str(p.PlatformEventProcessStartedCommand)
+	if p.ProcessStartedCommand != "" {
+		e.FieldStart("processStartedCommand")
+		e.Str(p.ProcessStartedCommand)
 	}
-	if len(p.PlatformEventProcessStartedArgs) > 0 {
-		e.FieldStart("platformEventProcessStartedArgs")
+	if len(p.ProcessStartedArgs) > 0 {
+		e.FieldStart("processStartedArgs")
 		e.ArrStart()
-		for _, v := range p.PlatformEventProcessStartedArgs {
+		for _, v := range p.ProcessStartedArgs {
 			e.Str(v)
 		}
 		e.ArrEnd()
 	}
-	if p.PlatformEventProcessStartedStartTime != 0 {
-		e.FieldStart("platformEventProcessStartedStartTime")
-		e.Int64(p.PlatformEventProcessStartedStartTime)
+	if p.ProcessStartedStartTime != 0 {
+		e.FieldStart("processStartedStartTime")
+		e.Int64(p.ProcessStartedStartTime)
 	}
-	if p.PlatformEventProcessExitedProcessId != "" {
-		e.FieldStart("platformEventProcessExitedProcessId")
-		e.Str(p.PlatformEventProcessExitedProcessId)
+	if p.ProcessExitedProcessId != "" {
+		e.FieldStart("processExitedProcessId")
+		e.Str(p.ProcessExitedProcessId)
 	}
-	if p.PlatformEventProcessExitedExitCode != 0 {
-		e.FieldStart("platformEventProcessExitedExitCode")
-		e.Int32(p.PlatformEventProcessExitedExitCode)
+	if p.ProcessExitedExitCode != 0 {
+		e.FieldStart("processExitedExitCode")
+		e.Int32(p.ProcessExitedExitCode)
 	}
-	if p.PlatformEventProcessExitedExitTime != 0 {
-		e.FieldStart("platformEventProcessExitedExitTime")
-		e.Int64(p.PlatformEventProcessExitedExitTime)
+	if p.ProcessExitedExitTime != 0 {
+		e.FieldStart("processExitedExitTime")
+		e.Int64(p.ProcessExitedExitTime)
 	}
-	if p.PlatformEventProcessExitedSignal != "" {
-		e.FieldStart("platformEventProcessExitedSignal")
-		e.Str(p.PlatformEventProcessExitedSignal)
+	if p.ProcessExitedSignal != "" {
+		e.FieldStart("processExitedSignal")
+		e.Str(p.ProcessExitedSignal)
 	}
-	if p.PlatformEventNetworkEventInterfaceName != "" {
-		e.FieldStart("platformEventNetworkEventInterfaceName")
-		e.Str(p.PlatformEventNetworkEventInterfaceName)
+	if p.NetworkEventInterfaceName != "" {
+		e.FieldStart("networkEventInterfaceName")
+		e.Str(p.NetworkEventInterfaceName)
 	}
-	if p.PlatformEventNetworkEventRemoteAddr != "" {
-		e.FieldStart("platformEventNetworkEventRemoteAddr")
-		e.Str(p.PlatformEventNetworkEventRemoteAddr)
+	if p.NetworkEventRemoteAddr != "" {
+		e.FieldStart("networkEventRemoteAddr")
+		e.Str(p.NetworkEventRemoteAddr)
 	}
-	if p.PlatformEventNetworkEventRemotePort != 0 {
-		e.FieldStart("platformEventNetworkEventRemotePort")
-		e.Int32(p.PlatformEventNetworkEventRemotePort)
+	if p.NetworkEventRemotePort != 0 {
+		e.FieldStart("networkEventRemotePort")
+		e.Int32(p.NetworkEventRemotePort)
 	}
-	if p.PlatformEventNetworkEventProtocol != "" {
-		e.FieldStart("platformEventNetworkEventProtocol")
-		e.Str(p.PlatformEventNetworkEventProtocol)
+	if p.NetworkEventProtocol != "" {
+		e.FieldStart("networkEventProtocol")
+		e.Str(p.NetworkEventProtocol)
 	}
-	if p.PlatformEventNetworkEventBytesSent != 0 {
-		e.FieldStart("platformEventNetworkEventBytesSent")
-		e.Int64(p.PlatformEventNetworkEventBytesSent)
+	if p.NetworkEventBytesSent != 0 {
+		e.FieldStart("networkEventBytesSent")
+		e.Int64(p.NetworkEventBytesSent)
 	}
-	if p.PlatformEventNetworkEventBytesReceived != 0 {
-		e.FieldStart("platformEventNetworkEventBytesReceived")
-		e.Int64(p.PlatformEventNetworkEventBytesReceived)
+	if p.NetworkEventBytesReceived != 0 {
+		e.FieldStart("networkEventBytesReceived")
+		e.Int64(p.NetworkEventBytesReceived)
 	}
 	e.ObjEnd()
 }
@@ -6764,136 +6764,136 @@ func (p *PlatformEventPlain) UnmarshalJX(d *jx.Decoder) error {
 				return nil
 			})
 			p.Src_ = append(p.Src_, 3)
-		case "platformEventHeartbeatTimestamp":
+		case "heartbeatTimestamp":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventHeartbeatTimestamp = v
+			p.HeartbeatTimestamp = v
 			p.Src_ = append(p.Src_, 4)
-		case "platformEventHeartbeatNodeId":
+		case "heartbeatNodeId":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventHeartbeatNodeId = v
+			p.HeartbeatNodeId = v
 			p.Src_ = append(p.Src_, 5)
-		case "platformEventHeartbeatCpuPercent":
+		case "heartbeatCpuPercent":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventHeartbeatCpuPercent = v
+			p.HeartbeatCpuPercent = v
 			p.Src_ = append(p.Src_, 6)
-		case "platformEventHeartbeatMemoryBytes":
+		case "heartbeatMemoryBytes":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventHeartbeatMemoryBytes = v
+			p.HeartbeatMemoryBytes = v
 			p.Src_ = append(p.Src_, 7)
-		case "platformEventProcessStartedProcessId":
+		case "processStartedProcessId":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventProcessStartedProcessId = v
+			p.ProcessStartedProcessId = v
 			p.Src_ = append(p.Src_, 8)
-		case "platformEventProcessStartedCommand":
+		case "processStartedCommand":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventProcessStartedCommand = v
+			p.ProcessStartedCommand = v
 			p.Src_ = append(p.Src_, 9)
-		case "platformEventProcessStartedArgs":
+		case "processStartedArgs":
 			if err := d.Arr(func(d *jx.Decoder) error {
 				v, err := d.Str()
 				if err != nil {
 					return err
 				}
-				p.PlatformEventProcessStartedArgs = append(p.PlatformEventProcessStartedArgs, v)
+				p.ProcessStartedArgs = append(p.ProcessStartedArgs, v)
 				return nil
 			}); err != nil {
 				return err
 			}
 			p.Src_ = append(p.Src_, 10)
-		case "platformEventProcessStartedStartTime":
+		case "processStartedStartTime":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventProcessStartedStartTime = v
+			p.ProcessStartedStartTime = v
 			p.Src_ = append(p.Src_, 11)
-		case "platformEventProcessExitedProcessId":
+		case "processExitedProcessId":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventProcessExitedProcessId = v
+			p.ProcessExitedProcessId = v
 			p.Src_ = append(p.Src_, 12)
-		case "platformEventProcessExitedExitCode":
+		case "processExitedExitCode":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventProcessExitedExitCode = v
+			p.ProcessExitedExitCode = v
 			p.Src_ = append(p.Src_, 13)
-		case "platformEventProcessExitedExitTime":
+		case "processExitedExitTime":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventProcessExitedExitTime = v
+			p.ProcessExitedExitTime = v
 			p.Src_ = append(p.Src_, 14)
-		case "platformEventProcessExitedSignal":
+		case "processExitedSignal":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventProcessExitedSignal = v
+			p.ProcessExitedSignal = v
 			p.Src_ = append(p.Src_, 15)
-		case "platformEventNetworkEventInterfaceName":
+		case "networkEventInterfaceName":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventNetworkEventInterfaceName = v
+			p.NetworkEventInterfaceName = v
 			p.Src_ = append(p.Src_, 16)
-		case "platformEventNetworkEventRemoteAddr":
+		case "networkEventRemoteAddr":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventNetworkEventRemoteAddr = v
+			p.NetworkEventRemoteAddr = v
 			p.Src_ = append(p.Src_, 17)
-		case "platformEventNetworkEventRemotePort":
+		case "networkEventRemotePort":
 			v, err := d.Int32()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventNetworkEventRemotePort = v
+			p.NetworkEventRemotePort = v
 			p.Src_ = append(p.Src_, 18)
-		case "platformEventNetworkEventProtocol":
+		case "networkEventProtocol":
 			v, err := d.Str()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventNetworkEventProtocol = v
+			p.NetworkEventProtocol = v
 			p.Src_ = append(p.Src_, 19)
-		case "platformEventNetworkEventBytesSent":
+		case "networkEventBytesSent":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventNetworkEventBytesSent = v
+			p.NetworkEventBytesSent = v
 			p.Src_ = append(p.Src_, 20)
-		case "platformEventNetworkEventBytesReceived":
+		case "networkEventBytesReceived":
 			v, err := d.Int64()
 			if err != nil {
 				return err
 			}
-			p.PlatformEventNetworkEventBytesReceived = v
+			p.NetworkEventBytesReceived = v
 			p.Src_ = append(p.Src_, 21)
 		default:
 			return d.Skip()
@@ -6946,24 +6946,24 @@ func (p *PlatformEventPlain) Reset() {
 	for k := range p.Labels {
 		delete(p.Labels, k)
 	}
-	p.PlatformEventHeartbeatTimestamp = 0
-	p.PlatformEventHeartbeatNodeId = ""
-	p.PlatformEventHeartbeatCpuPercent = 0
-	p.PlatformEventHeartbeatMemoryBytes = 0
-	p.PlatformEventProcessStartedProcessId = ""
-	p.PlatformEventProcessStartedCommand = ""
-	p.PlatformEventProcessStartedArgs = p.PlatformEventProcessStartedArgs[:0]
-	p.PlatformEventProcessStartedStartTime = 0
-	p.PlatformEventProcessExitedProcessId = ""
-	p.PlatformEventProcessExitedExitCode = 0
-	p.PlatformEventProcessExitedExitTime = 0
-	p.PlatformEventProcessExitedSignal = ""
-	p.PlatformEventNetworkEventInterfaceName = ""
-	p.PlatformEventNetworkEventRemoteAddr = ""
-	p.PlatformEventNetworkEventRemotePort = 0
-	p.PlatformEventNetworkEventProtocol = ""
-	p.PlatformEventNetworkEventBytesSent = 0
-	p.PlatformEventNetworkEventBytesReceived = 0
+	p.HeartbeatTimestamp = 0
+	p.HeartbeatNodeId = ""
+	p.HeartbeatCpuPercent = 0
+	p.HeartbeatMemoryBytes = 0
+	p.ProcessStartedProcessId = ""
+	p.ProcessStartedCommand = ""
+	p.ProcessStartedArgs = p.ProcessStartedArgs[:0]
+	p.ProcessStartedStartTime = 0
+	p.ProcessExitedProcessId = ""
+	p.ProcessExitedExitCode = 0
+	p.ProcessExitedExitTime = 0
+	p.ProcessExitedSignal = ""
+	p.NetworkEventInterfaceName = ""
+	p.NetworkEventRemoteAddr = ""
+	p.NetworkEventRemotePort = 0
+	p.NetworkEventProtocol = ""
+	p.NetworkEventBytesSent = 0
+	p.NetworkEventBytesReceived = 0
 }
 
 type DeprecatedShowcasePlain struct {

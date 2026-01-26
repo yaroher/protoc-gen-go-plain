@@ -231,7 +231,16 @@ func (g *Generator) generateIntoPlainReuse(gf *protogen.GeneratedFile, msg *IRMe
 // generateOneofCaseDetection generates code to detect which oneof variant is set
 func (g *Generator) generateOneofCaseDetection(gf *protogen.GeneratedFile, eo *EmbeddedOneof) {
 	gf.P("\t// Detect ", eo.Name, " oneof case")
-	gf.P("\tswitch pb.", eo.GoName, ".(type) {")
+
+	// Build access path: pb.GoName or pb.AccessPath.GoName
+	var oneofAccess string
+	if eo.AccessPath != "" {
+		oneofAccess = "pb." + eo.AccessPath + ".Get" + eo.GoName + "()"
+	} else {
+		oneofAccess = "pb." + eo.GoName
+	}
+
+	gf.P("\tswitch ", oneofAccess, ".(type) {")
 	for _, variant := range eo.Variants {
 		wrapperIdent := protogen.GoIdent{
 			GoName:       eo.Source.Parent.GoIdent.GoName + "_" + variant.GoName,

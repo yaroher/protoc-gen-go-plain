@@ -347,10 +347,10 @@ func TestOneofEmbedWithFieldEmbed(t *testing.T) {
 	assert.Equal(t, "heartbeat", plain.PlatformEventCase)
 
 	// Check flattened Heartbeat fields (double embed: oneof.embed + field.embed)
-	assert.Equal(t, int64(1706000000), plain.PlatformEventHeartbeatTimestamp)
-	assert.Equal(t, "node-1", plain.PlatformEventHeartbeatNodeId)
-	assert.Equal(t, int32(45), plain.PlatformEventHeartbeatCpuPercent)
-	assert.Equal(t, int64(8589934592), plain.PlatformEventHeartbeatMemoryBytes)
+	assert.Equal(t, int64(1706000000), plain.HeartbeatTimestamp)
+	assert.Equal(t, "node-1", plain.HeartbeatNodeId)
+	assert.Equal(t, int32(45), plain.HeartbeatCpuPercent)
+	assert.Equal(t, int64(8589934592), plain.HeartbeatMemoryBytes)
 
 	// Test ProcessStarted variant
 	processEvent := &full.PlatformEvent{
@@ -369,9 +369,9 @@ func TestOneofEmbedWithFieldEmbed(t *testing.T) {
 
 	plainProcess := processEvent.IntoPlain()
 	assert.Equal(t, "process_started", plainProcess.PlatformEventCase)
-	assert.Equal(t, "pid-123", plainProcess.PlatformEventProcessStartedProcessId)
-	assert.Equal(t, "/usr/bin/myapp", plainProcess.PlatformEventProcessStartedCommand)
-	assert.Equal(t, []string{"--config", "/etc/myapp.conf"}, plainProcess.PlatformEventProcessStartedArgs)
+	assert.Equal(t, "pid-123", plainProcess.ProcessStartedProcessId)
+	assert.Equal(t, "/usr/bin/myapp", plainProcess.ProcessStartedCommand)
+	assert.Equal(t, []string{"--config", "/etc/myapp.conf"}, plainProcess.ProcessStartedArgs)
 
 	// Test roundtrip
 	restored := plain.IntoPb()

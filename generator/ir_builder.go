@@ -6,6 +6,8 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/yaroher/protoc-gen-go-plain/goplain"
+	"github.com/yaroher/protoc-gen-go-plain/logger"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -142,9 +144,14 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 				Source:        oneof,
 			}
 
-			// Для oneof embed используем prefix: oneof_name + variant_name
-			// чтобы избежать коллизий (многие варианты могут иметь одинаковые поля)
-			basePrefix := string(oneof.Desc.Name())
+			// Определяем базовый prefix для oneof
+			// Если embed_with_prefix=true, используем имя oneof как prefix
+			// Если embed_with_prefix=false, prefix пустой (поля вставляются без prefix)
+			usePrefix := oneofOpts.EmbedWithPrefix
+			basePrefix := ""
+			if usePrefix {
+				basePrefix = string(oneof.Desc.Name())
+			}
 
 			// Embed oneof — разворачиваем все варианты
 			for _, field := range oneof.Fields {
@@ -155,8 +162,17 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 					FieldNumber: int32(field.Desc.Number()),
 				})
 
-				// Prefix включает имя oneof и имя варианта для уникальности
-				variantPrefix := basePrefix + "_" + string(field.Desc.Name())
+				// Prefix для варианта:
+				// - Если usePrefix=true: oneof_name + variant_name
+				// - Если usePrefix=false: только variant_name (для полей с embed=true внутри)
+				var variantPrefix string
+				if usePrefix {
+					variantPrefix = basePrefix + "_" + string(field.Desc.Name())
+				} else {
+					// Без prefix на уровне oneof, но поля внутри variant могут иметь свой prefix
+					variantPrefix = string(field.Desc.Name())
+				}
+
 				irFields, err := b.processField(field, irMsg, variantPrefix, nil)
 				if err != nil {
 					return nil, err
@@ -176,12 +192,12 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 
 			irMsg.EmbeddedOneofs = append(irMsg.EmbeddedOneofs, embeddedOneof)
 		} else {
-			// Обычный oneof — оставляем как есть (пока не поддерживаем)
-			// TODO: добавить поддержку обычных oneof
-			b.Errors = append(b.Errors, fmt.Errorf(
-				"oneof %s in message %s: non-embedded oneofs are not yet supported",
-				oneof.Desc.Name(), msg.Desc.Name(),
-			))
+			// Non-embedded oneof — пропускаем, поля не добавляются в plain struct
+			// Это позволяет иметь смешанные сообщения с embedded и non-embedded oneofs
+			logger.Debug("skipping non-embedded oneof",
+				zap.String("oneof", string(oneof.Desc.Name())),
+				zap.String("message", string(msg.Desc.Name())),
+			)
 		}
 	}
 
@@ -431,8 +447,13 @@ func (b *IRBuilder) processEmbedField(
 		prefix = oneofPrefix
 	}
 
-	// Разворачиваем все поля вложенного сообщения
+	// Разворачиваем все поля вложенного сообщения (кроме oneof полей)
 	for _, nestedField := range field.Message.Fields {
+		// Skip oneof fields - they're handled separately below
+		if nestedField.Oneof != nil && !nestedField.Oneof.Desc.IsSynthetic() {
+			continue
+		}
+
 		// Рекурсивно обрабатываем поля (они тоже могут иметь embed)
 		// Передаём текущий путь — он уже содержит номер этого поля
 		nestedFields, err := b.processField(nestedField, irMsg, prefix, pathNumbers)
@@ -446,7 +467,79 @@ func (b *IRBuilder) processEmbedField(
 		}
 	}
 
-	// TODO: обработать oneof внутри вложенного сообщения
+	// Обрабатываем oneofs вложенного сообщения
+	for _, oneof := range field.Message.Oneofs {
+		if oneof.Desc.IsSynthetic() {
+			continue
+		}
+
+		oneofOpts := b.getOneofOptions(oneof)
+		if oneofOpts != nil && oneofOpts.Embed {
+			// Embedded oneof - process all variants
+			useOneofPrefix := oneofOpts.EmbedWithPrefix
+			var oneofBasePrefix string
+			if useOneofPrefix {
+				if prefix != "" {
+					oneofBasePrefix = prefix + "_" + string(oneof.Desc.Name())
+				} else {
+					oneofBasePrefix = string(oneof.Desc.Name())
+				}
+			} else if prefix != "" {
+				oneofBasePrefix = prefix
+			}
+
+			// Создаём информацию о embedded oneof
+			// AccessPath содержит путь доступа к родительскому сообщению (через которое embed)
+			accessPath := "Get" + field.GoName + "()"
+			embeddedOneof := &EmbeddedOneof{
+				Name:          string(oneof.Desc.Name()),
+				GoName:        oneof.GoName,
+				CaseFieldName: oneof.GoName + "Case",
+				JSONName:      string(oneof.Desc.Name()) + "_case",
+				Variants:      make([]*OneofVariant, 0, len(oneof.Fields)),
+				Source:        oneof,
+				AccessPath:    accessPath,
+			}
+
+			for _, oneofField := range oneof.Fields {
+				embeddedOneof.Variants = append(embeddedOneof.Variants, &OneofVariant{
+					Name:        string(oneofField.Desc.Name()),
+					GoName:      oneofField.GoName,
+					FieldNumber: int32(oneofField.Desc.Number()),
+				})
+
+				// Build variant prefix
+				var variantPrefix string
+				if useOneofPrefix {
+					variantPrefix = oneofBasePrefix + "_" + string(oneofField.Desc.Name())
+				} else if oneofBasePrefix != "" {
+					variantPrefix = oneofBasePrefix + "_" + string(oneofField.Desc.Name())
+				} else {
+					variantPrefix = string(oneofField.Desc.Name())
+				}
+
+				oneofFields, err := b.processField(oneofField, irMsg, variantPrefix, pathNumbers)
+				if err != nil {
+					return nil, err
+				}
+
+				for _, of := range oneofFields {
+					if of.Origin == OriginEmbed {
+						of.Origin = OriginOneofEmbed
+					} else {
+						of.Origin = OriginOneofEmbed
+					}
+					of.OneofName = embeddedOneof.Name
+					of.OneofGoName = embeddedOneof.GoName
+					of.OneofVariant = string(oneofField.Desc.Name())
+					result = append(result, of)
+				}
+			}
+
+			irMsg.EmbeddedOneofs = append(irMsg.EmbeddedOneofs, embeddedOneof)
+		}
+		// Non-embedded oneofs are skipped when embedding parent message
+	}
 
 	return result, nil
 }
@@ -563,6 +656,16 @@ func (b *IRBuilder) buildVirtualField(vf *typepb.Field, irMsg *IRMessage) *IRFie
 // При коллизии поле не добавляется, коллизия записывается в b.Collisions
 func (b *IRBuilder) addField(irMsg *IRMessage, field *IRField) {
 	if existing, ok := b.fieldNames[field.Name]; ok {
+		// Check if this is a "safe" collision within the same oneof but different variants
+		// Oneof guarantees only one variant is set at a time, so fields from different
+		// variants of the same oneof cannot conflict at runtime
+		if b.isSafeOneofCollision(existing, field) {
+			// Not a real collision - fields from different variants of same oneof
+			// Don't add the field again, but don't report as collision either
+			// The first field "wins" for struct definition
+			return
+		}
+
 		collision := Collision{
 			FieldName:     field.Name,
 			ExistingField: existing,
@@ -578,6 +681,25 @@ func (b *IRBuilder) addField(irMsg *IRMessage, field *IRField) {
 
 	b.fieldNames[field.Name] = field
 	irMsg.Fields = append(irMsg.Fields, field)
+}
+
+// isSafeOneofCollision checks if two fields with the same name are from
+// different variants of the same oneof. This is safe because only one
+// variant can be set at a time in protobuf.
+func (b *IRBuilder) isSafeOneofCollision(existing, new *IRField) bool {
+	// Both must be from oneof
+	if existing.OneofName == "" || new.OneofName == "" {
+		return false
+	}
+	// Must be from the same oneof
+	if existing.OneofName != new.OneofName {
+		return false
+	}
+	// Must be from different variants
+	if existing.OneofVariant == new.OneofVariant {
+		return false // Same variant = real collision
+	}
+	return true
 }
 
 // Вспомогательные методы

@@ -132,6 +132,9 @@ type EmbeddedOneof struct {
 	Variants []*OneofVariant
 	// Source — исходный protogen.Oneof
 	Source *protogen.Oneof
+	// AccessPath — путь доступа к oneof через getter'ы (e.g., "GetData()" для pb.GetData().GetPlatformEvent())
+	// Пустой для oneof в корневом сообщении
+	AccessPath string
 }
 
 // OneofVariant представляет один вариант oneof
