@@ -290,7 +290,11 @@ func (g *Generator) generateField(gf *protogen.GeneratedFile, field *IRField, f 
 	typeStr := g.buildTypeString(gf, field, f)
 
 	// Build JSON tag
+	// Use OneofJSONName for unified JSON serialization of oneof fields (if enabled)
 	jsonTag := field.JSONName
+	if g.Settings.UnifiedOneofJSON && field.OneofJSONName != "" {
+		jsonTag = field.OneofJSONName
+	}
 	if field.IsOptional {
 		jsonTag += ",omitempty"
 	}

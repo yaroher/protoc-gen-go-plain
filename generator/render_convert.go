@@ -410,8 +410,28 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 
 	gf.P("\t// ", field.GoName, " from ", field.EmPath)
 	gf.P("\tif ", nilCheck, " {")
+	g.generateEmbedFieldAssignment(gf, field, pathInfo, dstField, getterChain, srcAppend)
+	gf.P("\t}")
 
-	// Check source field characteristics
+	// Generate alternatives (for fields from other oneof variants)
+	for _, alt := range field.OneofAlternatives {
+		altPathInfo, err := resolvePathInfo(msg.Source, alt.PathNumbers)
+		if err != nil {
+			gf.P("\t// ", field.GoName, " alt (", alt.OneofVariant, "): path resolution error: ", err.Error())
+			continue
+		}
+		altGetterChain := altPathInfo.BuildGetterChain("pb")
+		altNilCheck := altPathInfo.BuildNilCheck("pb")
+
+		gf.P("\t// ", field.GoName, " from ", alt.EmPath, " (variant: ", alt.OneofVariant, ")")
+		gf.P("\tif ", altNilCheck, " {")
+		g.generateEmbedFieldAssignment(gf, field, altPathInfo, dstField, altGetterChain, srcAppend)
+		gf.P("\t}")
+	}
+}
+
+// generateEmbedFieldAssignment generates the assignment code for an embedded field
+func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, field *IRField, pathInfo *PathInfo, dstField, getterChain, srcAppend string) {
 	leafField := pathInfo.LeafField
 
 	// Handle different field types
@@ -421,11 +441,9 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 			// Plain type - call IntoPlain()
 			if field.IsRepeated {
 				// Repeated message with generate=true
-				elemType := field.GoType.Name
 				gf.P("\t\tfor _, v := range ", getterChain, " {")
 				gf.P("\t\t\t", dstField, " = append(", dstField, ", *v.IntoPlain())")
 				gf.P("\t\t}")
-				_ = elemType
 			} else {
 				gf.P("\t\t", dstField, " = ", getterChain, ".IntoPlain()")
 			}
@@ -455,7 +473,6 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 	}
 
 	gf.P("\t\t", srcAppend)
-	gf.P("\t}")
 }
 
 // generateIntoPlainSerializedField handles serialized field (message -> bytes)

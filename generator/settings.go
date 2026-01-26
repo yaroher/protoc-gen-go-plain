@@ -23,6 +23,12 @@ type PluginSettings struct {
 	// - true (default): pass as struct parameter, e.g. IntoPlain(c *MsgCasters)
 	// - false: pass as separate arguments, e.g. IntoPlain(fieldACaster cast.Caster[A,B], ...)
 	CastersAsStruct bool
+	// UnifiedOneofJSON controls JSON naming for oneof variant fields:
+	// - true: all variants use original field name in JSON (e.g., "target" for all)
+	//         Go struct has unique names (ProcessCreateTarget, ProcessExecTarget)
+	//         Unmarshal uses oneof case field to dispatch to correct Go field
+	// - false (default): Go field name is used in JSON (with variant prefix)
+	UnifiedOneofJSON bool
 }
 
 func mapGetOrDefault(paramsMap map[string]string, key string, defaultValue string) string {
@@ -46,11 +52,12 @@ func NewPluginSettingsFromPlugin(p *protogen.Plugin) (*PluginSettings, error) {
 	}
 
 	settings := &PluginSettings{
-		JSONJX:          mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
-		JXPB:            mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
-		SparseJSON:      mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
-		GeneratePool:    mapGetOrDefault(paramsMap, "pool", "false") == "true",
-		CastersAsStruct: mapGetOrDefault(paramsMap, "casters_as_struct", "true") == "true", // default true
+		JSONJX:           mapGetOrDefault(paramsMap, "json_jx", "false") == "true",
+		JXPB:             mapGetOrDefault(paramsMap, "jx_pb", "false") == "true",
+		SparseJSON:       mapGetOrDefault(paramsMap, "sparse_json", "true") == "true", // default true for backward compat
+		GeneratePool:     mapGetOrDefault(paramsMap, "pool", "false") == "true",
+		CastersAsStruct:  mapGetOrDefault(paramsMap, "casters_as_struct", "true") == "true", // default true
+		UnifiedOneofJSON: mapGetOrDefault(paramsMap, "unified_oneof_json", "false") == "true",
 	}
 	return settings, nil
 }

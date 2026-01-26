@@ -95,7 +95,11 @@ func (g *Generator) generateMarshalJX(gf *protogen.GeneratedFile, msg *IRMessage
 // generateMarshalJXFieldSparse generates encoding for a single field with sparse check
 func (g *Generator) generateMarshalJXFieldSparse(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
 	fieldAccess := "p." + field.GoName
+	// Use OneofJSONName for unified JSON serialization of oneof fields (if enabled)
 	jsonName := field.JSONName
+	if g.Settings.UnifiedOneofJSON && field.OneofJSONName != "" {
+		jsonName = field.OneofJSONName
+	}
 
 	// Check if field is in srcSet (sparse mode) or not sparse
 	gf.P("\tif _, inSrc := srcSet[", field.Index, "]; !sparse || inSrc {")
@@ -129,7 +133,11 @@ func (g *Generator) generateMarshalJXFieldSparse(gf *protogen.GeneratedFile, fie
 // Still applies omitempty logic for zero values
 func (g *Generator) generateMarshalJXFieldFast(gf *protogen.GeneratedFile, field *IRField, f *protogen.File) {
 	fieldAccess := "p." + field.GoName
+	// Use OneofJSONName for unified JSON serialization of oneof fields (if enabled)
 	jsonName := field.JSONName
+	if g.Settings.UnifiedOneofJSON && field.OneofJSONName != "" {
+		jsonName = field.OneofJSONName
+	}
 
 	// Handle optional/pointer fields
 	if field.GoType.IsPointer {
@@ -394,9 +402,64 @@ func (g *Generator) generateUnmarshalJX(gf *protogen.GeneratedFile, msg *IRMessa
 		gf.P("\t\t\tp.", eo.CaseFieldName, " = v")
 	}
 
-	// Generate field decodings
+	// Group ALL fields by effective JSON name (OneofJSONName if set and unified_oneof_json enabled)
+	fieldGroups := make(map[string][]*IRField)
+	fieldOrder := make([]string, 0) // preserve order
+
 	for _, field := range msg.Fields {
-		g.generateUnmarshalJXFieldWithSrc(gf, field, f)
+		effectiveJSONName := field.JSONName
+		if g.Settings.UnifiedOneofJSON && field.OneofJSONName != "" {
+			effectiveJSONName = field.OneofJSONName
+		}
+		if _, exists := fieldGroups[effectiveJSONName]; !exists {
+			fieldOrder = append(fieldOrder, effectiveJSONName)
+		}
+		fieldGroups[effectiveJSONName] = append(fieldGroups[effectiveJSONName], field)
+	}
+
+	// Generate field decodings (grouped by effective JSON name)
+	for _, jsonName := range fieldOrder {
+		fields := fieldGroups[jsonName]
+		gf.P("\t\tcase \"", jsonName, "\":")
+		if len(fields) == 1 {
+			// Single field - simple decode
+			field := fields[0]
+			g.generateUnmarshalJXValue(gf, field, "p."+field.GoName, f, "\t\t\t")
+			gf.P("\t\t\tp.Src_ = append(p.Src_, ", field.Index, ")")
+		} else {
+			// Multiple fields with same JSON name - dispatch by oneof case
+			// Find a field with oneof info
+			var oneofCaseField string
+			for _, f := range fields {
+				if f.OneofGoName != "" {
+					oneofCaseField = f.OneofGoName + "Case"
+					break
+				}
+			}
+			if oneofCaseField == "" {
+				// No oneof info - decode to first field only
+				field := fields[0]
+				g.generateUnmarshalJXValue(gf, field, "p."+field.GoName, f, "\t\t\t")
+				gf.P("\t\t\tp.Src_ = append(p.Src_, ", field.Index, ")")
+			} else {
+				gf.P("\t\t\tswitch p.", oneofCaseField, " {")
+				for _, field := range fields {
+					if field.OneofVariant != "" {
+						gf.P("\t\t\tcase \"", field.OneofVariant, "\":")
+					} else {
+						gf.P("\t\t\tcase \"\":")
+					}
+					g.generateUnmarshalJXValue(gf, field, "p."+field.GoName, f, "\t\t\t\t")
+					gf.P("\t\t\t\tp.Src_ = append(p.Src_, ", field.Index, ")")
+				}
+				// Default case - decode to first field (fallback)
+				gf.P("\t\t\tdefault:")
+				field := fields[0]
+				g.generateUnmarshalJXValue(gf, field, "p."+field.GoName, f, "\t\t\t\t")
+				gf.P("\t\t\t\tp.Src_ = append(p.Src_, ", field.Index, ")")
+				gf.P("\t\t\t}")
+			}
+		}
 	}
 
 	gf.P("\t\tdefault:")

@@ -162,14 +162,14 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 					FieldNumber: int32(field.Desc.Number()),
 				})
 
-				// Prefix для варианта:
-				// - Если usePrefix=true: oneof_name + variant_name
-				// - Если usePrefix=false: только variant_name (для полей с embed=true внутри)
+				// Prefix для Go структуры:
+				// - Если usePrefix=true (oneof.embed_with_prefix): oneof_name + variant_name
+				// - Иначе: variant_name (для уникальности в Go)
 				var variantPrefix string
 				if usePrefix {
 					variantPrefix = basePrefix + "_" + string(field.Desc.Name())
 				} else {
-					// Без prefix на уровне oneof, но поля внутри variant могут иметь свой prefix
+					// Всегда используем имя варианта как prefix для Go
 					variantPrefix = string(field.Desc.Name())
 				}
 
@@ -186,6 +186,11 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 					f.OneofName = embeddedOneof.Name
 					f.OneofGoName = embeddedOneof.GoName
 					f.OneofVariant = string(field.Desc.Name())
+					// Сохраняем оригинальное JSON имя (без prefix варианта)
+					// для унифицированной JSON сериализации
+					if f.Source != nil {
+						f.OneofJSONName = string(f.Source.Desc.JSONName())
+					}
 					b.addField(irMsg, f)
 				}
 			}
@@ -508,7 +513,7 @@ func (b *IRBuilder) processEmbedField(
 					FieldNumber: int32(oneofField.Desc.Number()),
 				})
 
-				// Build variant prefix
+				// Build variant prefix for Go struct (always include variant name for uniqueness)
 				var variantPrefix string
 				if useOneofPrefix {
 					variantPrefix = oneofBasePrefix + "_" + string(oneofField.Desc.Name())
@@ -532,6 +537,10 @@ func (b *IRBuilder) processEmbedField(
 					of.OneofName = embeddedOneof.Name
 					of.OneofGoName = embeddedOneof.GoName
 					of.OneofVariant = string(oneofField.Desc.Name())
+					// Сохраняем оригинальное JSON имя (без prefix варианта)
+					if of.Source != nil {
+						of.OneofJSONName = string(of.Source.Desc.JSONName())
+					}
 					result = append(result, of)
 				}
 			}
@@ -656,16 +665,6 @@ func (b *IRBuilder) buildVirtualField(vf *typepb.Field, irMsg *IRMessage) *IRFie
 // При коллизии поле не добавляется, коллизия записывается в b.Collisions
 func (b *IRBuilder) addField(irMsg *IRMessage, field *IRField) {
 	if existing, ok := b.fieldNames[field.Name]; ok {
-		// Check if this is a "safe" collision within the same oneof but different variants
-		// Oneof guarantees only one variant is set at a time, so fields from different
-		// variants of the same oneof cannot conflict at runtime
-		if b.isSafeOneofCollision(existing, field) {
-			// Not a real collision - fields from different variants of same oneof
-			// Don't add the field again, but don't report as collision either
-			// The first field "wins" for struct definition
-			return
-		}
-
 		collision := Collision{
 			FieldName:     field.Name,
 			ExistingField: existing,
@@ -684,8 +683,8 @@ func (b *IRBuilder) addField(irMsg *IRMessage, field *IRField) {
 }
 
 // isSafeOneofCollision checks if two fields with the same name are from
-// different variants of the same oneof. This is safe because only one
-// variant can be set at a time in protobuf.
+// different variants of the same oneof AND have the same type.
+// This is safe because only one variant can be set at a time in protobuf.
 func (b *IRBuilder) isSafeOneofCollision(existing, new *IRField) bool {
 	// Both must be from oneof
 	if existing.OneofName == "" || new.OneofName == "" {
@@ -698,6 +697,14 @@ func (b *IRBuilder) isSafeOneofCollision(existing, new *IRField) bool {
 	// Must be from different variants
 	if existing.OneofVariant == new.OneofVariant {
 		return false // Same variant = real collision
+	}
+	// Must have the same Go type to be safely unified
+	if existing.GoType != new.GoType {
+		return false // Different types = real collision
+	}
+	// Must have the same kind
+	if existing.Kind != new.Kind {
+		return false
 	}
 	return true
 }

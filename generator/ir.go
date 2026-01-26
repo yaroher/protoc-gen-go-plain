@@ -147,6 +147,18 @@ type OneofVariant struct {
 	FieldNumber int32
 }
 
+// OneofAlternative представляет альтернативный путь к полю из другого варианта oneof
+type OneofAlternative struct {
+	// OneofVariant — имя варианта oneof
+	OneofVariant string
+	// PathNumbers — путь как массив номеров полей
+	PathNumbers []int32
+	// EmPath — путь embed
+	EmPath string
+	// Source — исходное protobuf-поле
+	Source *protogen.Field
+}
+
 // IRField представляет поле в plain-сообщении
 type IRField struct {
 	// Source — исходное protobuf-поле (может быть nil для virtual)
@@ -190,6 +202,12 @@ type IRField struct {
 	OneofGoName string
 	// OneofVariant — имя варианта oneof (e.g., "heartbeat")
 	OneofVariant string
+	// OneofAlternatives — альтернативные пути для того же поля из других вариантов oneof
+	// (заполняется когда несколько вариантов имеют поле с одинаковым именем)
+	OneofAlternatives []*OneofAlternative
+	// OneofJSONName — оригинальное JSON имя поля (без prefix варианта)
+	// Используется для сериализации в JSON — все варианты пишутся под одним именем
+	OneofJSONName string
 
 	// IsRepeated — repeated поле
 	IsRepeated bool
