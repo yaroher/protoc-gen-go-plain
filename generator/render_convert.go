@@ -471,7 +471,13 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 	} else {
 		// Scalar, enum, bytes - direct assignment
 		// Note: protobuf getters always return values (not pointers) for scalars
-		gf.P("\t\t", dstField, " = ", getterChain)
+		// If field is optional, we need to take address of the value
+		if plainIsPointer {
+			gf.P("\t\t_tmp := ", getterChain)
+			gf.P("\t\t", dstField, " = &_tmp")
+		} else {
+			gf.P("\t\t", dstField, " = ", getterChain)
+		}
 	}
 
 }
@@ -511,7 +517,13 @@ func (g *Generator) generateIntoPlainTypeAliasField(gf *protogen.GeneratedFile, 
 
 	gf.P("\t// ", field.GoName, " type alias from ", field.EmPath)
 	gf.P("\tif ", nilCheck, " {")
-	gf.P("\t\t", dstField, " = ", getterChain)
+	// If field is optional, we need to take address of the value
+	if field.IsOptional {
+		gf.P("\t\t_tmp := ", getterChain)
+		gf.P("\t\t", dstField, " = &_tmp")
+	} else {
+		gf.P("\t\t", dstField, " = ", getterChain)
+	}
 	gf.P("\t}")
 }
 
@@ -816,6 +828,10 @@ func (g *Generator) generateIntoPbEmbedField(gf *protogen.GeneratedFile, field *
 		// Proto wants pointer, plain has value - take address
 		valueExpr = "&" + srcField
 		valueIsPointer = true
+	} else if plainIsPointer && !protoIsPointer && field.Kind != KindMessage {
+		// Plain is pointer (optional type_alias), proto wants value - dereference
+		valueExpr = "*" + srcField
+		valueIsPointer = false
 	}
 
 	// Build setter code with oneof handling
@@ -946,6 +962,14 @@ func (g *Generator) generateIntoPbTypeAliasField(gf *protogen.GeneratedFile, fie
 	}
 
 	gf.P("\t// ", field.GoName, " type alias -> ", field.EmPath)
+
+	// For optional fields, check nil and dereference
+	if field.IsOptional {
+		gf.P("\tif ", srcField, " != nil {")
+		gf.P("\t\tpb.", field.Source.GoName, " = &", wrapperType, "{", aliasFieldName, ": *", srcField, "}")
+		gf.P("\t}")
+		return
+	}
 
 	// Check for zero value based on type
 	switch field.ScalarKind {
