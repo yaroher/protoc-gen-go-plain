@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/yaroher/protoc-gen-go-plain/test/full"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -1545,5 +1546,207 @@ func BenchmarkConfig_IntoPlainReuse(b *testing.B) {
 		p := full.GetConfigPlain()
 		pb.IntoPlainReuse(p)
 		full.PutConfigPlain(p)
+	}
+}
+
+// ============================================================================
+// Comparison benchmarks: JX vs protojson vs encoding/json
+// ============================================================================
+
+// --- Event: Marshal ---
+
+func BenchmarkEvent_MarshalJSON_Stdlib(b *testing.B) {
+	pb := createBenchEvent()
+	plain := pb.IntoPlain()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = json.Marshal(plain)
+	}
+}
+
+func BenchmarkEvent_MarshalJSON_ProtoJSON(b *testing.B) {
+	pb := createBenchEvent()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = protojson.Marshal(pb)
+	}
+}
+
+// --- Event: Unmarshal ---
+
+func BenchmarkEvent_UnmarshalJSON_Stdlib(b *testing.B) {
+	pb := createBenchEvent()
+	plain := pb.IntoPlain()
+	data, _ := json.Marshal(plain)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p := &full.EventPlain{}
+		_ = json.Unmarshal(data, p)
+	}
+}
+
+func BenchmarkEvent_UnmarshalJSON_ProtoJSON(b *testing.B) {
+	pb := createBenchEvent()
+	data, _ := protojson.Marshal(pb)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p := &full.Event{}
+		_ = protojson.Unmarshal(data, p)
+	}
+}
+
+// --- Event: Full roundtrip ---
+
+func BenchmarkEvent_FullRoundtrip_Stdlib(b *testing.B) {
+	pb := createBenchEvent()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		plain := pb.IntoPlain()
+		data, _ := json.Marshal(plain)
+		plain2 := &full.EventPlain{}
+		_ = json.Unmarshal(data, plain2)
+		_ = plain2.IntoPb()
+	}
+}
+
+func BenchmarkEvent_FullRoundtrip_ProtoJSON(b *testing.B) {
+	pb := createBenchEvent()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		data, _ := protojson.Marshal(pb)
+		p := &full.Event{}
+		_ = protojson.Unmarshal(data, p)
+	}
+}
+
+// --- Document: Marshal ---
+
+func BenchmarkDocument_MarshalJSON_Stdlib(b *testing.B) {
+	pb := createBenchDocument()
+	plain := pb.IntoPlain()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = json.Marshal(plain)
+	}
+}
+
+func BenchmarkDocument_MarshalJSON_ProtoJSON(b *testing.B) {
+	pb := createBenchDocument()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = protojson.Marshal(pb)
+	}
+}
+
+// --- Document: Unmarshal ---
+
+func BenchmarkDocument_UnmarshalJSON_Stdlib(b *testing.B) {
+	pb := createBenchDocument()
+	plain := pb.IntoPlain()
+	data, _ := json.Marshal(plain)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p := &full.DocumentPlain{}
+		_ = json.Unmarshal(data, p)
+	}
+}
+
+func BenchmarkDocument_UnmarshalJSON_ProtoJSON(b *testing.B) {
+	pb := createBenchDocument()
+	data, _ := protojson.Marshal(pb)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p := &full.Document{}
+		_ = protojson.Unmarshal(data, p)
+	}
+}
+
+// --- Document: Full roundtrip ---
+
+func BenchmarkDocument_FullRoundtrip_Stdlib(b *testing.B) {
+	pb := createBenchDocument()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		plain := pb.IntoPlain()
+		data, _ := json.Marshal(plain)
+		plain2 := &full.DocumentPlain{}
+		_ = json.Unmarshal(data, plain2)
+		_ = plain2.IntoPb()
+	}
+}
+
+func BenchmarkDocument_FullRoundtrip_ProtoJSON(b *testing.B) {
+	pb := createBenchDocument()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		data, _ := protojson.Marshal(pb)
+		p := &full.Document{}
+		_ = protojson.Unmarshal(data, p)
+	}
+}
+
+// --- Config: Marshal ---
+
+func BenchmarkConfig_MarshalJSON_Stdlib(b *testing.B) {
+	pb := createBenchConfig()
+	plain := pb.IntoPlain()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = json.Marshal(plain)
+	}
+}
+
+func BenchmarkConfig_MarshalJSON_ProtoJSON(b *testing.B) {
+	pb := createBenchConfig()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = protojson.Marshal(pb)
+	}
+}
+
+// --- Config: Unmarshal ---
+
+func BenchmarkConfig_UnmarshalJSON_Stdlib(b *testing.B) {
+	pb := createBenchConfig()
+	plain := pb.IntoPlain()
+	data, _ := json.Marshal(plain)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p := &full.ConfigPlain{}
+		_ = json.Unmarshal(data, p)
+	}
+}
+
+func BenchmarkConfig_UnmarshalJSON_ProtoJSON(b *testing.B) {
+	pb := createBenchConfig()
+	data, _ := protojson.Marshal(pb)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p := &full.Config{}
+		_ = protojson.Unmarshal(data, p)
+	}
+}
+
+// --- Config: Full roundtrip ---
+
+func BenchmarkConfig_FullRoundtrip_Stdlib(b *testing.B) {
+	pb := createBenchConfig()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		plain := pb.IntoPlain()
+		data, _ := json.Marshal(plain)
+		plain2 := &full.ConfigPlain{}
+		_ = json.Unmarshal(data, plain2)
+		_ = plain2.IntoPb()
+	}
+}
+
+func BenchmarkConfig_FullRoundtrip_ProtoJSON(b *testing.B) {
+	pb := createBenchConfig()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		data, _ := protojson.Marshal(pb)
+		p := &full.Config{}
+		_ = protojson.Unmarshal(data, p)
 	}
 }
