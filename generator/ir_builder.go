@@ -467,7 +467,11 @@ func (b *IRBuilder) processEmbedField(
 		}
 
 		for _, nf := range nestedFields {
-			nf.Origin = OriginEmbed
+			// Don't overwrite OriginSerialized — serialized fields keep their
+			// origin so that IntoPlain/IntoPb use proto.Marshal/Unmarshal
+			if nf.Origin != OriginSerialized {
+				nf.Origin = OriginEmbed
+			}
 			result = append(result, nf)
 		}
 	}
@@ -529,9 +533,7 @@ func (b *IRBuilder) processEmbedField(
 				}
 
 				for _, of := range oneofFields {
-					if of.Origin == OriginEmbed {
-						of.Origin = OriginOneofEmbed
-					} else {
+					if of.Origin != OriginSerialized {
 						of.Origin = OriginOneofEmbed
 					}
 					of.OneofName = embeddedOneof.Name
