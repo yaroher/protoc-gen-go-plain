@@ -512,10 +512,38 @@ func (g *Generator) generateIntoPlainTypeAliasField(gf *protogen.GeneratedFile, 
 	}
 
 	dstField := "p." + field.GoName
+
+	gf.P("\t// ", field.GoName, " type alias from ", field.EmPath)
+
+	if field.IsRepeated && len(pathInfo.Segments) >= 2 {
+		// For repeated type_alias: pb.GetFileIds() returns []*WrapperMsg
+		// We need to iterate and unwrap each element via the leaf getter
+		containerSeg := pathInfo.Segments[0 : len(pathInfo.Segments)-1]
+		leafSeg := pathInfo.Segments[len(pathInfo.Segments)-1]
+
+		// Build getter for the container (repeated field)
+		containerChain := "pb"
+		for _, seg := range containerSeg {
+			containerChain += fmt.Sprintf(".Get%s()", seg.GoName)
+		}
+
+		// Leaf getter applied to each element
+		leafGetter := fmt.Sprintf(".Get%s()", leafSeg.GoName)
+
+		gf.P("\tif len(", containerChain, ") > 0 {")
+		gf.P("\t\t", dstField, " = make([]", g.buildTypeStringPlain(field, f), ", 0, len(", containerChain, "))")
+		gf.P("\t\tfor _, _elem := range ", containerChain, " {")
+		gf.P("\t\t\tif _elem != nil {")
+		gf.P("\t\t\t\t", dstField, " = append(", dstField, ", _elem", leafGetter, ")")
+		gf.P("\t\t\t}")
+		gf.P("\t\t}")
+		gf.P("\t}")
+		return
+	}
+
 	getterChain := pathInfo.BuildGetterChain("pb")
 	nilCheck := pathInfo.BuildNilCheck("pb")
 
-	gf.P("\t// ", field.GoName, " type alias from ", field.EmPath)
 	gf.P("\tif ", nilCheck, " {")
 	// If field is optional, we need to take address of the value
 	if field.IsOptional {
@@ -962,6 +990,18 @@ func (g *Generator) generateIntoPbTypeAliasField(gf *protogen.GeneratedFile, fie
 	}
 
 	gf.P("\t// ", field.GoName, " type alias -> ", field.EmPath)
+
+	// For repeated type_alias: p.FileIds is []string, pb.FileIds is []*WrapperMsg
+	if field.IsRepeated {
+		sliceType := "[]*" + wrapperType
+		gf.P("\tif len(", srcField, ") > 0 {")
+		gf.P("\t\tpb.", field.Source.GoName, " = make(", sliceType, ", len(", srcField, "))")
+		gf.P("\t\tfor i, v := range ", srcField, " {")
+		gf.P("\t\t\tpb.", field.Source.GoName, "[i] = &", wrapperType, "{", aliasFieldName, ": v}")
+		gf.P("\t\t}")
+		gf.P("\t}")
+		return
+	}
 
 	// For optional fields, check nil and dereference
 	if field.IsOptional {
