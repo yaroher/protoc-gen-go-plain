@@ -271,6 +271,9 @@ func (g *Generator) generateMessage(gf *protogen.GeneratedFile, msg *IRMessage, 
 	// Generate conversion methods
 	g.generateConversionMethods(gf, msg, f, irFile)
 
+	// Generate With* setters for virtual fields
+	g.generateVirtualFieldSetters(gf, msg, f)
+
 	// Generate JSON methods
 	if g.Settings.JSONJX {
 		g.generateJSONMethods(gf, msg, f)
@@ -358,6 +361,22 @@ func (g *Generator) qualifyType(gf *protogen.GeneratedFile, goType GoType, f *pr
 		GoImportPath: protogen.GoImportPath(goType.ImportPath),
 	}
 	return gf.QualifiedGoIdent(ident)
+}
+
+// generateVirtualFieldSetters generates With* chainable setters for virtual fields.
+func (g *Generator) generateVirtualFieldSetters(gf *protogen.GeneratedFile, msg *IRMessage, f *protogen.File) {
+	for _, field := range msg.Fields {
+		if field.Origin != OriginVirtual {
+			continue
+		}
+		typeStr := g.buildTypeString(gf, field, f)
+		gf.P("// With", field.GoName, " sets the virtual field ", field.GoName)
+		gf.P("func (p *", msg.GoName, ") With", field.GoName, "(v ", typeStr, ") *", msg.GoName, " {")
+		gf.P("\tp.", field.GoName, " = v")
+		gf.P("\treturn p")
+		gf.P("}")
+		gf.P()
+	}
 }
 
 // GetIRMessage returns the IR for a protogen.Message, or nil if not found.
