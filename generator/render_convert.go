@@ -69,7 +69,13 @@ func (g *Generator) generateCastersStruct(gf *protogen.GeneratedFile, msg *IRMes
 
 	for _, field := range fields {
 		srcType := g.qualifyType(gf, field.SourceGoType, f)
+		if field.SourceGoType.IsPointer {
+			srcType = "*" + srcType
+		}
 		dstType := g.qualifyType(gf, field.GoType, f)
+		if field.GoType.IsPointer {
+			dstType = "*" + dstType
+		}
 
 		// ToPlain caster: SourceGoType -> GoType
 		gf.P("\t", field.GoName, "ToPlain ", gf.QualifiedGoIdent(castPkg.Ident("Caster")), "[", srcType, ", ", dstType, "]")
@@ -89,7 +95,13 @@ func (g *Generator) generateCasterArgs(gf *protogen.GeneratedFile, fields []*IRF
 
 	for _, field := range fields {
 		srcType := g.qualifyType(gf, field.SourceGoType, f)
+		if field.SourceGoType.IsPointer {
+			srcType = "*" + srcType
+		}
 		dstType := g.qualifyType(gf, field.GoType, f)
+		if field.GoType.IsPointer {
+			dstType = "*" + dstType
+		}
 
 		var argName, fromType, toType string
 		if toPlain {
@@ -486,15 +498,33 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 func (g *Generator) generateIntoPlainSerializedField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
 	protoPkg := protogen.GoImportPath("google.golang.org/protobuf/proto")
 
-	path := g.buildPbNavigationPath(field, msg)
 	dstField := "p." + field.GoName
 
 	gf.P("\t// ", field.GoName, " serialized from ", field.EmPath)
-	gf.P("\tif ", path.NilCheck, " {")
-	gf.P("\t\tif data, err := ", gf.QualifiedGoIdent(protoPkg.Ident("Marshal")), "(", path.Value, "); err == nil {")
-	gf.P("\t\t\t", dstField, " = data")
-	gf.P("\t\t}")
-	gf.P("\t}")
+
+	// For embedded serialized fields, use resolvePathInfo for proper getter chain
+	if len(field.PathNumbers) > 1 && msg.Source != nil {
+		pathInfo, err := resolvePathInfo(msg.Source, field.PathNumbers)
+		if err != nil {
+			gf.P("\t// ", field.GoName, ": path resolution error: ", err.Error())
+			return
+		}
+		getterChain := pathInfo.BuildGetterChain("pb")
+		nilCheck := pathInfo.BuildNilCheck("pb")
+
+		gf.P("\tif ", nilCheck, " {")
+		gf.P("\t\tif data, err := ", gf.QualifiedGoIdent(protoPkg.Ident("Marshal")), "(", getterChain, "); err == nil {")
+		gf.P("\t\t\t", dstField, " = data")
+		gf.P("\t\t}")
+		gf.P("\t}")
+	} else {
+		path := g.buildPbNavigationPath(field, msg)
+		gf.P("\tif ", path.NilCheck, " {")
+		gf.P("\t\tif data, err := ", gf.QualifiedGoIdent(protoPkg.Ident("Marshal")), "(", path.Value, "); err == nil {")
+		gf.P("\t\t\t", dstField, " = data")
+		gf.P("\t\t}")
+		gf.P("\t}")
+	}
 }
 
 // generateIntoPlainTypeAliasField handles type alias field
@@ -955,17 +985,37 @@ func (g *Generator) generateIntoPbSerializedField(gf *protogen.GeneratedFile, fi
 	protoPkg := protogen.GoImportPath("google.golang.org/protobuf/proto")
 
 	srcField := "p." + field.GoName
-	assignment := g.buildPbAssignmentPath(gf, field, msg, f)
 
 	gf.P("\t// ", field.GoName, " deserialize -> ", field.EmPath)
 	gf.P("\tif len(", srcField, ") > 0 {")
-	if assignment.InitCode != "" {
-		gf.P(assignment.InitCode)
+
+	// For embedded serialized fields, use resolvePathInfo and BuildSetterCode
+	if len(field.PathNumbers) > 1 && msg.Source != nil {
+		pathInfo, err := resolvePathInfo(msg.Source, field.PathNumbers)
+		if err != nil {
+			gf.P("\t// ", field.GoName, ": path resolution error: ", err.Error())
+			gf.P("\t}")
+			return
+		}
+		gf.P("\t\tvar msg ", g.getProtoTypeIdent(gf, field))
+		gf.P("\t\tif err := ", gf.QualifiedGoIdent(protoPkg.Ident("Unmarshal")), "(", srcField, ", &msg); err == nil {")
+		initCode, assignCode := pathInfo.BuildSetterCode(gf, "pb", "&msg", true)
+		if initCode != "" {
+			gf.P(initCode)
+		}
+		gf.P("\t\t\t", assignCode)
+		gf.P("\t\t}")
+	} else {
+		assignment := g.buildPbAssignmentPath(gf, field, msg, f)
+		if assignment.InitCode != "" {
+			gf.P(assignment.InitCode)
+		}
+		gf.P("\t\tvar msg ", g.getProtoTypeIdent(gf, field))
+		gf.P("\t\tif err := ", gf.QualifiedGoIdent(protoPkg.Ident("Unmarshal")), "(", srcField, ", &msg); err == nil {")
+		gf.P("\t\t\t", assignment.Path, " = &msg")
+		gf.P("\t\t}")
 	}
-	gf.P("\t\tvar msg ", g.getProtoTypeIdent(gf, field))
-	gf.P("\t\tif err := ", gf.QualifiedGoIdent(protoPkg.Ident("Unmarshal")), "(", srcField, ", &msg); err == nil {")
-	gf.P("\t\t\t", assignment.Path, " = &msg")
-	gf.P("\t\t}")
+
 	gf.P("\t}")
 }
 
@@ -1062,7 +1112,7 @@ func (g *Generator) buildPbNavigationPath(field *IRField, msg *IRMessage) Naviga
 
 // buildPbAssignmentPath builds the assignment path for writing to protobuf
 func (g *Generator) buildPbAssignmentPath(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) AssignmentPath {
-	if field.Source != nil && field.Origin == OriginDirect {
+	if field.Source != nil && (field.Origin == OriginDirect || field.Origin == OriginSerialized) {
 		return AssignmentPath{
 			Path: "pb." + field.Source.GoName,
 		}

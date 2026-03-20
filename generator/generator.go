@@ -43,6 +43,9 @@ type Generator struct {
 
 	// castersAsStruct - временное поле для текущего файла
 	castersAsStruct bool
+
+	// irFiles stores built IR files keyed by proto file path
+	irFiles map[string]*IRFile
 }
 
 type Option func(*Generator) error
@@ -94,6 +97,7 @@ func NewGenerator(p *protogen.Plugin, settings *PluginSettings, opts ...Option) 
 		Settings: settings,
 		Plugin:   p,
 		suffix:   "Plain",
+		irFiles:  make(map[string]*IRFile),
 	}
 	for _, opt := range opts {
 		if opt == nil {
@@ -140,6 +144,8 @@ func (g *Generator) Generate() error {
 			logger.Error("failed to build IR", zap.Error(err), zap.String("file", f.Desc.Path()))
 			return fmt.Errorf("failed to build IR for %s: %w", f.Desc.Path(), err)
 		}
+
+		g.irFiles[f.Desc.Path()] = irFile
 
 		// Skip files without plain messages
 		if len(irFile.Messages) == 0 {
@@ -352,4 +358,25 @@ func (g *Generator) qualifyType(gf *protogen.GeneratedFile, goType GoType, f *pr
 		GoImportPath: protogen.GoImportPath(goType.ImportPath),
 	}
 	return gf.QualifiedGoIdent(ident)
+}
+
+// GetIRMessage returns the IR for a protogen.Message, or nil if not found.
+func (g *Generator) GetIRMessage(msg *protogen.Message) *IRMessage {
+	filePath := msg.Desc.ParentFile().Path()
+	irFile, ok := g.irFiles[string(filePath)]
+	if !ok {
+		return nil
+	}
+	for _, irMsg := range irFile.Messages {
+		if irMsg.Source != nil && irMsg.Source.GoIdent.GoName == msg.GoIdent.GoName {
+			return irMsg
+		}
+	}
+	return nil
+}
+
+// CollectCasterFields returns fields that need parameter-based casters for a message.
+// Fields with existing casters are excluded.
+func (g *Generator) CollectCasterFields(msg *IRMessage) []*IRField {
+	return g.collectCasterFields(msg)
 }
