@@ -378,6 +378,16 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		} else {
 			gf.P("\t", dstField, " = &", srcField)
 		}
+	} else if field.EnumAsString && field.IsRepeated {
+		// Repeated enum to []string conversion
+		gf.P("\tif len(", srcField, ") > 0 {")
+		gf.P("\t\t", dstField, " = make([]string, len(", srcField, "))")
+		gf.P("\t\tfor i, v := range ", srcField, " {")
+		gf.P("\t\t\t", dstField, "[i] = v.String()")
+		gf.P("\t\t}")
+		gf.P("\t} else {")
+		gf.P("\t\t", dstField, " = []string{}")
+		gf.P("\t}")
 	} else if field.EnumAsString {
 		// Enum to string conversion
 		gf.P("\t", dstField, " = ", srcField, ".String()")
@@ -506,6 +516,19 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 	} else if field.NeedsCaster {
 		// Scalar with type override
 		gf.P("\t\t", dstField, " = ", g.casterCallWithImport(gf, field, getterChain, true))
+	} else if field.EnumAsString && field.IsRepeated {
+		// Repeated enum to []string conversion (embed path)
+		gf.P("\t\tif len(", getterChain, ") > 0 {")
+		gf.P("\t\t\t", dstField, " = make([]string, len(", getterChain, "))")
+		gf.P("\t\t\tfor i, v := range ", getterChain, " {")
+		gf.P("\t\t\t\t", dstField, "[i] = v.String()")
+		gf.P("\t\t\t}")
+		gf.P("\t\t} else {")
+		gf.P("\t\t\t", dstField, " = []string{}")
+		gf.P("\t\t}")
+	} else if field.EnumAsString {
+		// Enum to string conversion (embed path)
+		gf.P("\t\t", dstField, " = ", getterChain, ".String()")
 	} else {
 		// Scalar, enum, bytes - direct assignment
 		// Note: protobuf getters always return values (not pointers) for scalars
@@ -774,6 +797,18 @@ func (g *Generator) generateIntoPbDirectField(gf *protogen.GeneratedFile, field 
 		} else {
 			gf.P("\t\t", dstField, " = *", srcField)
 		}
+		gf.P("\t}")
+	} else if field.EnumAsString && field.IsRepeated {
+		// []string back to repeated enum conversion
+		enumType := g.qualifyType(gf, GoType{
+			Name:       field.Source.Enum.GoIdent.GoName,
+			ImportPath: string(field.Source.Enum.GoIdent.GoImportPath),
+		}, f)
+		gf.P("\tif len(", srcField, ") > 0 {")
+		gf.P("\t\t", dstField, " = make([]", enumType, ", len(", srcField, "))")
+		gf.P("\t\tfor i, v := range ", srcField, " {")
+		gf.P("\t\t\t", dstField, "[i] = ", enumType, "(", enumType, "_value[v])")
+		gf.P("\t\t}")
 		gf.P("\t}")
 	} else if field.EnumAsString {
 		// String back to enum conversion
