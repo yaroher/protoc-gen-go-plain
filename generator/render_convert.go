@@ -396,7 +396,7 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 		} else if field.IsRepeated {
 			// Repeated scalar fields: ensure non-nil slice so database drivers
 			// send an empty array instead of NULL for NOT NULL array columns.
-			typeStr := g.qualifyType(gf, field.GoType, f)
+			typeStr := g.buildTypeString(gf, field, f)
 			gf.P("\tif len(", srcField, ") > 0 {")
 			gf.P("\t\t", dstField, " = ", srcField)
 			gf.P("\t} else {")
