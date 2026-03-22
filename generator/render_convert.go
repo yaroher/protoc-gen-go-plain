@@ -572,6 +572,18 @@ func (g *Generator) generateIntoPlainSerializedField(gf *protogen.GeneratedFile,
 		gf.P("\t\tif data, err := ", gf.QualifiedGoIdent(protoPkg.Ident("Marshal")), "(", getterChain, "); err == nil {")
 		gf.P("\t\t\t", dstField, " = data")
 		gf.P("\t\t}")
+		gf.P("\t} else {")
+		gf.P("\t\t", dstField, " = []byte{}")
+		gf.P("\t}")
+	} else if field.OneofName != "" && field.Source != nil {
+		// Oneof serialized field — use getter for access
+		getterName := "pb.Get" + field.Source.GoName + "()"
+		gf.P("\tif ", getterName, " != nil {")
+		gf.P("\t\tif data, err := ", gf.QualifiedGoIdent(protoPkg.Ident("Marshal")), "(", getterName, "); err == nil {")
+		gf.P("\t\t\t", dstField, " = data")
+		gf.P("\t\t}")
+		gf.P("\t} else {")
+		gf.P("\t\t", dstField, " = []byte{}")
 		gf.P("\t}")
 	} else {
 		path := g.buildPbNavigationPath(field, msg)
@@ -579,6 +591,8 @@ func (g *Generator) generateIntoPlainSerializedField(gf *protogen.GeneratedFile,
 		gf.P("\t\tif data, err := ", gf.QualifiedGoIdent(protoPkg.Ident("Marshal")), "(", path.Value, "); err == nil {")
 		gf.P("\t\t\t", dstField, " = data")
 		gf.P("\t\t}")
+		gf.P("\t} else {")
+		gf.P("\t\t", dstField, " = []byte{}")
 		gf.P("\t}")
 	}
 }
@@ -1075,6 +1089,16 @@ func (g *Generator) generateIntoPbSerializedField(gf *protogen.GeneratedFile, fi
 			gf.P(initCode)
 		}
 		gf.P("\t\t\t", assignCode)
+		gf.P("\t\t}")
+	} else if field.OneofName != "" && field.Source != nil && msg.Source != nil {
+		// Oneof serialized field — assign via wrapper type
+		// pb.Detail = &AuditLog_CreateAction{CreateAction: &msg}
+		msgGoName := msg.Source.GoIdent.GoName
+		oneofGoName := field.OneofGoName
+		wrapperType := msgGoName + "_" + field.Source.GoName
+		gf.P("\t\tvar msg ", g.getProtoTypeIdent(gf, field))
+		gf.P("\t\tif err := ", gf.QualifiedGoIdent(protoPkg.Ident("Unmarshal")), "(", srcField, ", &msg); err == nil {")
+		gf.P("\t\t\tpb.", oneofGoName, " = &", wrapperType, "{", field.Source.GoName, ": &msg}")
 		gf.P("\t\t}")
 	} else {
 		assignment := g.buildPbAssignmentPath(gf, field, msg, f)
