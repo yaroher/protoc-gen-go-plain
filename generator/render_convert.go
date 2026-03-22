@@ -428,7 +428,7 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 
 	gf.P("\t// ", field.GoName, " from ", field.EmPath)
 	gf.P("\tif ", nilCheck, " {")
-	g.generateEmbedFieldAssignment(gf, field, pathInfo, dstField, getterChain)
+	g.generateEmbedFieldAssignment(gf, field, pathInfo, dstField, getterChain, f)
 	gf.P("\t}")
 
 	// Generate alternatives (for fields from other oneof variants)
@@ -443,13 +443,13 @@ func (g *Generator) generateIntoPlainEmbedField(gf *protogen.GeneratedFile, fiel
 
 		gf.P("\t// ", field.GoName, " from ", alt.EmPath, " (variant: ", alt.OneofVariant, ")")
 		gf.P("\tif ", altNilCheck, " {")
-		g.generateEmbedFieldAssignment(gf, field, altPathInfo, dstField, altGetterChain)
+		g.generateEmbedFieldAssignment(gf, field, altPathInfo, dstField, altGetterChain, f)
 		gf.P("\t}")
 	}
 }
 
 // generateEmbedFieldAssignment generates the assignment code for an embedded field
-func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, field *IRField, pathInfo *PathInfo, dstField, getterChain string) {
+func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, field *IRField, pathInfo *PathInfo, dstField, getterChain string, f *protogen.File) {
 	leafField := pathInfo.LeafField
 	// Plain is pointer if GoType.IsPointer OR field is optional (for nullable fields like optional Timestamp -> *time.Time)
 	plainIsPointer := field.GoType.IsPointer || (field.IsOptional && !field.GoType.IsSlice && !field.IsRepeated)
@@ -461,8 +461,13 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 			// Plain type - call IntoPlain()
 			if field.IsRepeated {
 				// Repeated message with generate=true
-				gf.P("\t\tfor _, v := range ", getterChain, " {")
-				gf.P("\t\t\t", dstField, " = append(", dstField, ", *v.IntoPlain())")
+				plainType := g.buildTypeStringPlain(field, f)
+				gf.P("\t\tif len(", getterChain, ") > 0 {")
+				gf.P("\t\t\tfor _, v := range ", getterChain, " {")
+				gf.P("\t\t\t\t", dstField, " = append(", dstField, ", *v.IntoPlain())")
+				gf.P("\t\t\t}")
+				gf.P("\t\t} else {")
+				gf.P("\t\t\t", dstField, " = []", plainType, "{}")
 				gf.P("\t\t}")
 			} else {
 				gf.P("\t\t", dstField, " = ", getterChain, ".IntoPlain()")
@@ -480,10 +485,19 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 			// Protobuf type - check if slice element types match
 			if field.IsRepeated && !field.GoType.IsPointer && leafField != nil && leafField.Message != nil {
 				// Plain is []T, proto is []*T - need to convert
-				gf.P("\t\tfor _, v := range ", getterChain, " {")
-				gf.P("\t\t\tif v != nil {")
-				gf.P("\t\t\t\t", dstField, " = append(", dstField, ", *v)")
+				gf.P("\t\tif len(", getterChain, ") > 0 {")
+				gf.P("\t\t\tfor _, v := range ", getterChain, " {")
+				gf.P("\t\t\t\tif v != nil {")
+				gf.P("\t\t\t\t\t", dstField, " = append(", dstField, ", *v)")
+				gf.P("\t\t\t\t}")
 				gf.P("\t\t\t}")
+				gf.P("\t\t}")
+			} else if field.IsRepeated {
+				typeStr := g.buildTypeString(gf, field, f)
+				gf.P("\t\tif len(", getterChain, ") > 0 {")
+				gf.P("\t\t\t", dstField, " = ", getterChain)
+				gf.P("\t\t} else {")
+				gf.P("\t\t\t", dstField, " = ", typeStr, "{}")
 				gf.P("\t\t}")
 			} else {
 				gf.P("\t\t", dstField, " = ", getterChain)
@@ -499,6 +513,13 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 		if plainIsPointer {
 			gf.P("\t\t_tmp := ", getterChain)
 			gf.P("\t\t", dstField, " = &_tmp")
+		} else if field.IsRepeated {
+			typeStr := g.buildTypeString(gf, field, f)
+			gf.P("\t\tif len(", getterChain, ") > 0 {")
+			gf.P("\t\t\t", dstField, " = ", getterChain)
+			gf.P("\t\t} else {")
+			gf.P("\t\t\t", dstField, " = ", typeStr, "{}")
+			gf.P("\t\t}")
 		} else {
 			gf.P("\t\t", dstField, " = ", getterChain)
 		}
@@ -572,13 +593,16 @@ func (g *Generator) generateIntoPlainTypeAliasField(gf *protogen.GeneratedFile, 
 		// Leaf getter applied to each element
 		leafGetter := fmt.Sprintf(".Get%s()", leafSeg.GoName)
 
+		plainType := g.buildTypeStringPlain(field, f)
 		gf.P("\tif len(", containerChain, ") > 0 {")
-		gf.P("\t\t", dstField, " = make([]", g.buildTypeStringPlain(field, f), ", 0, len(", containerChain, "))")
+		gf.P("\t\t", dstField, " = make([]", plainType, ", 0, len(", containerChain, "))")
 		gf.P("\t\tfor _, _elem := range ", containerChain, " {")
 		gf.P("\t\t\tif _elem != nil {")
 		gf.P("\t\t\t\t", dstField, " = append(", dstField, ", _elem", leafGetter, ")")
 		gf.P("\t\t\t}")
 		gf.P("\t\t}")
+		gf.P("\t} else {")
+		gf.P("\t\t", dstField, " = []", plainType, "{}")
 		gf.P("\t}")
 		return
 	}
