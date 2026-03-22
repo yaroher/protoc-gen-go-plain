@@ -330,13 +330,16 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 				// Repeated plain: []PlainType (without pointer on element)
 				// Source is []*ProtoMessage, IntoPlain() returns *PlainType
 				// Need to dereference: *v.IntoPlain()
+				plainType := g.buildTypeStringPlain(field, f)
 				gf.P("\tif len(", srcField, ") > 0 {")
-				gf.P("\t\t", dstField, " = make([]", g.buildTypeStringPlain(field, f), ", len(", srcField, "))")
+				gf.P("\t\t", dstField, " = make([]", plainType, ", len(", srcField, "))")
 				gf.P("\t\tfor i, v := range ", srcField, " {")
 				gf.P("\t\t\tif v != nil {")
 				gf.P("\t\t\t\t", dstField, "[i] = *v.IntoPlain()")
 				gf.P("\t\t\t}")
 				gf.P("\t\t}")
+				gf.P("\t} else {")
+				gf.P("\t\t", dstField, " = []", plainType, "{}")
 				gf.P("\t}")
 			} else {
 				gf.P("\tif ", srcField, " != nil {")
@@ -390,6 +393,15 @@ func (g *Generator) generateIntoPlainDirectField(gf *protogen.GeneratedFile, fie
 			// Skip cast for slice types and bytes - direct assignment works
 			typeStr := g.qualifyType(gf, field.GoType, f)
 			gf.P("\t", dstField, " = ", typeStr, "(", srcField, ")")
+		} else if field.IsRepeated {
+			// Repeated scalar fields: ensure non-nil slice so database drivers
+			// send an empty array instead of NULL for NOT NULL array columns.
+			typeStr := g.qualifyType(gf, field.GoType, f)
+			gf.P("\tif len(", srcField, ") > 0 {")
+			gf.P("\t\t", dstField, " = ", srcField)
+			gf.P("\t} else {")
+			gf.P("\t\t", dstField, " = ", typeStr, "{}")
+			gf.P("\t}")
 		} else {
 			gf.P("\t", dstField, " = ", srcField)
 		}
