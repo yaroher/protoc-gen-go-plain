@@ -550,9 +550,9 @@ func (g *Generator) generateEmbedFieldAssignment(gf *protogen.GeneratedFile, fie
 
 }
 
-// generateIntoPlainSerializedField handles serialized field (message -> bytes)
+// generateIntoPlainSerializedField handles serialized field (message -> JSON bytes)
 func (g *Generator) generateIntoPlainSerializedField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
-	protoPkg := protogen.GoImportPath("google.golang.org/protobuf/proto")
+	protoPkg := protogen.GoImportPath("google.golang.org/protobuf/encoding/protojson")
 
 	dstField := "p." + field.GoName
 
@@ -1065,9 +1065,9 @@ func (g *Generator) generateIntoPbOneofField(gf *protogen.GeneratedFile, field *
 	}
 }
 
-// generateIntoPbSerializedField handles deserialization of bytes back to message
+// generateIntoPbSerializedField handles deserialization of JSON bytes back to message
 func (g *Generator) generateIntoPbSerializedField(gf *protogen.GeneratedFile, field *IRField, msg *IRMessage, f *protogen.File) {
-	protoPkg := protogen.GoImportPath("google.golang.org/protobuf/proto")
+	protoPkg := protogen.GoImportPath("google.golang.org/protobuf/encoding/protojson")
 
 	srcField := "p." + field.GoName
 
