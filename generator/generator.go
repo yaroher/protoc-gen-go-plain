@@ -41,6 +41,9 @@ type Generator struct {
 	// existingCasters contains pre-defined casters that will be imported and used directly
 	existingCasters []*ExistingCaster
 
+	// forceEnumAsString forces all enum fields to be generated as string type
+	forceEnumAsString bool
+
 	// castersAsStruct - временное поле для текущего файла
 	castersAsStruct bool
 
@@ -60,6 +63,15 @@ func WithPlainSuffix(suffix string) Option {
 func WithTypeOverrides(overrides []*goplain.TypeOverride) Option {
 	return func(g *Generator) error {
 		g.overrides = overrides
+		return nil
+	}
+}
+
+// WithForceEnumAsString forces all enum fields to be generated as string type in Scanner structs.
+// Useful when enums are stored as TEXT in the database.
+func WithForceEnumAsString() Option {
+	return func(g *Generator) error {
+		g.forceEnumAsString = true
 		return nil
 	}
 }
@@ -138,6 +150,7 @@ func (g *Generator) Generate() error {
 		// Build IR
 		builder := NewIRBuilder(g.suffix)
 		builder.GlobalOverrides = g.overrides
+		builder.ForceEnumAsString = g.forceEnumAsString
 
 		irFile, err := builder.BuildFile(f)
 		if err != nil {

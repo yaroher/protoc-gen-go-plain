@@ -25,6 +25,8 @@ type IRBuilder struct {
 	// Errors — ошибки валидации
 	Errors []error
 
+	// ForceEnumAsString forces all enum fields to be generated as string type
+	ForceEnumAsString bool
 	// nextFieldNumber — счётчик для нумерации полей
 	nextFieldNumber int32
 	// fieldNames — имена полей текущего сообщения (для проверки коллизий)
@@ -625,6 +627,10 @@ func (b *IRBuilder) buildDirectField(field *protogen.Field, prefix string, pathN
 	// Enum поля
 	if field.Enum != nil {
 		irField.ProtoType = string(field.Enum.Desc.FullName())
+		// ForceEnumAsString overrides per-field setting
+		if b.ForceEnumAsString && !irField.EnumAsInt {
+			irField.EnumAsString = true
+		}
 		// Меняем Go-тип если нужно
 		if irField.EnumAsString {
 			irField.GoType = GoType{Name: "string"}
