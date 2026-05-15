@@ -1123,7 +1123,7 @@ func (g *Generator) generateIntoPbTypeAliasField(gf *protogen.GeneratedFile, fie
 
 	srcField := "p." + field.GoName
 
-	// Get the wrapper message type
+	// Get the wrapper message type (the type-alias message itself)
 	wrapperType := gf.QualifiedGoIdent(field.Source.Message.GoIdent)
 
 	// Get the alias field name from message options
@@ -1135,6 +1135,22 @@ func (g *Generator) generateIntoPbTypeAliasField(gf *protogen.GeneratedFile, fie
 	}
 
 	gf.P("\t// ", field.GoName, " type alias -> ", field.EmPath)
+
+	// Oneof variant: assign through oneof wrapper, with case discriminator check.
+	if field.Source.Oneof != nil && !field.Source.Oneof.Desc.IsSynthetic() {
+		oneof := field.Source.Oneof
+		oneofWrapperIdent := protogen.GoIdent{
+			GoName:       oneof.Parent.GoIdent.GoName + "_" + field.Source.GoName,
+			GoImportPath: oneof.Parent.GoIdent.GoImportPath,
+		}
+		oneofWrapperType := gf.QualifiedGoIdent(oneofWrapperIdent)
+		caseFieldName := field.OneofGoName + "Case"
+
+		gf.P("\tif p.", caseFieldName, " == \"", field.OneofVariant, "\" {")
+		gf.P("\t\tpb.", oneof.GoName, " = &", oneofWrapperType, "{", field.Source.GoName, ": &", wrapperType, "{", aliasFieldName, ": ", srcField, "}}")
+		gf.P("\t}")
+		return
+	}
 
 	// For repeated type_alias: p.FileIds is []string, pb.FileIds is []*WrapperMsg
 	if field.IsRepeated {
