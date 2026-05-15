@@ -166,13 +166,12 @@ func (b *IRBuilder) BuildMessage(msg *protogen.Message, parentEmPath string) (*I
 
 				// Prefix для Go структуры:
 				// - Если usePrefix=true (oneof.embed_with_prefix): oneof_name + variant_name
-				// - Иначе: variant_name (для уникальности в Go)
+				// - Иначе: oneof_name (disambiguates multi-oneof hosts, avoids doubling)
 				var variantPrefix string
 				if usePrefix {
 					variantPrefix = basePrefix + "_" + string(field.Desc.Name())
 				} else {
-					// Всегда используем имя варианта как prefix для Go
-					variantPrefix = string(field.Desc.Name())
+					variantPrefix = string(oneof.Desc.Name())
 				}
 
 				irFields, err := b.processField(field, irMsg, variantPrefix, nil)
@@ -519,14 +518,14 @@ func (b *IRBuilder) processEmbedField(
 					FieldNumber: int32(oneofField.Desc.Number()),
 				})
 
-				// Build variant prefix for Go struct (always include variant name for uniqueness)
+				// Build variant prefix: <embed_path>_<oneof_name> (no doubling with variant name)
 				var variantPrefix string
 				if useOneofPrefix {
 					variantPrefix = oneofBasePrefix + "_" + string(oneofField.Desc.Name())
 				} else if oneofBasePrefix != "" {
-					variantPrefix = oneofBasePrefix + "_" + string(oneofField.Desc.Name())
+					variantPrefix = oneofBasePrefix + "_" + string(oneof.Desc.Name())
 				} else {
-					variantPrefix = string(oneofField.Desc.Name())
+					variantPrefix = string(oneof.Desc.Name())
 				}
 
 				oneofFields, err := b.processField(oneofField, irMsg, variantPrefix, pathNumbers)
